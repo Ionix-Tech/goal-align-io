@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
 import { KanbanCard } from './KanbanCard';
 import { useUserRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
@@ -32,8 +33,18 @@ export function SortableKanbanCard({ project, onClick }: SortableKanbanCardProps
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      className="relative group"
     >
+      {/* Handle de drag */}
+      <button
+        {...listeners}
+        className="absolute top-2 right-2 z-10 p-1 opacity-0 group-hover:opacity-50 hover:!opacity-100 cursor-grab active:cursor-grabbing transition-opacity rounded hover:bg-accent"
+        aria-label="Arrastar projeto"
+        type="button"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+
       <KanbanCard
         project={project}
         onClick={onClick}
