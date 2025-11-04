@@ -54,12 +54,21 @@ export function AppSidebar() {
                 
                 <DropdownMenuContent align="start" className="w-56 bg-background border border-border shadow-lg z-50">
                   {role === 'ceo' && (
-                    <DropdownMenuItem asChild>
-                      <NavLink to="/quick-idea" className="flex items-center gap-2 cursor-pointer">
-                        <Lightbulb className="h-4 w-4" />
-                        <span>Nova Ideia</span>
-                      </NavLink>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild>
+                        <NavLink to="/quick-idea" className="flex items-center gap-2 cursor-pointer">
+                          <Lightbulb className="h-4 w-4" />
+                          <span>Nova Ideia</span>
+                        </NavLink>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem asChild>
+                        <NavLink to="/create-project" className="flex items-center gap-2 cursor-pointer">
+                          <Plus className="h-4 w-4" />
+                          <span>Novo Projeto</span>
+                        </NavLink>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   
                   {role === 'pmo_manager' && (
