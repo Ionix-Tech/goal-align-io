@@ -90,8 +90,7 @@ const CreateProject = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <div className="container max-w-4xl py-8 px-4">
+    <div className="container max-w-4xl py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Criar Novo Projeto</h1>
           <p className="text-muted-foreground">
@@ -309,16 +308,12 @@ const CreateProject = () => {
 
           {/* Actions */}
           <div className="flex gap-3 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={() => window.history.back()}>
-              Cancelar
-            </Button>
             <Button type="submit" size="lg">
               Criar Projeto
             </Button>
           </div>
         </form>
       </div>
-    </div>
   );
 };
 
