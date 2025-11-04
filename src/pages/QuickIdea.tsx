@@ -17,13 +17,6 @@ const QuickIdea = () => {
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      toast.error("Você precisa estar autenticado");
-      navigate('/auth');
-    }
-  }, [authLoading, user, navigate]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 

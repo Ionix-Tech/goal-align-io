@@ -145,8 +145,8 @@ export function AppSidebar() {
                 
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <NavLink to={item.url}>
+                    <SidebarMenuButton asChild isActive={item.url ? isActive(item.url) : false}>
+                      <NavLink to={item.url || "#"}>
                         <item.icon className="h-4 w-4" />
                         {open && <span>{item.title}</span>}
                       </NavLink>
