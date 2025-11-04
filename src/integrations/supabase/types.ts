@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          project_id: string | null
+          read: boolean | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          project_id?: string | null
+          read?: boolean | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          project_id?: string | null
+          read?: boolean | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -306,14 +344,7 @@ export type Database = {
     }
     Enums: {
       app_role: "ceo" | "pmo_manager" | "project_member"
-      project_status:
-        | "idea"
-        | "draft"
-        | "review"
-        | "approved"
-        | "in_progress"
-        | "completed"
-        | "archived"
+      project_status: "idea" | "draft" | "review" | "approved" | "archived"
       strategic_pillar:
         | "operational_efficiency"
         | "sales_expansion"
@@ -446,15 +477,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["ceo", "pmo_manager", "project_member"],
-      project_status: [
-        "idea",
-        "draft",
-        "review",
-        "approved",
-        "in_progress",
-        "completed",
-        "archived",
-      ],
+      project_status: ["idea", "draft", "review", "approved", "archived"],
       strategic_pillar: [
         "operational_efficiency",
         "sales_expansion",

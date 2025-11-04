@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -39,10 +40,13 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <SidebarTrigger />
                 <div className="ml-4 font-semibold">COMPASS</div>
               </div>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+              </div>
             </div>
           </header>
           <main className="flex-1">{children}</main>
