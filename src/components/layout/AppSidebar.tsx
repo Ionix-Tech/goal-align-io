@@ -1,5 +1,6 @@
-import { Plus, Target, ClipboardCheck, Brain, Lightbulb, ChevronDown } from "lucide-react";
+import { Plus, Target, ClipboardCheck, Brain, Lightbulb, ChevronDown, ChevronRight, ListOrdered, FolderKanban, FileText } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +11,11 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,7 +26,15 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 
 const menuItems = [
-  { title: "Estratégia", url: "/prioritization", icon: Target },
+  { 
+    title: "Estratégia", 
+    icon: Target,
+    subitems: [
+      { title: "Priorização", url: "/prioritization", icon: ListOrdered },
+      { title: "Portfólio", url: "/portfolio", icon: FolderKanban },
+      { title: "Teses", url: "/theses", icon: FileText },
+    ]
+  },
   { title: "Gestão e Execução", url: "/management", icon: ClipboardCheck },
   { title: "Inteligência", url: "/intelligence", icon: Brain },
 ];
@@ -30,8 +44,20 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { role } = useUserRole();
+  
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    "Estratégia": true,
+  });
 
   const isActive = (path: string) => currentPath === path;
+  
+  const hasActiveSubitem = (subitems?: Array<{url: string}>) => {
+    return subitems?.some(sub => isActive(sub.url)) || false;
+  };
+
+  const toggleSection = (title: string) => {
+    setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -73,16 +99,61 @@ export function AppSidebar() {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      {open && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                if (item.subitems) {
+                  const sectionOpen = openSections[item.title];
+                  const hasActive = hasActiveSubitem(item.subitems);
+                  
+                  return (
+                    <Collapsible
+                      key={item.title}
+                      open={sectionOpen}
+                      onOpenChange={() => toggleSection(item.title)}
+                    >
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton className={hasActive ? "font-semibold" : ""}>
+                            <item.icon className="h-4 w-4" />
+                            {open && (
+                              <>
+                                <span>{item.title}</span>
+                                <ChevronRight 
+                                  className={`h-4 w-4 ml-auto transition-transform ${sectionOpen ? 'rotate-90' : ''}`} 
+                                />
+                              </>
+                            )}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenu className="ml-4 border-l pl-2">
+                            {item.subitems.map((subitem) => (
+                              <SidebarMenuItem key={subitem.title}>
+                                <SidebarMenuButton asChild isActive={isActive(subitem.url)}>
+                                  <NavLink to={subitem.url}>
+                                    <subitem.icon className="h-4 w-4" />
+                                    {open && <span>{subitem.title}</span>}
+                                  </NavLink>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            ))}
+                          </SidebarMenu>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  );
+                }
+                
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <NavLink to={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        {open && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
