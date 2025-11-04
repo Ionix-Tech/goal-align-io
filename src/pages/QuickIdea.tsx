@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,26 @@ import { useAuth } from "@/hooks/useAuth";
 
 const QuickIdea = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.error("Você precisa estar autenticado");
+      navigate('/auth');
+    }
+  }, [authLoading, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user?.id) {
+      toast.error("Você precisa estar autenticado para criar uma ideia");
+      navigate('/auth');
+      return;
+    }
 
     if (!title.trim()) {
       toast.error("Título é obrigatório");
@@ -30,18 +43,22 @@ const QuickIdea = () => {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
 
     try {
+      const ideaData = {
+        name: title,
+        description: description,
+        status: 'idea' as const,
+        created_by: user.id,
+        assigned_to: null,
+      };
+
+      console.log('Creating idea with data:', ideaData);
+
       const { data, error } = await supabase
         .from('projects')
-        .insert({
-          name: title,
-          description: description,
-          status: 'idea',
-          created_by: user?.id,
-          assigned_to: null,
-        })
+        .insert(ideaData)
         .select()
         .single();
 
@@ -51,13 +68,30 @@ const QuickIdea = () => {
         description: "Ela será priorizada em breve"
       });
       navigate('/prioritization');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating idea:', error);
-      toast.error("Erro ao criar ideia");
+      
+      if (error.code === '23502') {
+        toast.error("Erro: campos obrigatórios não preenchidos");
+      } else if (error.code === '42501') {
+        toast.error("Erro: você não tem permissão para criar ideias");
+      } else if (error.message) {
+        toast.error(`Erro ao criar ideia: ${error.message}`);
+      } else {
+        toast.error("Erro ao criar ideia. Tente novamente.");
+      }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="container max-w-3xl py-8 px-4 flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-3xl py-8 px-4">
@@ -122,12 +156,12 @@ const QuickIdea = () => {
             type="button"
             variant="outline"
             onClick={() => navigate('/prioritization')}
-            disabled={loading}
+            disabled={submitting}
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Criando..." : "Criar Ideia"}
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Criando..." : "Criar Ideia"}
           </Button>
         </div>
       </form>
