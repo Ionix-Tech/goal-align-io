@@ -10,7 +10,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
 
-const Strategy = () => {
+const Prioritization = () => {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [search, setSearch] = useState('');
   const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
@@ -57,9 +57,9 @@ const Strategy = () => {
               <Target className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Portfólio Estratégico</h1>
+              <h1 className="text-3xl font-bold">Priorização</h1>
               <p className="text-muted-foreground">
-                Visualize e gerencie ideias e projetos da empresa
+                Priorize e gerencie ideias e projetos estratégicos
               </p>
             </div>
           </div>
@@ -81,7 +81,7 @@ const Strategy = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                📝 Rascunhos
+                📝 Detalhamento
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -171,4 +171,4 @@ const Strategy = () => {
   );
 };
 
-export default Strategy;
+export default Prioritization;

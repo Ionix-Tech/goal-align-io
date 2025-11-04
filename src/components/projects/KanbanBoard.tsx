@@ -18,7 +18,7 @@ interface KanbanBoardProps {
 
 const STATUS_COLUMNS = [
   { id: 'idea' as ProjectStatus, title: 'Ideias', icon: Lightbulb },
-  { id: 'draft' as ProjectStatus, title: 'Rascunhos', icon: FileText },
+  { id: 'draft' as ProjectStatus, title: 'Detalhamento', icon: FileText },
   { id: 'review' as ProjectStatus, title: 'Em Análise', icon: Clock },
   { id: 'approved' as ProjectStatus, title: 'Aprovados', icon: CheckCircle2 },
   { id: 'archived' as ProjectStatus, title: 'Arquivados', icon: Archive }

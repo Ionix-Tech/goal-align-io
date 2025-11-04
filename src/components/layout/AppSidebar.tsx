@@ -20,7 +20,7 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 
 const menuItems = [
-  { title: "Estratégia", url: "/strategy", icon: Target },
+  { title: "Estratégia", url: "/prioritization", icon: Target },
   { title: "Gestão e Execução", url: "/management", icon: ClipboardCheck },
   { title: "Inteligência", url: "/intelligence", icon: Brain },
 ];

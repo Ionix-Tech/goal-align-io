@@ -16,7 +16,7 @@ const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; icon:
     icon: '💡'
   },
   draft: {
-    label: 'Rascunho',
+    label: 'Detalhamento e Aprofundamento',
     color: 'bg-blue-100 text-blue-800 border-blue-300',
     icon: '📝'
   },

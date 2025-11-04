@@ -195,7 +195,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
         strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
         objective: objective || null,
         status: targetStatus,
-        assigned_to: user?.id,
+        assigned_to: null,
         created_by: user?.id,
         submitted_for_review_at: targetStatus === 'review' ? new Date().toISOString() : null
       };
@@ -291,14 +291,14 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
 
       // Feedback de sucesso
       if (targetStatus === 'draft') {
-        toast.success("Rascunho salvo", {
-          description: "Você pode continuar editando depois"
+        toast.success("Salvo em Detalhamento", {
+          description: "Continue estruturando quando quiser"
         });
       } else {
         toast.success("Projeto enviado para aprovação", {
           description: "O CEO será notificado para revisar"
         });
-        navigate('/strategy');
+        navigate('/prioritization');
       }
     } catch (error) {
       console.error('Error saving project:', error);
@@ -323,7 +323,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     <div className="container max-w-4xl py-8 px-4">
       <Button
         variant="ghost"
-        onClick={() => navigate('/strategy')}
+        onClick={() => navigate('/prioritization')}
         className="mb-4"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -646,7 +646,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
               disabled={loading}
             >
               <Save className="mr-2 h-4 w-4" />
-              {loading ? "Salvando..." : "Salvar Rascunho"}
+              {loading ? "Salvando..." : "Salvar em Detalhamento"}
             </Button>
             
             <Button 

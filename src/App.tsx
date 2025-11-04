@@ -10,7 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CreateProject from "./pages/CreateProject";
 import QuickIdea from "./pages/QuickIdea";
-import Strategy from "./pages/Strategy";
+import Prioritization from "./pages/Prioritization";
 import Management from "./pages/Management";
 import Intelligence from "./pages/Intelligence";
 import NotFound from "./pages/NotFound";
@@ -29,7 +29,7 @@ const App = () => (
           <Route path="/quick-idea" element={<ProtectedRoute><AppLayout><QuickIdea /></AppLayout></ProtectedRoute>} />
           <Route path="/create-project" element={<ProtectedRoute><AppLayout><CreateProject /></AppLayout></ProtectedRoute>} />
           <Route path="/projects/:id/structure" element={<ProtectedRoute><AppLayout><CreateProject mode="structure" /></AppLayout></ProtectedRoute>} />
-          <Route path="/strategy" element={<ProtectedRoute><AppLayout><Strategy /></AppLayout></ProtectedRoute>} />
+          <Route path="/prioritization" element={<ProtectedRoute><AppLayout><Prioritization /></AppLayout></ProtectedRoute>} />
           <Route path="/management" element={<ProtectedRoute><AppLayout><Management /></AppLayout></ProtectedRoute>} />
           <Route path="/intelligence" element={<ProtectedRoute><AppLayout><Intelligence /></AppLayout></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
