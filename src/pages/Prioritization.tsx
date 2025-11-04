@@ -4,8 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { ProjectFilters } from "@/components/projects/ProjectFilters";
+import { ProjectDrawer } from "@/components/projects/ProjectDrawer";
 import { useProjects } from "@/hooks/useProjects";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
@@ -14,9 +16,11 @@ const Prioritization = () => {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [search, setSearch] = useState('');
   const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
-  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   
   const { role } = useUserRole();
+  const queryClient = useQueryClient();
   
   const filters = {
     search,
@@ -34,8 +38,8 @@ const Prioritization = () => {
   const allProjects = data?.all || [];
 
   const handleProjectClick = (project: any) => {
-    setSelectedProject(project);
-    // TODO: Open project details modal
+    setSelectedProjectId(project.id);
+    setDrawerOpen(true);
   };
 
   // Calculate stats
@@ -166,6 +170,19 @@ const Prioritization = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Project Drawer */}
+        <ProjectDrawer
+          projectId={selectedProjectId}
+          isOpen={drawerOpen}
+          onClose={() => {
+            setDrawerOpen(false);
+            setSelectedProjectId(null);
+          }}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          }}
+        />
       </div>
     </div>
   );
