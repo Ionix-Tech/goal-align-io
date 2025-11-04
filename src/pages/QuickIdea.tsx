@@ -30,13 +30,6 @@ const QuickIdea = () => {
   const [managers, setManagers] = useState<Manager[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Proteção: apenas CEO pode acessar
-  useEffect(() => {
-    if (role && role !== 'ceo') {
-      toast.error("Apenas CEOs podem criar ideias");
-      navigate('/strategy');
-    }
-  }, [role, navigate]);
 
   // Buscar gestores PMO
   useEffect(() => {

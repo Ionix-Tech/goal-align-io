@@ -63,13 +63,6 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     { value: 'new_business', label: 'Novos Negócios', icon: '🚀' }
   ];
 
-  // Proteção: apenas gestores PMO podem acessar
-  useEffect(() => {
-    if (role && role !== 'pmo_manager') {
-      toast.error("Apenas gestores PMO podem criar projetos");
-      navigate('/strategy');
-    }
-  }, [role, navigate]);
 
   // Buscar membros disponíveis
   useEffect(() => {

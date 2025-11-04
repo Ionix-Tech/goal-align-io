@@ -38,7 +38,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <div className="px-3 py-2 space-y-2">
-            {(role === 'ceo' || role === 'pmo_manager') && (
+            {role && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"}>
@@ -53,32 +53,19 @@ export function AppSidebar() {
                 </DropdownMenuTrigger>
                 
                 <DropdownMenuContent align="start" className="w-56 bg-background border border-border shadow-lg z-50">
-                  {role === 'ceo' && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <NavLink to="/quick-idea" className="flex items-center gap-2 cursor-pointer">
-                          <Lightbulb className="h-4 w-4" />
-                          <span>Nova Ideia</span>
-                        </NavLink>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem asChild>
-                        <NavLink to="/create-project" className="flex items-center gap-2 cursor-pointer">
-                          <Plus className="h-4 w-4" />
-                          <span>Novo Projeto</span>
-                        </NavLink>
-                      </DropdownMenuItem>
-                    </>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/quick-idea" className="flex items-center gap-2 cursor-pointer">
+                      <Lightbulb className="h-4 w-4" />
+                      <span>Nova Ideia</span>
+                    </NavLink>
+                  </DropdownMenuItem>
                   
-                  {role === 'pmo_manager' && (
-                    <DropdownMenuItem asChild>
-                      <NavLink to="/create-project" className="flex items-center gap-2 cursor-pointer">
-                        <Plus className="h-4 w-4" />
-                        <span>Novo Projeto</span>
-                      </NavLink>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/create-project" className="flex items-center gap-2 cursor-pointer">
+                      <Plus className="h-4 w-4" />
+                      <span>Novo Projeto</span>
+                    </NavLink>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
