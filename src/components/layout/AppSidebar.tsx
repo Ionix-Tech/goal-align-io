@@ -1,4 +1,4 @@
-import { Plus, Target, ClipboardCheck, Brain, Lightbulb } from "lucide-react";
+import { Plus, Target, ClipboardCheck, Brain, Lightbulb, ChevronDown } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -11,6 +11,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const menuItems = [
@@ -32,22 +38,40 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <div className="px-3 py-2 space-y-2">
-            {role === 'ceo' && (
-              <NavLink to="/quick-idea">
-                <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"}>
-                  <Lightbulb className="h-4 w-4" />
-                  {open && <span>Nova Ideia</span>}
-                </Button>
-              </NavLink>
-            )}
-            
-            {role === 'pmo_manager' && (
-              <NavLink to="/create-project">
-                <Button className="w-full justify-start gap-2" variant="outline" size={open ? "default" : "icon"}>
-                  <Plus className="h-4 w-4" />
-                  {open && <span>Novo Projeto</span>}
-                </Button>
-              </NavLink>
+            {(role === 'ceo' || role === 'pmo_manager') && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"}>
+                    <Plus className="h-4 w-4" />
+                    {open && (
+                      <>
+                        <span>Novo</span>
+                        <ChevronDown className="h-4 w-4 ml-auto" />
+                      </>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                
+                <DropdownMenuContent align="start" className="w-56 bg-background border border-border shadow-lg z-50">
+                  {role === 'ceo' && (
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/quick-idea" className="flex items-center gap-2 cursor-pointer">
+                        <Lightbulb className="h-4 w-4" />
+                        <span>Nova Ideia</span>
+                      </NavLink>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {role === 'pmo_manager' && (
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/create-project" className="flex items-center gap-2 cursor-pointer">
+                        <Plus className="h-4 w-4" />
+                        <span>Novo Projeto</span>
+                      </NavLink>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 
