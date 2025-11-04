@@ -23,7 +23,7 @@ interface Project {
 const ALLOWED_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   idea: ['draft', 'archived'],
   draft: ['review', 'archived'],
-  review: ['approved', 'draft'], // CEO pode aprovar ou devolver para ajustes
+  review: ['approved', 'draft', 'archived'], // CEO pode aprovar, devolver para ajustes ou arquivar
   approved: ['archived'],
   archived: []
 };
@@ -51,6 +51,11 @@ export function useProjectTransitions() {
     // Validação: apenas CEO pode aprovar
     if (to === 'approved' && role !== 'ceo') {
       return { allowed: false, reason: 'Apenas CEO pode aprovar projetos' };
+    }
+
+    // Validação: apenas CEO pode arquivar projetos em revisão
+    if (to === 'archived' && from === 'review' && role !== 'ceo') {
+      return { allowed: false, reason: 'Apenas CEO pode arquivar projetos em análise' };
     }
 
     // Validação: apenas CEO ou criador/gestor podem voltar para draft
@@ -135,6 +140,8 @@ export function useProjectTransitions() {
         toast({ title: 'Projeto aprovado!', variant: 'default' });
       } else if (newStatus === 'draft') {
         toast({ title: 'Projeto devolvido para ajustes' });
+      } else if (newStatus === 'archived') {
+        toast({ title: 'Projeto arquivado' });
       }
     },
     onError: (error: any) => {
@@ -201,6 +208,24 @@ export function useProjectTransitions() {
             project.id,
             'project_rejected',
             `⚠️ O projeto "${project.name}" precisa de ajustes.`
+          );
+        }
+      } else if (newStatus === 'archived') {
+        // Notificar sobre arquivamento
+        if (project.created_by) {
+          await createNotification(
+            project.created_by,
+            project.id,
+            'project_archived',
+            `📦 Seu projeto "${project.name}" foi arquivado.`
+          );
+        }
+        if (project.assigned_to && project.assigned_to !== project.created_by) {
+          await createNotification(
+            project.assigned_to,
+            project.id,
+            'project_archived',
+            `📦 O projeto "${project.name}" foi arquivado.`
           );
         }
       }

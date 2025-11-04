@@ -66,31 +66,71 @@ export function useProjectDetails(projectId: string | null) {
     queryFn: async () => {
       if (!projectId) return null;
 
-      const { data, error } = await supabase
+      console.log('[useProjectDetails] Fetching project:', projectId);
+
+      // Buscar projeto base
+      const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select(`
-          *,
-          indicators:project_indicators(*),
-          milestones:project_milestones(*),
-          members:project_members(
-            id,
-            user:profiles(id, full_name, email, avatar_url)
-          ),
-          comments:project_comments(
-            id,
-            comment,
-            created_at,
-            user:profiles(id, full_name, avatar_url)
-          ),
-          creator:profiles!projects_created_by_fkey(id, full_name, email, avatar_url),
-          assignee:profiles!projects_assigned_to_fkey(id, full_name, email, avatar_url)
-        `)
+        .select('*')
         .eq('id', projectId)
         .single();
 
-      if (error) throw error;
+      if (projectError) {
+        console.error('[useProjectDetails] Error fetching project:', projectError);
+        throw projectError;
+      }
+
+      // Buscar dados relacionados em paralelo
+      const [
+        { data: indicators },
+        { data: milestones },
+        { data: members },
+        { data: comments },
+        { data: creator },
+        { data: assignee }
+      ] = await Promise.all([
+        supabase.from('project_indicators').select('*').eq('project_id', projectId),
+        supabase.from('project_milestones').select('*').eq('project_id', projectId),
+        supabase
+          .from('project_members')
+          .select('id, user_id, profiles(id, full_name, email, avatar_url)')
+          .eq('project_id', projectId),
+        supabase
+          .from('project_comments')
+          .select('id, comment, created_at, user_id, profiles(id, full_name, avatar_url)')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: false }),
+        projectData.created_by
+          ? supabase.from('profiles').select('id, full_name, email, avatar_url').eq('id', projectData.created_by).single()
+          : Promise.resolve({ data: null }),
+        projectData.assigned_to
+          ? supabase.from('profiles').select('id, full_name, email, avatar_url').eq('id', projectData.assigned_to).single()
+          : Promise.resolve({ data: null })
+      ]);
+
+      // Montar o objeto final
+      const data = {
+        ...projectData,
+        indicators: indicators || [],
+        milestones: milestones || [],
+        members: (members || []).map((m: any) => ({
+          id: m.id,
+          user: m.profiles
+        })),
+        comments: (comments || []).map((c: any) => ({
+          id: c.id,
+          comment: c.comment,
+          created_at: c.created_at,
+          user: c.profiles
+        })),
+        creator,
+        assignee
+      };
+
+      console.log('[useProjectDetails] Project data:', data);
       return data as unknown as ProjectDetails;
     },
-    enabled: !!projectId
+    enabled: !!projectId,
+    retry: false
   });
 }

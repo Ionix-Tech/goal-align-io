@@ -32,12 +32,12 @@ export function SortableKanbanCard({ project, onClick }: SortableKanbanCardProps
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
       className="relative group"
     >
       {/* Handle de drag */}
       <button
         {...listeners}
+        {...attributes}
         className="absolute top-2 right-2 z-10 p-1 opacity-0 group-hover:opacity-50 hover:!opacity-100 cursor-grab active:cursor-grabbing transition-opacity rounded hover:bg-accent"
         aria-label="Arrastar projeto"
         type="button"

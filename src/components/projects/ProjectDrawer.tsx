@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, X, Users, Save, Send, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Plus, X, Users, Save, Send, CheckCircle2, XCircle, AlertCircle, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -68,6 +68,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
   const [membersPopoverOpen, setMembersPopoverOpen] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const strategicPillars = [
@@ -344,6 +345,26 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
     });
 
     setShowRejectDialog(false);
+    setNewComment("");
+    onSuccess?.();
+    onClose();
+  };
+
+  const handleArchive = async () => {
+    if (!project || !projectId) return;
+
+    if (!newComment.trim()) {
+      toast.error("Adicione um comentário explicando o motivo do arquivamento");
+      return;
+    }
+
+    await transition({
+      projectId: projectId,
+      newStatus: 'archived',
+      comment: newComment.trim()
+    });
+
+    setShowArchiveDialog(false);
     setNewComment("");
     onSuccess?.();
     onClose();
@@ -821,23 +842,34 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
             )}
 
             {canApprove && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowRejectDialog(true)}
-                  disabled={isTransitioning}
-                  className="flex-1"
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Reprovar
-                </Button>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowRejectDialog(true)}
+                    disabled={isTransitioning}
+                    className="flex-1"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Solicitar Ajustes
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowArchiveDialog(true)}
+                    disabled={isTransitioning}
+                    className="flex-1"
+                  >
+                    <Archive className="mr-2 h-4 w-4" />
+                    Arquivar
+                  </Button>
+                </div>
                 <Button
                   onClick={() => setShowApproveDialog(true)}
                   disabled={isTransitioning}
-                  className="flex-1"
+                  className="w-full"
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Aprovar
+                  Aprovar Projeto
                 </Button>
               </div>
             )}
@@ -876,7 +908,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reprovar Projeto?</AlertDialogTitle>
+            <AlertDialogTitle>Solicitar Ajustes?</AlertDialogTitle>
             <AlertDialogDescription>
               O projeto será devolvido para "Detalhamento" e o criador será notificado sobre os ajustes necessários.
             </AlertDialogDescription>
@@ -892,11 +924,42 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleReject}
               disabled={!newComment.trim()}
             >
-              Reprovar e Solicitar Ajustes
+              Solicitar Ajustes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de Arquivamento */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Arquivar Projeto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O projeto será movido para "Arquivados" e o criador será notificado. Esta ação indica que o projeto não será desenvolvido.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label className="text-sm">Comentário * (obrigatório)</Label>
+            <Textarea
+              placeholder="Explique o motivo do arquivamento..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchive}
+              disabled={!newComment.trim()}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Confirmar Arquivamento
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
