@@ -341,6 +341,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_has_project_access: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "ceo" | "pmo_manager" | "project_member"
