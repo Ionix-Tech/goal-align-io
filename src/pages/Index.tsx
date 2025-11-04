@@ -1,9 +1,35 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Target, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
+import { Target } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        navigate("/strategy");
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        if (session) {
+          navigate("/strategy");
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
@@ -21,14 +47,15 @@ const Index = () => {
         </div>
 
         <div className="pt-4">
-          <Button 
-            size="lg" 
-            onClick={() => navigate("/create-project")}
-            className="text-lg px-8 py-6"
-          >
-            <TrendingUp className="mr-2 h-5 w-5" />
-            Criar Novo Projeto
-          </Button>
+          {!session && (
+            <Button 
+              size="lg" 
+              onClick={() => navigate("/auth")}
+              className="text-lg px-8 py-6"
+            >
+              Fazer Login
+            </Button>
+          )}
         </div>
       </div>
     </div>

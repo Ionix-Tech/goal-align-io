@@ -1,4 +1,4 @@
-import { Plus, Target, ClipboardCheck, Brain } from "lucide-react";
+import { Plus, Target, ClipboardCheck, Brain, Lightbulb } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -11,6 +11,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const menuItems = [
   { title: "Estratégia", url: "/strategy", icon: Target },
@@ -22,6 +23,7 @@ export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const { role } = useUserRole();
 
   const isActive = (path: string) => currentPath === path;
 
@@ -29,13 +31,24 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <div className="px-3 py-2">
-            <NavLink to="/create-project">
-              <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"}>
-                <Plus className="h-4 w-4" />
-                {open && <span>Novo Projeto</span>}
-              </Button>
-            </NavLink>
+          <div className="px-3 py-2 space-y-2">
+            {role === 'ceo' && (
+              <NavLink to="/quick-idea">
+                <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"}>
+                  <Lightbulb className="h-4 w-4" />
+                  {open && <span>Nova Ideia</span>}
+                </Button>
+              </NavLink>
+            )}
+            
+            {role === 'pmo_manager' && (
+              <NavLink to="/create-project">
+                <Button className="w-full justify-start gap-2" variant="outline" size={open ? "default" : "icon"}>
+                  <Plus className="h-4 w-4" />
+                  {open && <span>Novo Projeto</span>}
+                </Button>
+              </NavLink>
+            )}
           </div>
 
           <SidebarGroupContent>
