@@ -14,7 +14,7 @@ const Index = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        navigate("/strategy");
+        navigate("/prioritization");
       }
     });
 
@@ -23,7 +23,7 @@ const Index = () => {
       (_event, session) => {
         setSession(session);
         if (session) {
-          navigate("/strategy");
+          navigate("/prioritization");
         }
       }
     );
