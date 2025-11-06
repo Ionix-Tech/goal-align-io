@@ -4,6 +4,8 @@ import { PortfolioKPICard } from "@/components/portfolio/PortfolioKPICard";
 import { PillarDistributionChart } from "@/components/portfolio/PillarDistributionChart";
 import { HealthStatusChart } from "@/components/portfolio/HealthStatusChart";
 import { AttentionRequiredCard } from "@/components/portfolio/AttentionRequiredCard";
+import { PipelineFunnelChart } from "@/components/portfolio/PipelineFunnelChart";
+import { ApprovalTimelineChart } from "@/components/portfolio/ApprovalTimelineChart";
 import { 
   FolderKanban, 
   DollarSign, 
@@ -99,36 +101,8 @@ export default function Portfolio() {
       <div className="grid gap-4 lg:grid-cols-2">
         <PillarDistributionChart data={metrics.pillarDistribution} />
         <HealthStatusChart data={metrics.healthDistribution} />
-        
-        {/* Placeholder for Pipeline Funnel - Phase 2 */}
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle className="text-muted-foreground">Pipeline Funil</CardTitle>
-            <CardDescription>
-              Fase 2 - Visualização do funil de projetos
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center h-[300px]">
-            <p className="text-sm text-muted-foreground">
-              Em desenvolvimento
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Placeholder for Approval Timeline - Phase 2 */}
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle className="text-muted-foreground">Timeline de Aprovações</CardTitle>
-            <CardDescription>
-              Fase 2 - Histórico de aprovações nos últimos 6 meses
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center h-[300px]">
-            <p className="text-sm text-muted-foreground">
-              Em desenvolvimento
-            </p>
-          </CardContent>
-        </Card>
+        <PipelineFunnelChart />
+        <ApprovalTimelineChart />
       </div>
 
       {/* Attention Required Section */}
