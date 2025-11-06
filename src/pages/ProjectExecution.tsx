@@ -20,6 +20,8 @@ import { TaskManagementPanel } from "@/components/execution/TaskManagementPanel"
 import { IndicatorEvolutionChart } from "@/components/execution/IndicatorEvolutionChart";
 import { SituationManagement } from "@/components/execution/SituationManagement";
 import { useProjectSituations } from "@/hooks/useProjectSituations";
+import { useA3ReportData } from "@/hooks/useA3ReportData";
+import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -32,6 +34,7 @@ const ProjectExecution = () => {
   const navigate = useNavigate();
   const { data: project, isLoading } = useProjectDetails(projectId || null);
   const { data: situations } = useProjectSituations(projectId || null);
+  const { data: reportData } = useA3ReportData(projectId || null);
   const [activeTab, setActiveTab] = useState("overview");
 
   // Dialog states
@@ -64,6 +67,10 @@ const ProjectExecution = () => {
   const pillarConfig = project.strategic_pillar
     ? strategicPillars.find(p => p.value === project.strategic_pillar)
     : null;
+
+  const handleExportReport = () => {
+    window.print();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,7 +106,7 @@ const ProjectExecution = () => {
             <Button
               variant="default"
               size="sm"
-              disabled
+              onClick={handleExportReport}
             >
               <FileText className="mr-2 h-4 w-4" />
               Exportar Relatório A3
@@ -405,6 +412,15 @@ const ProjectExecution = () => {
         open={showAddIndicatorDialog}
         onOpenChange={setShowAddIndicatorDialog}
         projectId={project.id}
+      />
+
+      {/* Relatório A3 para impressão (oculto na tela) */}
+      <PrintableA3Report
+        project={project}
+        milestones={project.milestones}
+        indicators={project.indicators}
+        situations={situations}
+        reportData={reportData}
       />
     </div>
   );
