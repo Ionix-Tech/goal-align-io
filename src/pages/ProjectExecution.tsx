@@ -19,6 +19,8 @@ import { AddIndicatorDialog } from "@/components/execution/AddIndicatorDialog";
 import { TaskManagementPanel } from "@/components/execution/TaskManagementPanel";
 import { IndicatorEvolutionChart } from "@/components/execution/IndicatorEvolutionChart";
 import { SituationManagement } from "@/components/execution/SituationManagement";
+import { A3ReportExporter } from "@/components/execution/A3ReportExporter";
+import { useProjectSituations } from "@/hooks/useProjectSituations";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -30,6 +32,7 @@ const ProjectExecution = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProjectDetails(projectId || null);
+  const { data: situations } = useProjectSituations(projectId || null);
   const [activeTab, setActiveTab] = useState("overview");
 
   // Dialog states
@@ -91,11 +94,17 @@ const ProjectExecution = () => {
                       {pillarConfig.label}
                     </Badge>
                   )}
-                </div>
               </div>
             </div>
+            
+            <A3ReportExporter 
+              project={project} 
+              situations={situations || []}
+              pillarLabel={pillarConfig?.label}
+            />
           </div>
         </div>
+      </div>
       </div>
 
       {/* Content */}
