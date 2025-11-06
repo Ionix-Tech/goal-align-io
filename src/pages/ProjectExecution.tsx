@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,9 @@ import { AddMilestoneUpdateDialog } from "@/components/execution/AddMilestoneUpd
 import { MilestoneHistoryDialog } from "@/components/execution/MilestoneHistoryDialog";
 import { AddIndicatorMeasurementDialog } from "@/components/execution/AddIndicatorMeasurementDialog";
 import { IndicatorHistoryDialog } from "@/components/execution/IndicatorHistoryDialog";
+import { AddMilestoneDialog } from "@/components/execution/AddMilestoneDialog";
+import { AddIndicatorDialog } from "@/components/execution/AddIndicatorDialog";
+import { TaskManagementPanel } from "@/components/execution/TaskManagementPanel";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -32,6 +35,8 @@ const ProjectExecution = () => {
   const [showMilestoneHistoryDialog, setShowMilestoneHistoryDialog] = useState(false);
   const [showIndicatorMeasurementDialog, setShowIndicatorMeasurementDialog] = useState(false);
   const [showIndicatorHistoryDialog, setShowIndicatorHistoryDialog] = useState(false);
+  const [showAddMilestoneDialog, setShowAddMilestoneDialog] = useState(false);
+  const [showAddIndicatorDialog, setShowAddIndicatorDialog] = useState(false);
 
   const [selectedMilestone, setSelectedMilestone] = useState<{ id: string; title: string; progress: number } | null>(null);
   const [selectedIndicator, setSelectedIndicator] = useState<{ id: string; name: string; unit?: string | null } | null>(null);
@@ -252,9 +257,15 @@ const ProjectExecution = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Timeline de Milestones</h2>
-                <Badge variant="secondary">
-                  {project.milestones.filter(m => m.completed).length} de {project.milestones.length} concluídos
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">
+                    {project.milestones.filter(m => m.completed).length} de {project.milestones.length} concluídos
+                  </Badge>
+                  <Button size="sm" onClick={() => setShowAddMilestoneDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Milestone
+                  </Button>
+                </div>
               </div>
               <MilestoneTimeline
                 milestones={project.milestones}
@@ -281,13 +292,17 @@ const ProjectExecution = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Indicadores de Desempenho</h2>
-                <Badge variant="secondary">{project.indicators.length} indicadores</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{project.indicators.length} indicadores</Badge>
+                  <Button size="sm" onClick={() => setShowAddIndicatorDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Indicador
+                  </Button>
+                </div>
               </div>
               <IndicatorCards
                 indicators={project.indicators.map(ind => ({
                   ...ind,
-                  name: `${ind.current_state} → ${ind.target_state}`,
-                  unit: null,
                   progress: 0, // TODO: calculate from indicator updates
                   trend: undefined,
                   lastUpdate: undefined
@@ -297,8 +312,8 @@ const ProjectExecution = () => {
                   if (indicator) {
                     setSelectedIndicator({ 
                       id: indicator.id, 
-                      name: `${indicator.current_state} → ${indicator.target_state}`, 
-                      unit: null 
+                      name: indicator.name, 
+                      unit: indicator.unit 
                     });
                     setShowIndicatorMeasurementDialog(true);
                   }
@@ -308,8 +323,8 @@ const ProjectExecution = () => {
                   if (indicator) {
                     setSelectedIndicator({ 
                       id: indicator.id, 
-                      name: `${indicator.current_state} → ${indicator.target_state}`, 
-                      unit: null 
+                      name: indicator.name, 
+                      unit: indicator.unit 
                     });
                     setShowIndicatorHistoryDialog(true);
                   }
@@ -318,21 +333,13 @@ const ProjectExecution = () => {
             </div>
           </TabsContent>
 
-          {/* Aba: Atualizações */}
           <TabsContent value="updates" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Atualizações Semanais</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Registre atualizações semanais sobre desafios, iniciativas, resultados e blockers.
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Em desenvolvimento: Formulário de updates semanais e histórico.
-                </p>
-              </CardContent>
-            </Card>
+            <TaskManagementPanel
+              projectId={project.id}
+              milestones={project.milestones.map(m => ({ id: m.id, title: m.title }))}
+              indicators={project.indicators.map(i => ({ id: i.id, name: i.name }))}
+              members={project.members.map(m => ({ user_id: m.user.id, user: { full_name: m.user.full_name } }))}
+            />
           </TabsContent>
         </Tabs>
       </div>
@@ -374,6 +381,18 @@ const ProjectExecution = () => {
           />
         </>
       )}
+
+      <AddMilestoneDialog
+        open={showAddMilestoneDialog}
+        onOpenChange={setShowAddMilestoneDialog}
+        projectId={project.id}
+      />
+
+      <AddIndicatorDialog
+        open={showAddIndicatorDialog}
+        onOpenChange={setShowAddIndicatorDialog}
+        projectId={project.id}
+      />
     </div>
   );
 };

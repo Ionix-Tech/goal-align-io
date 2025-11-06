@@ -247,22 +247,28 @@ export type Database = {
           created_at: string | null
           current_state: string
           id: string
+          name: string
           project_id: string
           target_state: string
+          unit: string | null
         }
         Insert: {
           created_at?: string | null
           current_state: string
           id?: string
+          name?: string
           project_id: string
           target_state: string
+          unit?: string | null
         }
         Update: {
           created_at?: string | null
           current_state?: string
           id?: string
+          name?: string
           project_id?: string
           target_state?: string
+          unit?: string | null
         }
         Relationships: [
           {
@@ -356,6 +362,7 @@ export type Database = {
           completed: boolean | null
           completed_at: string | null
           created_at: string | null
+          description: string | null
           id: string
           project_id: string
           target_date: string
@@ -365,6 +372,7 @@ export type Database = {
           completed?: boolean | null
           completed_at?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
           project_id: string
           target_date: string
@@ -374,6 +382,7 @@ export type Database = {
           completed?: boolean | null
           completed_at?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
           project_id?: string
           target_date?: string
@@ -398,6 +407,8 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          indicator_id: string | null
+          milestone_id: string | null
           priority: string
           project_id: string
           status: string
@@ -411,6 +422,8 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          indicator_id?: string | null
+          milestone_id?: string | null
           priority?: string
           project_id: string
           status?: string
@@ -424,6 +437,8 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          indicator_id?: string | null
+          milestone_id?: string | null
           priority?: string
           project_id?: string
           status?: string
@@ -442,6 +457,20 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "project_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
             referencedColumns: ["id"]
           },
           {

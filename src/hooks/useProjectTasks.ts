@@ -17,6 +17,8 @@ export interface ProjectTask {
   completed_at: string | null;
   due_date: string | null;
   created_at: string;
+  milestone_id: string | null;
+  indicator_id: string | null;
   assignee?: {
     full_name: string;
     avatar_url: string | null;
@@ -25,6 +27,14 @@ export interface ProjectTask {
     full_name: string;
     avatar_url: string | null;
   };
+  milestone?: {
+    id: string;
+    title: string;
+  } | null;
+  indicator?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export function useProjectTasks(projectId: string | null) {
@@ -38,7 +48,9 @@ export function useProjectTasks(projectId: string | null) {
         .select(`
           *,
           assignee:profiles!project_tasks_assigned_to_fkey(full_name, avatar_url),
-          creator:profiles!project_tasks_created_by_fkey(full_name, avatar_url)
+          creator:profiles!project_tasks_created_by_fkey(full_name, avatar_url),
+          milestone:project_milestones(id, title),
+          indicator:project_indicators(id, name)
         `)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
@@ -60,13 +72,19 @@ export function useCreateTask() {
       title,
       description,
       assignedTo,
-      dueDate
+      dueDate,
+      milestoneId,
+      indicatorId,
+      priority
     }: {
       projectId: string;
       title: string;
       description?: string;
       assignedTo?: string;
       dueDate?: string;
+      milestoneId?: string;
+      indicatorId?: string;
+      priority?: string;
     }) => {
       const { data, error } = await supabase
         .from('project_tasks')
@@ -76,6 +94,9 @@ export function useCreateTask() {
           description: description || null,
           assigned_to: assignedTo || null,
           due_date: dueDate || null,
+          milestone_id: milestoneId || null,
+          indicator_id: indicatorId || null,
+          priority: priority || 'medium',
           created_by: user?.id
         })
         .select()
@@ -105,7 +126,10 @@ export function useUpdateTask() {
       description,
       status,
       assignedTo,
-      dueDate
+      dueDate,
+      milestoneId,
+      indicatorId,
+      priority
     }: {
       taskId: string;
       projectId: string;
@@ -114,6 +138,9 @@ export function useUpdateTask() {
       status?: TaskStatus;
       assignedTo?: string | null;
       dueDate?: string | null;
+      milestoneId?: string | null;
+      indicatorId?: string | null;
+      priority?: string;
     }) => {
       const updateData: any = {};
       if (title !== undefined) updateData.title = title;
@@ -129,6 +156,9 @@ export function useUpdateTask() {
       }
       if (assignedTo !== undefined) updateData.assigned_to = assignedTo;
       if (dueDate !== undefined) updateData.due_date = dueDate;
+      if (milestoneId !== undefined) updateData.milestone_id = milestoneId;
+      if (indicatorId !== undefined) updateData.indicator_id = indicatorId;
+      if (priority !== undefined) updateData.priority = priority;
 
       const { data, error } = await supabase
         .from('project_tasks')

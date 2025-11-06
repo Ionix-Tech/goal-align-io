@@ -17,12 +17,15 @@ export interface ProjectDetails {
   approved_by: string | null;
   indicators: Array<{
     id: string;
+    name: string;
     current_state: string;
     target_state: string;
+    unit: string | null;
   }>;
   milestones: Array<{
     id: string;
     title: string;
+    description: string | null;
     target_date: string;
     completed: boolean;
     completed_at: string | null;
