@@ -257,21 +257,18 @@ const ProjectExecution = () => {
                 </Badge>
               </div>
               <MilestoneTimeline
-                milestones={project.milestones.map(m => ({
-                  ...m,
-                  progress: 0 // TODO: calculate from milestone updates
-                }))}
+                milestones={project.milestones}
                 onUpdateMilestone={(milestoneId) => {
                   const milestone = project.milestones.find(m => m.id === milestoneId);
                   if (milestone) {
-                    setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: 0 });
+                    setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: milestone.progress || 0 });
                     setShowMilestoneUpdateDialog(true);
                   }
                 }}
                 onViewHistory={(milestoneId) => {
                   const milestone = project.milestones.find(m => m.id === milestoneId);
                   if (milestone) {
-                    setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: 0 });
+                    setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: milestone.progress || 0 });
                     setShowMilestoneHistoryDialog(true);
                   }
                 }}

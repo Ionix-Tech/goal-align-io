@@ -26,6 +26,7 @@ export interface ProjectDetails {
     target_date: string;
     completed: boolean;
     completed_at: string | null;
+    progress: number;
   }>;
   members: Array<{
     id: string;
@@ -108,11 +109,31 @@ export function useProjectDetails(projectId: string | null) {
           : Promise.resolve({ data: null })
       ]);
 
+      // Buscar milestone updates apenas se houver milestones
+      const { data: milestoneUpdates } = milestones?.length
+        ? await supabase
+            .from('project_milestone_updates')
+            .select('milestone_id, progress_percentage, updated_at')
+            .in('milestone_id', milestones.map((m: any) => m.id))
+            .order('updated_at', { ascending: false })
+        : { data: null };
+
+      // Calcular o progresso mais recente de cada milestone
+      const milestoneProgressMap = new Map<string, number>();
+      milestoneUpdates?.forEach((update: any) => {
+        if (!milestoneProgressMap.has(update.milestone_id)) {
+          milestoneProgressMap.set(update.milestone_id, update.progress_percentage);
+        }
+      });
+
       // Montar o objeto final
       const data = {
         ...projectData,
         indicators: indicators || [],
-        milestones: milestones || [],
+        milestones: (milestones || []).map((m: any) => ({
+          ...m,
+          progress: milestoneProgressMap.get(m.id) || 0
+        })),
         members: (members || []).map((m: any) => ({
           id: m.id,
           user: m.profiles
