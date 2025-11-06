@@ -35,6 +35,21 @@ interface Milestone {
   targetDate: string;
 }
 
+interface SituationIndicator {
+  id: string;
+  name: string;
+  currentValue: string;
+  targetValue: string;
+  unit: string;
+}
+
+interface Situation {
+  id: string;
+  currentProblem: string;
+  targetGoal: string;
+  indicators: SituationIndicator[];
+}
+
 interface Profile {
   id: string;
   full_name: string;
@@ -60,8 +75,10 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
   const [context, setContext] = useState("");
   const [strategicPillar, setStrategicPillar] = useState("");
   const [objective, setObjective] = useState("");
+  const [requirements, setRequirements] = useState("");
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [situations, setSituations] = useState<Situation[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Profile[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -106,6 +123,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       setContext(project.context || '');
       setStrategicPillar(project.strategic_pillar || '');
       setObjective(project.objective || '');
+      setRequirements(project.requirements || '');
       
       setIndicators(project.indicators.map(ind => ({
         id: ind.id,
@@ -120,8 +138,13 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       })));
       
       setSelectedMembers(project.members.map(m => m.user.id));
+      
+      // Carregar situações do projeto
+      if (projectId) {
+        loadSituations(projectId);
+      }
     }
-  }, [project]);
+  }, [project, projectId]);
 
   // Resetar estado ao fechar
   useEffect(() => {
@@ -177,6 +200,98 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
     setSelectedMembers(selectedMembers.filter(id => id !== memberId));
   };
 
+  const loadSituations = async (projId: string) => {
+    const { data: situationsData } = await supabase
+      .from('project_situations')
+      .select(`
+        id,
+        current_problem,
+        target_goal,
+        situation_indicators (
+          id,
+          name,
+          current_value,
+          target_value,
+          unit
+        )
+      `)
+      .eq('project_id', projId)
+      .order('display_order');
+
+    if (situationsData) {
+      setSituations(situationsData.map((s: any) => ({
+        id: s.id,
+        currentProblem: s.current_problem,
+        targetGoal: s.target_goal,
+        indicators: (s.situation_indicators || []).map((ind: any) => ({
+          id: ind.id,
+          name: ind.name,
+          currentValue: String(ind.current_value),
+          targetValue: String(ind.target_value),
+          unit: ind.unit || ''
+        }))
+      })));
+    }
+  };
+
+  const addSituation = () => {
+    setSituations([...situations, {
+      id: crypto.randomUUID(),
+      currentProblem: "",
+      targetGoal: "",
+      indicators: []
+    }]);
+  };
+
+  const removeSituation = (id: string) => {
+    setSituations(situations.filter(s => s.id !== id));
+  };
+
+  const updateSituation = (id: string, field: keyof Situation, value: any) => {
+    setSituations(situations.map(s => 
+      s.id === id ? { ...s, [field]: value } : s
+    ));
+  };
+
+  const addIndicatorToSituation = (situationId: string) => {
+    const newIndicator: SituationIndicator = {
+      id: crypto.randomUUID(),
+      name: "",
+      currentValue: "",
+      targetValue: "",
+      unit: ""
+    };
+    setSituations(situations.map(s => 
+      s.id === situationId ? { ...s, indicators: [...s.indicators, newIndicator] } : s
+    ));
+  };
+
+  const removeIndicatorFromSituation = (situationId: string, indicatorId: string) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { ...s, indicators: s.indicators.filter(ind => ind.id !== indicatorId) } 
+        : s
+    ));
+  };
+
+  const updateIndicatorInSituation = (
+    situationId: string, 
+    indicatorId: string, 
+    field: keyof SituationIndicator, 
+    value: string
+  ) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { 
+            ...s, 
+            indicators: s.indicators.map(ind => 
+              ind.id === indicatorId ? { ...ind, [field]: value } : ind
+            ) 
+          }
+        : s
+    ));
+  };
+
   const handleSave = async (targetStatus: 'draft' | 'review') => {
     if (!project || !projectId) return;
 
@@ -220,6 +335,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
         .update({
           name: projectName,
           context: context,
+          requirements: requirements || null,
           strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
           objective: objective || null,
           status: targetStatus,
@@ -272,6 +388,47 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
           })));
 
         if (membersError) throw membersError;
+      }
+
+      // 5. Atualizar situações
+      await supabase.from('project_situations').delete().eq('project_id', projectId);
+      
+      if (situations.length > 0) {
+        for (let i = 0; i < situations.length; i++) {
+          const situation = situations[i];
+          
+          const { data: situationData, error: situationError } = await supabase
+            .from('project_situations')
+            .insert({
+              project_id: projectId,
+              current_problem: situation.currentProblem,
+              target_goal: situation.targetGoal,
+              display_order: i,
+              created_by: user?.id
+            } as any)
+            .select()
+            .single();
+
+          if (situationError) throw situationError;
+
+          // Salvar indicadores da situação
+          if (situation.indicators.length > 0) {
+            const { error: situationIndicatorsError } = await supabase
+              .from('situation_indicators')
+              .insert(
+                situation.indicators.map((ind, idx) => ({
+                  situation_id: situationData.id,
+                  name: ind.name,
+                  current_value: parseFloat(ind.currentValue) || 0,
+                  target_value: parseFloat(ind.targetValue) || 0,
+                  unit: ind.unit || null,
+                  display_order: idx
+                })) as any
+              );
+
+            if (situationIndicatorsError) throw situationIndicatorsError;
+          }
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -469,6 +626,152 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                       className="min-h-[80px]"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="requirements" className="text-base font-semibold">
+                      Requisitos
+                    </Label>
+                    <Textarea
+                      id="requirements"
+                      value={requirements}
+                      onChange={(e) => setRequirements(e.target.value)}
+                      placeholder="Descreva os requisitos estratégicos que guiam o projeto"
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  {/* Situações (Metodologia A3) */}
+                  <Card className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-base font-semibold">Metodologia A3 - Situação Atual vs Alvo</h3>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addSituation}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar Situação
+                        </Button>
+                      </div>
+                      
+                      {situations.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nenhuma situação adicionada. Use a metodologia A3 para definir o problema atual e o objetivo desejado.
+                        </p>
+                      ) : (
+                        <div className="space-y-4">
+                          {situations.map((situation, sitIndex) => (
+                            <Card key={situation.id} className="p-4 border-2">
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium">Situação {sitIndex + 1}</h4>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeSituation(situation.id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                  <div className="space-y-2">
+                                    <Label className="text-xs">❌ Problema Atual</Label>
+                                    <Textarea
+                                      placeholder="Descreva o problema ou situação atual"
+                                      value={situation.currentProblem}
+                                      onChange={(e) => updateSituation(situation.id, 'currentProblem', e.target.value)}
+                                      className="min-h-[80px]"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-xs">✅ Objetivo Desejado</Label>
+                                    <Textarea
+                                      placeholder="Descreva a situação desejada/objetivo"
+                                      value={situation.targetGoal}
+                                      onChange={(e) => updateSituation(situation.id, 'targetGoal', e.target.value)}
+                                      className="min-h-[80px]"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Indicadores da Situação */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-xs font-semibold">Indicadores desta Situação</Label>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => addIndicatorToSituation(situation.id)}
+                                    >
+                                      <Plus className="h-3 w-3 mr-1" />
+                                      Indicador
+                                    </Button>
+                                  </div>
+                                  
+                                  {situation.indicators.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic">
+                                      Nenhum indicador específico
+                                    </p>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {situation.indicators.map((indicator) => (
+                                        <div key={indicator.id} className="p-2 border rounded-lg space-y-2 bg-muted/30">
+                                          <div className="flex items-center justify-between">
+                                            <Label className="text-xs">Indicador</Label>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeIndicatorFromSituation(situation.id, indicator.id)}
+                                            >
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                          <div className="grid gap-2 md:grid-cols-2">
+                                            <Input
+                                              placeholder="Nome do indicador"
+                                              value={indicator.name}
+                                              onChange={(e) => updateIndicatorInSituation(situation.id, indicator.id, 'name', e.target.value)}
+                                              className="text-xs"
+                                            />
+                                            <Input
+                                              placeholder="Unidade (ex: %, R$, un)"
+                                              value={indicator.unit}
+                                              onChange={(e) => updateIndicatorInSituation(situation.id, indicator.id, 'unit', e.target.value)}
+                                              className="text-xs"
+                                            />
+                                          </div>
+                                          <div className="grid gap-2 md:grid-cols-2">
+                                            <Input
+                                              placeholder="Valor atual"
+                                              value={indicator.currentValue}
+                                              onChange={(e) => updateIndicatorInSituation(situation.id, indicator.id, 'currentValue', e.target.value)}
+                                              className="text-xs"
+                                            />
+                                            <Input
+                                              placeholder="Valor desejado"
+                                              value={indicator.targetValue}
+                                              onChange={(e) => updateIndicatorInSituation(situation.id, indicator.id, 'targetValue', e.target.value)}
+                                              className="text-xs"
+                                            />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
 
                   {/* Membros */}
                   <Card className="p-4">
