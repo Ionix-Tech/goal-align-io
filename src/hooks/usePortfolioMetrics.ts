@@ -117,7 +117,7 @@ export function usePortfolioMetrics() {
       }));
 
       // Health distribution for approved projects
-      const healthCounts = { green: 0, amber: 0, red: 0, unknown: 0 };
+      const healthCounts = { green: 0, yellow: 0, red: 0, unknown: 0 };
       approvedProjects.forEach(p => {
         const healthRecords = p.project_health_status as any[];
         if (!healthRecords || healthRecords.length === 0) {
@@ -137,7 +137,7 @@ export function usePortfolioMetrics() {
 
       const healthDistribution = [
         { name: 'Saudável', value: healthCounts.green, fill: 'hsl(142, 76%, 36%)' },
-        { name: 'Atenção', value: healthCounts.amber, fill: 'hsl(45, 93%, 47%)' },
+        { name: 'Atenção', value: healthCounts.yellow, fill: 'hsl(45, 93%, 47%)' },
         { name: 'Crítico', value: healthCounts.red, fill: 'hsl(0, 84%, 60%)' },
         { name: 'Sem Status', value: healthCounts.unknown, fill: 'hsl(var(--muted))' },
       ].filter(item => item.value > 0);

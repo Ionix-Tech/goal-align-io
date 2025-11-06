@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export type HealthStatus = 'green' | 'amber' | 'red';
+export type HealthStatus = 'green' | 'yellow' | 'red';
 
 interface HealthStatusBadgeProps {
   status: HealthStatus | null | undefined;
@@ -17,11 +17,11 @@ const STATUS_CONFIG = {
     textColor: 'text-green-700',
     bgColor: 'bg-green-100'
   },
-  amber: {
+  yellow: {
     label: 'Atenção',
-    color: 'bg-amber-500',
-    textColor: 'text-amber-700',
-    bgColor: 'bg-amber-100'
+    color: 'bg-yellow-500',
+    textColor: 'text-yellow-700',
+    bgColor: 'bg-yellow-100'
   },
   red: {
     label: 'Crítico',

@@ -9,7 +9,7 @@ import { useApprovedProjects } from "@/hooks/useApprovedProjects";
 import type { Database } from "@/integrations/supabase/types";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
-type HealthStatus = 'green' | 'amber' | 'red';
+type HealthStatus = 'green' | 'yellow' | 'red';
 
 const Management = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const Management = () => {
   const stats = {
     total: projects?.length || 0,
     green: projects?.filter(p => p.current_health === 'green').length || 0,
-    amber: projects?.filter(p => p.current_health === 'amber').length || 0,
+    yellow: projects?.filter(p => p.current_health === 'yellow').length || 0,
     red: projects?.filter(p => p.current_health === 'red').length || 0,
     noStatus: projects?.filter(p => !p.current_health).length || 0
   };
@@ -75,15 +75,15 @@ const Management = () => {
             </CardContent>
           </Card>
 
-          <Card className="ring-2 ring-amber-500/20">
+          <Card className="ring-2 ring-yellow-500/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-amber-500" />
+                <div className="h-3 w-3 rounded-full bg-yellow-500" />
                 Atenção
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-700">{stats.amber}</div>
+              <div className="text-2xl font-bold text-yellow-700">{stats.yellow}</div>
             </CardContent>
           </Card>
 
@@ -147,9 +147,9 @@ const Management = () => {
                       Saudáveis
                     </div>
                   </SelectItem>
-                  <SelectItem value="amber">
+                  <SelectItem value="yellow">
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-amber-500" />
+                      <div className="h-3 w-3 rounded-full bg-yellow-500" />
                       Atenção
                     </div>
                   </SelectItem>

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-export type HealthStatus = 'green' | 'amber' | 'red';
+export type HealthStatus = 'green' | 'yellow' | 'red';
 
 export interface WeeklyUpdate {
   id: string;

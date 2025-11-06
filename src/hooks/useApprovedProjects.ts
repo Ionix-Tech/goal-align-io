@@ -15,7 +15,7 @@ export interface ApprovedProject {
   indicators_count: number;
   milestones_total: number;
   milestones_completed: number;
-  current_health?: 'green' | 'amber' | 'red' | null;
+  current_health?: 'green' | 'yellow' | 'red' | null;
   last_update?: string | null;
 }
 
