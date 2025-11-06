@@ -194,6 +194,54 @@ export type Database = {
           },
         ]
       }
+      project_indicator_updates: {
+        Row: {
+          created_at: string
+          id: string
+          indicator_id: string
+          measured_value: string
+          measurement_date: string
+          notes: string | null
+          progress_percentage: number
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          indicator_id: string
+          measured_value: string
+          measurement_date: string
+          notes?: string | null
+          progress_percentage?: number
+          updated_by: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          indicator_id?: string
+          measured_value?: string
+          measurement_date?: string
+          notes?: string | null
+          progress_percentage?: number
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_indicator_updates_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "project_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_indicator_updates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_indicators: {
         Row: {
           created_at: string | null
@@ -254,6 +302,51 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_milestone_updates: {
+        Row: {
+          id: string
+          is_critical: boolean
+          milestone_id: string
+          notes: string | null
+          progress_percentage: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          id?: string
+          is_critical?: boolean
+          milestone_id: string
+          notes?: string | null
+          progress_percentage: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          id?: string
+          is_critical?: boolean
+          milestone_id?: string
+          notes?: string | null
+          progress_percentage?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestone_updates_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_milestone_updates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
