@@ -14,6 +14,11 @@ export default {
     },
     extend: {
       colors: {
+        'freitas-magenta': '#E91E63',
+        'freitas-orange': '#FF6F00',
+        'freitas-yellow': '#FFC107',
+        'freitas-navy': '#1A2342',
+        'freitas-navy-light': '#2A3452',
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

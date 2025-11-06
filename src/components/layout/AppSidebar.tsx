@@ -9,8 +9,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { FreitasLogo } from "@/components/icons/FreitasLogo";
 import {
   Collapsible,
   CollapsibleContent,
@@ -61,6 +63,19 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex items-center gap-3 p-4 border-b">
+          <FreitasLogo className="h-10 w-10" />
+          {open && (
+            <div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-freitas-magenta to-freitas-orange bg-clip-text text-transparent">
+                COMPASS
+              </h2>
+              <p className="text-xs text-muted-foreground">Freitas Portfolio</p>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <div className="px-3 py-2 space-y-2">

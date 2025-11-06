@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { FreitasLogo } from "@/components/icons/FreitasLogo";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -36,9 +37,17 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="flex-1 flex flex-col">
           <header className="sticky top-0 z-10 h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-full items-center justify-between px-4">
-              <div className="flex items-center">
+              <div className="flex items-center gap-3">
                 <SidebarTrigger />
-                <div className="ml-4 font-semibold">COMPASS</div>
+                <FreitasLogo className="h-8 w-8" />
+                <div>
+                  <div className="font-bold text-lg bg-gradient-to-r from-freitas-magenta to-freitas-orange bg-clip-text text-transparent">
+                    COMPASS
+                  </div>
+                  <div className="text-[10px] text-muted-foreground -mt-1">
+                    by Freitas
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <NotificationBell />
