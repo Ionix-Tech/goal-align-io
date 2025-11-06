@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive } from "lucide-react";
+import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,22 @@ interface Milestone {
   targetDate: string;
 }
 
+interface SituationIndicator {
+  id: string;
+  name: string;
+  currentValue: string;
+  targetValue: string;
+  unit: string;
+}
+
+interface Situation {
+  id: string;
+  currentProblem: string;
+  targetGoal: string;
+  indicators: SituationIndicator[];
+  attachments: File[];
+}
+
 interface Profile {
   id: string;
   full_name: string;
@@ -56,8 +72,10 @@ const ProjectDetail = () => {
   const [context, setContext] = useState("");
   const [strategicPillar, setStrategicPillar] = useState("");
   const [objective, setObjective] = useState("");
+  const [requirements, setRequirements] = useState("");
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [situations, setSituations] = useState<Situation[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Profile[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -102,6 +120,7 @@ const ProjectDetail = () => {
       setContext(project.context || '');
       setStrategicPillar(project.strategic_pillar || '');
       setObjective(project.objective || '');
+      setRequirements(project.requirements || '');
 
       setIndicators(project.indicators.map(ind => ({
         id: ind.id,
@@ -118,6 +137,49 @@ const ProjectDetail = () => {
       setSelectedMembers(project.members.map(m => m.user.id));
     }
   }, [project]);
+
+  // Carregar situações do projeto
+  useEffect(() => {
+    if (projectId && project) {
+      const loadSituations = async () => {
+        const { data: situationsData } = await supabase
+          .from('project_situations')
+          .select(`
+            id,
+            current_problem,
+            target_goal,
+            situation_indicators (
+              id,
+              name,
+              current_value,
+              target_value,
+              unit
+            )
+          `)
+          .eq('project_id', projectId)
+          .order('display_order');
+
+        if (situationsData) {
+          const situationsWithData = situationsData.map((s: any) => ({
+            id: s.id,
+            currentProblem: s.current_problem,
+            targetGoal: s.target_goal,
+            indicators: (s.situation_indicators || []).map((ind: any) => ({
+              id: ind.id,
+              name: ind.name,
+              currentValue: String(ind.current_value),
+              targetValue: String(ind.target_value),
+              unit: ind.unit || ''
+            })),
+            attachments: []
+          }));
+          setSituations(situationsWithData);
+        }
+      };
+
+      loadSituations();
+    }
+  }, [projectId, project]);
 
   const addIndicator = () => {
     setIndicators([...indicators, {
@@ -166,6 +228,116 @@ const ProjectDetail = () => {
     setSelectedMembers(selectedMembers.filter(id => id !== memberId));
   };
 
+  // Funções para gerenciar situações
+  const addSituation = () => {
+    const newSituation: Situation = {
+      id: crypto.randomUUID(),
+      currentProblem: "",
+      targetGoal: "",
+      indicators: [],
+      attachments: []
+    };
+    setSituations([...situations, newSituation]);
+  };
+
+  const removeSituation = (id: string) => {
+    setSituations(situations.filter(s => s.id !== id));
+  };
+
+  const updateSituation = (id: string, field: keyof Situation, value: any) => {
+    setSituations(situations.map(s => 
+      s.id === id ? { ...s, [field]: value } : s
+    ));
+  };
+
+  const addIndicatorToSituation = (situationId: string) => {
+    const newIndicator: SituationIndicator = {
+      id: crypto.randomUUID(),
+      name: "",
+      currentValue: "",
+      targetValue: "",
+      unit: ""
+    };
+    setSituations(situations.map(s => 
+      s.id === situationId ? { ...s, indicators: [...s.indicators, newIndicator] } : s
+    ));
+  };
+
+  const removeIndicatorFromSituation = (situationId: string, indicatorId: string) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { ...s, indicators: s.indicators.filter(ind => ind.id !== indicatorId) } 
+        : s
+    ));
+  };
+
+  const updateIndicatorInSituation = (
+    situationId: string, 
+    indicatorId: string, 
+    field: keyof SituationIndicator, 
+    value: string
+  ) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { 
+            ...s, 
+            indicators: s.indicators.map(ind => 
+              ind.id === indicatorId ? { ...ind, [field]: value } : ind
+            ) 
+          }
+        : s
+    ));
+  };
+
+  const addAttachmentsToSituation = (situationId: string, files: FileList | null) => {
+    if (!files) return;
+
+    const validFiles: File[] = [];
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/png',
+      'image/jpeg',
+      'image/jpg'
+    ];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > maxSize) {
+        toast.error(`Arquivo ${file.name} excede o tamanho máximo de 50MB`);
+        continue;
+      }
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`Tipo de arquivo ${file.name} não permitido`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setSituations(situations.map(s => 
+        s.id === situationId 
+          ? { ...s, attachments: [...s.attachments, ...validFiles] } 
+          : s
+      ));
+      toast.success(`${validFiles.length} arquivo(s) adicionado(s)`);
+    }
+  };
+
+  const removeAttachmentFromSituation = (situationId: string, index: number) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { ...s, attachments: s.attachments.filter((_, i) => i !== index) } 
+        : s
+    ));
+  };
+
   const handleSave = async (targetStatus: 'draft' | 'review') => {
     if (!project || !projectId) return;
 
@@ -206,6 +378,7 @@ const ProjectDetail = () => {
         .update({
           name: projectName,
           context: context,
+          requirements: requirements || null,
           strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
           objective: objective || null,
           status: targetStatus,
@@ -255,6 +428,83 @@ const ProjectDetail = () => {
           })));
 
         if (membersError) throw membersError;
+      }
+
+      // Salvar situações com indicadores e anexos
+      if (situations.length > 0) {
+        // Deletar situações anteriores (cascade irá deletar indicadores e anexos relacionados)
+        await supabase
+          .from('project_situations')
+          .delete()
+          .eq('project_id', projectId);
+
+        // Inserir novas situações
+        for (const [index, sit] of situations.entries()) {
+          const { data: situationData, error: situationError } = await supabase
+            .from('project_situations')
+            .insert({
+              project_id: projectId,
+              current_problem: sit.currentProblem,
+              target_goal: sit.targetGoal,
+              display_order: index,
+              created_by: user?.id
+            })
+            .select()
+            .single();
+
+          if (situationError) throw situationError;
+
+          // Inserir indicadores da situação
+          if (sit.indicators.length > 0) {
+            const { error: indicatorsError } = await supabase
+              .from('situation_indicators')
+              .insert(
+                sit.indicators.map((ind, indIndex) => ({
+                  situation_id: situationData.id,
+                  name: ind.name,
+                  current_value: parseFloat(ind.currentValue) || 0,
+                  target_value: parseFloat(ind.targetValue) || 0,
+                  unit: ind.unit || null,
+                  display_order: indIndex
+                }))
+              );
+
+            if (indicatorsError) throw indicatorsError;
+          }
+
+          // Upload de anexos
+          if (sit.attachments.length > 0) {
+            for (const file of sit.attachments) {
+              const fileExt = file.name.split('.').pop();
+              const filePath = `${situationData.id}/${Date.now()}.${fileExt}`;
+
+              const { error: uploadError } = await supabase.storage
+                .from('project-attachments')
+                .upload(filePath, file);
+
+              if (uploadError) {
+                console.error('Upload error:', uploadError);
+                toast.error(`Erro ao enviar ${file.name}`);
+                continue;
+              }
+
+              const { error: attachmentError } = await supabase
+                .from('situation_attachments')
+                .insert({
+                  situation_id: situationData.id,
+                  file_name: file.name,
+                  file_path: filePath,
+                  file_size: file.size,
+                  file_type: file.type,
+                  uploaded_by: user?.id
+                });
+
+              if (attachmentError) {
+                console.error('Attachment record error:', attachmentError);
+              }
+            }
+          }
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -475,6 +725,221 @@ const ProjectDetail = () => {
                         className="min-h-[100px]"
                         placeholder="Defina o objetivo do projeto..."
                       />
+                    </div>
+                  </Card>
+
+                  {/* Requisitos do Projeto */}
+                  <Card className="p-6">
+                    <div className="space-y-4">
+                      <Label htmlFor="requirements" className="text-base font-semibold">
+                        Requisitos do Projeto
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Quais são os requisitos essenciais para o sucesso deste projeto?
+                      </p>
+                      <Textarea
+                        id="requirements"
+                        placeholder="Liste os requisitos principais do projeto (recursos, aprovações, pré-condições, etc.)..."
+                        value={requirements}
+                        onChange={(e) => setRequirements(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                  </Card>
+
+                  {/* Situação Atual vs Situação Alvo */}
+                  <Card className="p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-base font-semibold mb-1">Situação Atual vs Situação Alvo</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Mapeie os problemas atuais e as metas correspondentes que o projeto deve alcançar.
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        {situations.map((situation, index) => (
+                          <div key={situation.id} className="p-4 border rounded-lg bg-background space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                Situação {index + 1}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeSituation(situation.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            {/* Descrições */}
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <div className="space-y-1">
+                                <Label className="text-sm">Situação Atual / Problema</Label>
+                                <Textarea
+                                  placeholder="Ex: Alto índice de retrabalho nos processos"
+                                  value={situation.currentProblem}
+                                  onChange={(e) => updateSituation(situation.id, "currentProblem", e.target.value)}
+                                  rows={2}
+                                  className="resize-none"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-sm">Situação Alvo / Meta</Label>
+                                <Textarea
+                                  placeholder="Ex: Processo padronizado e com baixo retrabalho"
+                                  value={situation.targetGoal}
+                                  onChange={(e) => updateSituation(situation.id, "targetGoal", e.target.value)}
+                                  rows={2}
+                                  className="resize-none"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Separador de Indicadores */}
+                            <div className="border-t pt-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <Label className="text-sm font-semibold">Indicadores</Label>
+                              </div>
+                              
+                              {situation.indicators.length > 0 && (
+                                <div className="space-y-2 mb-2">
+                                  {situation.indicators.map((indicator) => (
+                                    <div key={indicator.id} className="p-3 border rounded bg-muted/30 space-y-2">
+                                      <div className="flex items-start gap-2">
+                                        <div className="flex-1 space-y-2">
+                                          <Input
+                                            placeholder="Nome do indicador"
+                                            value={indicator.name}
+                                            onChange={(e) => updateIndicatorInSituation(
+                                              situation.id, 
+                                              indicator.id, 
+                                              "name", 
+                                              e.target.value
+                                            )}
+                                            className="text-sm"
+                                          />
+                                          <div className="grid grid-cols-3 gap-2">
+                                            <Input
+                                              placeholder="Atual"
+                                              value={indicator.currentValue}
+                                              onChange={(e) => updateIndicatorInSituation(
+                                                situation.id, 
+                                                indicator.id, 
+                                                "currentValue", 
+                                                e.target.value
+                                              )}
+                                              className="text-sm"
+                                            />
+                                            <Input
+                                              placeholder="Meta"
+                                              value={indicator.targetValue}
+                                              onChange={(e) => updateIndicatorInSituation(
+                                                situation.id, 
+                                                indicator.id, 
+                                                "targetValue", 
+                                                e.target.value
+                                              )}
+                                              className="text-sm"
+                                            />
+                                            <Input
+                                              placeholder="Unid."
+                                              value={indicator.unit}
+                                              onChange={(e) => updateIndicatorInSituation(
+                                                situation.id, 
+                                                indicator.id, 
+                                                "unit", 
+                                                e.target.value
+                                              )}
+                                              className="text-sm"
+                                            />
+                                          </div>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeIndicatorFromSituation(situation.id, indicator.id)}
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addIndicatorToSituation(situation.id)}
+                                className="w-full"
+                              >
+                                <Plus className="mr-2 h-3 w-3" />
+                                Adicionar Indicador
+                              </Button>
+                            </div>
+
+                            {/* Separador de Anexos */}
+                            <div className="border-t pt-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <Label className="text-sm font-semibold">Anexos</Label>
+                              </div>
+
+                              {situation.attachments.length > 0 && (
+                                <div className="space-y-1 mb-2">
+                                  {situation.attachments.map((file, fileIndex) => (
+                                    <div key={fileIndex} className="flex items-center justify-between p-2 border rounded bg-muted/30">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                        <span className="text-sm truncate">{file.name}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                        </span>
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeAttachmentFromSituation(situation.id, fileIndex)}
+                                      >
+                                        <Trash2 className="h-3 w-3 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div>
+                                <Input
+                                  type="file"
+                                  multiple
+                                  accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                  onChange={(e) => addAttachmentsToSituation(situation.id, e.target.files)}
+                                  className="text-sm"
+                                  id={`file-${situation.id}`}
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Máx. 50MB por arquivo. Formatos: PDF, PPT, DOC, XLS, imagens
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addSituation}
+                        className="w-full"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Situação
+                      </Button>
                     </div>
                   </Card>
 
