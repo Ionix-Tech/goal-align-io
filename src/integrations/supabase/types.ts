@@ -398,6 +398,63 @@ export type Database = {
           },
         ]
       }
+      project_situations: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_problem: string
+          display_order: number
+          id: string
+          numeric_current: number | null
+          numeric_target: number | null
+          project_id: string
+          target_goal: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_problem: string
+          display_order?: number
+          id?: string
+          numeric_current?: number | null
+          numeric_target?: number | null
+          project_id: string
+          target_goal: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_problem?: string
+          display_order?: number
+          id?: string
+          numeric_current?: number | null
+          numeric_target?: number | null
+          project_id?: string
+          target_goal?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_situations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_situations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tasks: {
         Row: {
           assigned_to: string | null
@@ -551,6 +608,7 @@ export type Database = {
           id: string
           name: string
           objective: string | null
+          requirements: string | null
           status: Database["public"]["Enums"]["project_status"]
           strategic_pillar:
             | Database["public"]["Enums"]["strategic_pillar"]
@@ -569,6 +627,7 @@ export type Database = {
           id?: string
           name: string
           objective?: string | null
+          requirements?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           strategic_pillar?:
             | Database["public"]["Enums"]["strategic_pillar"]
@@ -587,6 +646,7 @@ export type Database = {
           id?: string
           name?: string
           objective?: string | null
+          requirements?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           strategic_pillar?:
             | Database["public"]["Enums"]["strategic_pillar"]
@@ -607,6 +667,42 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      situation_tasks: {
+        Row: {
+          created_at: string
+          id: string
+          situation_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          situation_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          situation_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "situation_tasks_situation_id_fkey"
+            columns: ["situation_id"]
+            isOneToOne: false
+            referencedRelation: "project_situations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "situation_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
             referencedColumns: ["id"]
           },
         ]

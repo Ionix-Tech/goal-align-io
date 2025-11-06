@@ -29,6 +29,15 @@ interface Milestone {
   targetDate: string;
 }
 
+interface Situation {
+  id: string;
+  currentProblem: string;
+  targetGoal: string;
+  numericCurrent?: string;
+  numericTarget?: string;
+  unit?: string;
+}
+
 interface Profile {
   id: string;
   full_name: string;
@@ -50,8 +59,10 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
   const [context, setContext] = useState("");
   const [strategicPillar, setStrategicPillar] = useState("");
   const [objective, setObjective] = useState("");
+  const [requirements, setRequirements] = useState("");
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [situations, setSituations] = useState<Situation[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -104,6 +115,65 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
         } else if (data) {
           setProjectName(data.name);
           setContext(data.description || '');
+          setRequirements(data.requirements || '');
+          setStrategicPillar(data.strategic_pillar || '');
+          setObjective(data.objective || '');
+
+          // Carregar indicadores
+          const { data: indicatorsData } = await supabase
+            .from('project_indicators')
+            .select('*')
+            .eq('project_id', id);
+          
+          if (indicatorsData) {
+            setIndicators(indicatorsData.map(ind => ({
+              id: ind.id,
+              currentState: ind.current_state,
+              targetState: ind.target_state
+            })));
+          }
+
+          // Carregar milestones
+          const { data: milestonesData } = await supabase
+            .from('project_milestones')
+            .select('*')
+            .eq('project_id', id);
+          
+          if (milestonesData) {
+            setMilestones(milestonesData.map(ms => ({
+              id: ms.id,
+              title: ms.title,
+              targetDate: ms.target_date
+            })));
+          }
+
+          // Carregar situações
+          const { data: situationsData } = await supabase
+            .from('project_situations')
+            .select('*')
+            .eq('project_id', id)
+            .order('display_order');
+
+          if (situationsData) {
+            setSituations(situationsData.map(s => ({
+              id: s.id,
+              currentProblem: s.current_problem,
+              targetGoal: s.target_goal,
+              numericCurrent: s.numeric_current?.toString() || "",
+              numericTarget: s.numeric_target?.toString() || "",
+              unit: s.unit || ""
+            })));
+          }
+
+          // Carregar membros
+          const { data: membersData } = await supabase
+            .from('project_members')
+            .select('user_id')
+            .eq('project_id', id);
+          
+          if (membersData) {
+            setSelectedMembers(membersData.map(m => m.user_id));
+          }
         }
       };
 
@@ -153,6 +223,28 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     );
   };
 
+  const addSituation = () => {
+    const newSituation: Situation = {
+      id: crypto.randomUUID(),
+      currentProblem: "",
+      targetGoal: "",
+      numericCurrent: "",
+      numericTarget: "",
+      unit: ""
+    };
+    setSituations([...situations, newSituation]);
+  };
+
+  const removeSituation = (id: string) => {
+    setSituations(situations.filter(s => s.id !== id));
+  };
+
+  const updateSituation = (id: string, field: keyof Situation, value: string) => {
+    setSituations(situations.map(s => 
+      s.id === id ? { ...s, [field]: value } : s
+    ));
+  };
+
   const handleSubmit = async (targetStatus: 'draft' | 'review') => {
     // Validações básicas
     if (!projectName.trim()) {
@@ -192,6 +284,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
       const projectData = {
         name: projectName,
         context: context,
+        requirements: requirements || null,
         strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
         objective: objective || null,
         status: targetStatus,
@@ -287,6 +380,31 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           );
 
         if (membersError) throw membersError;
+      }
+
+      // 5. Salvar situações (deletar anteriores se existirem)
+      if (situations.length > 0) {
+        await supabase
+          .from('project_situations')
+          .delete()
+          .eq('project_id', projectId);
+
+        const { error: situationsError } = await supabase
+          .from('project_situations')
+          .insert(
+            situations.map((sit, index) => ({
+              project_id: projectId,
+              current_problem: sit.currentProblem,
+              target_goal: sit.targetGoal,
+              numeric_current: sit.numericCurrent ? parseFloat(sit.numericCurrent) : null,
+              numeric_target: sit.numericTarget ? parseFloat(sit.numericTarget) : null,
+              unit: sit.unit || null,
+              display_order: index,
+              created_by: user?.id
+            }))
+          );
+
+        if (situationsError) throw situationsError;
       }
 
       // Feedback de sucesso
@@ -418,6 +536,123 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                 onChange={(e) => setObjective(e.target.value)}
                 className="min-h-[80px] text-base"
               />
+            </div>
+          </Card>
+
+          {/* Requisitos do Projeto */}
+          <Card className="p-6">
+            <div className="space-y-2">
+              <Label htmlFor="requirements" className="text-base font-semibold">
+                Requisitos do Projeto
+              </Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Quais são os requisitos essenciais para o sucesso deste projeto?
+              </p>
+              <Textarea
+                id="requirements"
+                placeholder="Liste os requisitos principais do projeto (recursos, aprovações, pré-condições, etc.)..."
+                value={requirements}
+                onChange={(e) => setRequirements(e.target.value)}
+                className="min-h-[100px] text-base"
+              />
+            </div>
+          </Card>
+
+          {/* Situação Atual vs Situação Alvo */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-semibold mb-1">Situação Atual vs Situação Alvo</h3>
+                <p className="text-sm text-muted-foreground">
+                  Mapeie os problemas atuais e as metas correspondentes que o projeto deve alcançar.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {situations.map((situation, index) => (
+                  <div key={situation.id} className="p-4 border rounded-lg bg-background space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Situação {index + 1}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSituation(situation.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Descrições */}
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-sm">Situação Atual / Problema</Label>
+                        <Textarea
+                          placeholder="Ex: Alto índice de retrabalho nos processos"
+                          value={situation.currentProblem}
+                          onChange={(e) => updateSituation(situation.id, "currentProblem", e.target.value)}
+                          rows={2}
+                          className="resize-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-sm">Situação Alvo / Meta</Label>
+                        <Textarea
+                          placeholder="Ex: Processo padronizado e com baixo retrabalho"
+                          value={situation.targetGoal}
+                          onChange={(e) => updateSituation(situation.id, "targetGoal", e.target.value)}
+                          rows={2}
+                          className="resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Valores Numéricos (Opcional) */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Valor Atual</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 45"
+                          value={situation.numericCurrent}
+                          onChange={(e) => updateSituation(situation.id, "numericCurrent", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Valor Alvo</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 15"
+                          value={situation.numericTarget}
+                          onChange={(e) => updateSituation(situation.id, "numericTarget", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Unidade</Label>
+                        <Input
+                          placeholder="Ex: %"
+                          value={situation.unit}
+                          onChange={(e) => updateSituation(situation.id, "unit", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addSituation}
+                className="w-full"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Situação
+              </Button>
             </div>
           </Card>
 

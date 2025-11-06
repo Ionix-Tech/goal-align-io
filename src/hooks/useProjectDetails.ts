@@ -7,6 +7,7 @@ export interface ProjectDetails {
   description: string | null;
   context: string | null;
   objective: string | null;
+  requirements: string | null;
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
   status: 'idea' | 'draft' | 'review' | 'approved' | 'archived';
   created_at: string;
