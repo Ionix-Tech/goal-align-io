@@ -162,12 +162,11 @@ export function AddTaskDialog({
 
           <div className="space-y-2">
             <Label htmlFor="milestone">Vincular a Milestone (opcional)</Label>
-            <Select value={milestoneId} onValueChange={setMilestoneId}>
+            <Select value={milestoneId || undefined} onValueChange={setMilestoneId}>
               <SelectTrigger id="milestone">
-                <SelectValue placeholder="Selecione um milestone" />
+                <SelectValue placeholder="Nenhum" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
                 {milestones.map((milestone) => (
                   <SelectItem key={milestone.id} value={milestone.id}>
                     {milestone.title}
@@ -179,12 +178,11 @@ export function AddTaskDialog({
 
           <div className="space-y-2">
             <Label htmlFor="indicator">Vincular a Indicador (opcional)</Label>
-            <Select value={indicatorId} onValueChange={setIndicatorId}>
+            <Select value={indicatorId || undefined} onValueChange={setIndicatorId}>
               <SelectTrigger id="indicator">
-                <SelectValue placeholder="Selecione um indicador" />
+                <SelectValue placeholder="Nenhum" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
                 {indicators.map((indicator) => (
                   <SelectItem key={indicator.id} value={indicator.id}>
                     {indicator.name}
@@ -196,12 +194,11 @@ export function AddTaskDialog({
 
           <div className="space-y-2">
             <Label htmlFor="assignedTo">Atribuir a</Label>
-            <Select value={assignedTo} onValueChange={setAssignedTo}>
+            <Select value={assignedTo || undefined} onValueChange={setAssignedTo}>
               <SelectTrigger id="assignedTo">
-                <SelectValue placeholder="Selecione um responsável" />
+                <SelectValue placeholder="Não atribuído" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Não atribuído</SelectItem>
                 {members.map((member) => (
                   <SelectItem key={member.user_id} value={member.user_id}>
                     {member.user.full_name}
