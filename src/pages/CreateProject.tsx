@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, X, Users, Save, Send, ArrowLeft } from "lucide-react";
+import { Plus, X, Users, Save, Send, ArrowLeft, FileText, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,10 +29,20 @@ interface Milestone {
   targetDate: string;
 }
 
+interface SituationIndicator {
+  id: string;
+  name: string;
+  currentValue: string;
+  targetValue: string;
+  unit: string;
+}
+
 interface Situation {
   id: string;
   currentProblem: string;
   targetGoal: string;
+  indicators: SituationIndicator[];
+  attachments: File[];
 }
 
 interface Profile {
@@ -152,11 +162,38 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
             .order('display_order');
 
           if (situationsData) {
-            setSituations(situationsData.map(s => ({
-              id: s.id,
-              currentProblem: s.current_problem,
-              targetGoal: s.target_goal
-            })));
+            // Carregar situações com indicadores e anexos
+            const situationsWithData = await Promise.all(
+              situationsData.map(async (s) => {
+                // Buscar indicadores
+                const { data: indicatorsData } = await supabase
+                  .from('situation_indicators')
+                  .select('*')
+                  .eq('situation_id', s.id)
+                  .order('display_order');
+
+                // Buscar anexos (só os metadados, não os arquivos em si)
+                const { data: attachmentsData } = await supabase
+                  .from('situation_attachments')
+                  .select('*')
+                  .eq('situation_id', s.id);
+
+                return {
+                  id: s.id,
+                  currentProblem: s.current_problem,
+                  targetGoal: s.target_goal,
+                  indicators: (indicatorsData || []).map(ind => ({
+                    id: ind.id,
+                    name: ind.name,
+                    currentValue: String(ind.current_value),
+                    targetValue: String(ind.target_value),
+                    unit: ind.unit || ''
+                  })),
+                  attachments: [] // Não carregamos arquivos existentes na edição (apenas metadados são exibidos em outro lugar)
+                };
+              })
+            );
+            setSituations(situationsWithData);
           }
 
           // Carregar membros
@@ -221,7 +258,9 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     const newSituation: Situation = {
       id: crypto.randomUUID(),
       currentProblem: "",
-      targetGoal: ""
+      targetGoal: "",
+      indicators: [],
+      attachments: []
     };
     setSituations([...situations, newSituation]);
   };
@@ -230,9 +269,97 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     setSituations(situations.filter(s => s.id !== id));
   };
 
-  const updateSituation = (id: string, field: keyof Situation, value: string) => {
+  const updateSituation = (id: string, field: keyof Situation, value: any) => {
     setSituations(situations.map(s => 
       s.id === id ? { ...s, [field]: value } : s
+    ));
+  };
+
+  const addIndicatorToSituation = (situationId: string) => {
+    const newIndicator: SituationIndicator = {
+      id: crypto.randomUUID(),
+      name: "",
+      currentValue: "",
+      targetValue: "",
+      unit: ""
+    };
+    setSituations(situations.map(s => 
+      s.id === situationId ? { ...s, indicators: [...s.indicators, newIndicator] } : s
+    ));
+  };
+
+  const removeIndicatorFromSituation = (situationId: string, indicatorId: string) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { ...s, indicators: s.indicators.filter(ind => ind.id !== indicatorId) } 
+        : s
+    ));
+  };
+
+  const updateIndicatorInSituation = (
+    situationId: string, 
+    indicatorId: string, 
+    field: keyof SituationIndicator, 
+    value: string
+  ) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { 
+            ...s, 
+            indicators: s.indicators.map(ind => 
+              ind.id === indicatorId ? { ...ind, [field]: value } : ind
+            ) 
+          }
+        : s
+    ));
+  };
+
+  const addAttachmentsToSituation = (situationId: string, files: FileList | null) => {
+    if (!files) return;
+
+    const validFiles: File[] = [];
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/png',
+      'image/jpeg',
+      'image/jpg'
+    ];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > maxSize) {
+        toast.error(`Arquivo ${file.name} excede o tamanho máximo de 50MB`);
+        continue;
+      }
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`Tipo de arquivo ${file.name} não permitido`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setSituations(situations.map(s => 
+        s.id === situationId 
+          ? { ...s, attachments: [...s.attachments, ...validFiles] } 
+          : s
+      ));
+      toast.success(`${validFiles.length} arquivo(s) adicionado(s)`);
+    }
+  };
+
+  const removeAttachmentFromSituation = (situationId: string, index: number) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { ...s, attachments: s.attachments.filter((_, i) => i !== index) } 
+        : s
     ));
   };
 
@@ -373,26 +500,81 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
         if (membersError) throw membersError;
       }
 
-      // 5. Salvar situações (deletar anteriores se existirem)
+      // 5. Salvar situações com indicadores e anexos
       if (situations.length > 0) {
+        // Deletar situações anteriores (cascade irá deletar indicadores e anexos relacionados)
         await supabase
           .from('project_situations')
           .delete()
           .eq('project_id', projectId);
 
-        const { error: situationsError } = await supabase
-          .from('project_situations')
-          .insert(
-            situations.map((sit, index) => ({
+        // Inserir novas situações
+        for (const [index, sit] of situations.entries()) {
+          const { data: situationData, error: situationError } = await supabase
+            .from('project_situations')
+            .insert({
               project_id: projectId,
               current_problem: sit.currentProblem,
               target_goal: sit.targetGoal,
               display_order: index,
               created_by: user?.id
-            }))
-          );
+            })
+            .select()
+            .single();
 
-        if (situationsError) throw situationsError;
+          if (situationError) throw situationError;
+
+          // 5a. Inserir indicadores da situação
+          if (sit.indicators.length > 0) {
+            const { error: indicatorsError } = await supabase
+              .from('situation_indicators')
+              .insert(
+                sit.indicators.map((ind, indIndex) => ({
+                  situation_id: situationData.id,
+                  name: ind.name,
+                  current_value: parseFloat(ind.currentValue) || 0,
+                  target_value: parseFloat(ind.targetValue) || 0,
+                  unit: ind.unit || null,
+                  display_order: indIndex
+                }))
+              );
+
+            if (indicatorsError) throw indicatorsError;
+          }
+
+          // 5b. Upload de anexos
+          if (sit.attachments.length > 0) {
+            for (const file of sit.attachments) {
+              const fileExt = file.name.split('.').pop();
+              const filePath = `${situationData.id}/${Date.now()}.${fileExt}`;
+
+              const { error: uploadError } = await supabase.storage
+                .from('project-attachments')
+                .upload(filePath, file);
+
+              if (uploadError) {
+                console.error('Upload error:', uploadError);
+                toast.error(`Erro ao enviar ${file.name}`);
+                continue;
+              }
+
+              const { error: attachmentError } = await supabase
+                .from('situation_attachments')
+                .insert({
+                  situation_id: situationData.id,
+                  file_name: file.name,
+                  file_path: filePath,
+                  file_size: file.size,
+                  file_type: file.type,
+                  uploaded_by: user?.id
+                });
+
+              if (attachmentError) {
+                console.error('Attachment record error:', attachmentError);
+              }
+            }
+          }
+        }
       }
 
       // Feedback de sucesso
@@ -558,8 +740,8 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
 
               <div className="space-y-3">
                 {situations.map((situation, index) => (
-                  <div key={situation.id} className="p-4 border rounded-lg bg-background space-y-3">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={situation.id} className="p-4 border rounded-lg bg-background space-y-4">
+                    <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">
                         Situação {index + 1}
                       </span>
@@ -594,6 +776,136 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                           rows={2}
                           className="resize-none"
                         />
+                      </div>
+                    </div>
+
+                    {/* Separador de Indicadores */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm font-semibold">Indicadores</Label>
+                      </div>
+                      
+                      {situation.indicators.length > 0 && (
+                        <div className="space-y-2 mb-2">
+                          {situation.indicators.map((indicator) => (
+                            <div key={indicator.id} className="p-3 border rounded bg-muted/30 space-y-2">
+                              <div className="flex items-start gap-2">
+                                <div className="flex-1 space-y-2">
+                                  <Input
+                                    placeholder="Nome do indicador"
+                                    value={indicator.name}
+                                    onChange={(e) => updateIndicatorInSituation(
+                                      situation.id, 
+                                      indicator.id, 
+                                      "name", 
+                                      e.target.value
+                                    )}
+                                    className="text-sm"
+                                  />
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <Input
+                                      placeholder="Atual"
+                                      value={indicator.currentValue}
+                                      onChange={(e) => updateIndicatorInSituation(
+                                        situation.id, 
+                                        indicator.id, 
+                                        "currentValue", 
+                                        e.target.value
+                                      )}
+                                      className="text-sm"
+                                    />
+                                    <Input
+                                      placeholder="Meta"
+                                      value={indicator.targetValue}
+                                      onChange={(e) => updateIndicatorInSituation(
+                                        situation.id, 
+                                        indicator.id, 
+                                        "targetValue", 
+                                        e.target.value
+                                      )}
+                                      className="text-sm"
+                                    />
+                                    <Input
+                                      placeholder="Unid."
+                                      value={indicator.unit}
+                                      onChange={(e) => updateIndicatorInSituation(
+                                        situation.id, 
+                                        indicator.id, 
+                                        "unit", 
+                                        e.target.value
+                                      )}
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeIndicatorFromSituation(situation.id, indicator.id)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addIndicatorToSituation(situation.id)}
+                        className="w-full"
+                      >
+                        <Plus className="mr-2 h-3 w-3" />
+                        Adicionar Indicador
+                      </Button>
+                    </div>
+
+                    {/* Separador de Anexos */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm font-semibold">Anexos</Label>
+                      </div>
+
+                      {situation.attachments.length > 0 && (
+                        <div className="space-y-1 mb-2">
+                          {situation.attachments.map((file, fileIndex) => (
+                            <div key={fileIndex} className="flex items-center justify-between p-2 border rounded bg-muted/30">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <span className="text-sm truncate">{file.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeAttachmentFromSituation(situation.id, fileIndex)}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div>
+                        <Input
+                          type="file"
+                          multiple
+                          accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                          onChange={(e) => addAttachmentsToSituation(situation.id, e.target.files)}
+                          className="text-sm"
+                          id={`file-${situation.id}`}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Máx. 50MB por arquivo. Formatos: PDF, PPT, DOC, XLS, imagens
+                        </p>
                       </div>
                     </div>
                   </div>
