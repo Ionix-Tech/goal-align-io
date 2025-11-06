@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, CheckCircle2, Clock, Circle } from 'lucide-react';
+import { Plus, Search, CheckCircle2, Clock, Circle, XCircle } from 'lucide-react';
 import { TaskCard } from './TaskCard';
 import { AddTaskDialog } from './AddTaskDialog';
 import { useProjectTasks, useDeleteTask, useUpdateTask, ProjectTask } from '@/hooks/useProjectTasks';
@@ -41,13 +41,14 @@ export function TaskManagementPanel({ projectId, milestones, indicators, members
     const total = tasks.length;
     const completed = tasks.filter((t) => t.status === 'completed').length;
     const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
+    const blocked = tasks.filter((t) => t.status === 'blocked').length;
     const overdue = tasks.filter((t) => 
       t.due_date && 
       new Date(t.due_date) < new Date() && 
       t.status !== 'completed'
     ).length;
 
-    return { total, completed, inProgress, overdue };
+    return { total, completed, inProgress, blocked, overdue };
   }, [tasks]);
 
   const handleDelete = async (taskId: string) => {
@@ -56,13 +57,6 @@ export function TaskManagementPanel({ projectId, milestones, indicators, members
     }
   };
 
-  const handleStatusChange = async (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => {
-    await updateTask.mutateAsync({
-      taskId,
-      projectId,
-      status
-    });
-  };
 
   const handleEdit = (task: ProjectTask) => {
     setEditTask(task);
@@ -81,7 +75,7 @@ export function TaskManagementPanel({ projectId, milestones, indicators, members
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total</CardTitle>
@@ -94,21 +88,33 @@ export function TaskManagementPanel({ projectId, milestones, indicators, members
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completed}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Em Progresso</CardTitle>
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.inProgress}</div>
+          </CardContent>
+        </Card>
+
+        <Card className={stats.blocked > 0 ? 'ring-2 ring-red-500/20' : ''}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bloqueadas</CardTitle>
+            <XCircle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${stats.blocked > 0 ? 'text-red-500' : ''}`}>
+              {stats.blocked}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.completed}</div>
           </CardContent>
         </Card>
 
@@ -143,6 +149,9 @@ export function TaskManagementPanel({ projectId, milestones, indicators, members
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="not_started">Não iniciada</SelectItem>
             <SelectItem value="in_progress">Em progresso</SelectItem>
+            <SelectItem value="blocked">Bloqueada</SelectItem>
+            <SelectItem value="review">Em revisão</SelectItem>
+            <SelectItem value="paused">Pausada</SelectItem>
             <SelectItem value="completed">Concluída</SelectItem>
           </SelectContent>
         </Select>
@@ -186,7 +195,6 @@ export function TaskManagementPanel({ projectId, milestones, indicators, members
               task={task}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onStatusChange={handleStatusChange}
             />
           ))
         )}

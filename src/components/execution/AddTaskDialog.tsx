@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateTask, useUpdateTask, ProjectTask } from '@/hooks/useProjectTasks';
+import { useCreateTask, useUpdateTask, ProjectTask, TaskStatus } from '@/hooks/useProjectTasks';
 
 interface AddTaskDialogProps {
   open: boolean;
@@ -28,7 +28,7 @@ export function AddTaskDialog({
 }: AddTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<'not_started' | 'in_progress' | 'completed'>('not_started');
+  const [status, setStatus] = useState<TaskStatus>('not_started');
   const [priority, setPriority] = useState('medium');
   const [milestoneId, setMilestoneId] = useState<string>('');
   const [indicatorId, setIndicatorId] = useState<string>('');
@@ -136,11 +136,14 @@ export function AddTaskDialog({
                   <SelectTrigger id="status">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="not_started">Não iniciada</SelectItem>
-                    <SelectItem value="in_progress">Em progresso</SelectItem>
-                    <SelectItem value="completed">Concluída</SelectItem>
-                  </SelectContent>
+          <SelectContent>
+            <SelectItem value="not_started">Não iniciada</SelectItem>
+            <SelectItem value="in_progress">Em progresso</SelectItem>
+            <SelectItem value="blocked">Bloqueada</SelectItem>
+            <SelectItem value="review">Em revisão</SelectItem>
+            <SelectItem value="paused">Pausada</SelectItem>
+            <SelectItem value="completed">Concluída</SelectItem>
+          </SelectContent>
                 </Select>
               </div>
             )}

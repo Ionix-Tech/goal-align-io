@@ -1,24 +1,32 @@
+import { useState } from 'react';
 import { ProjectTask } from '@/hooks/useProjectTasks';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock } from 'lucide-react';
+import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock, XCircle, Eye, PauseCircle, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TaskStatusUpdateDialog } from './TaskStatusUpdateDialog';
+import { TaskStatusHistoryDialog } from './TaskStatusHistoryDialog';
 
 interface TaskCardProps {
   task: ProjectTask;
   onEdit: (task: ProjectTask) => void;
   onDelete: (taskId: string) => void;
-  onStatusChange: (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => void;
 }
 
-export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+
   const statusConfig = {
     not_started: { label: 'Não iniciada', icon: Circle, className: 'bg-muted text-muted-foreground' },
     in_progress: { label: 'Em progresso', icon: Clock, className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+    blocked: { label: 'Bloqueada', icon: XCircle, className: 'bg-red-500/10 text-red-500 border-red-500/20' },
+    review: { label: 'Em revisão', icon: Eye, className: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
+    paused: { label: 'Pausada', icon: PauseCircle, className: 'bg-orange-500/10 text-orange-500 border-orange-500/20' },
     completed: { label: 'Concluída', icon: CheckCircle2, className: 'bg-green-500/10 text-green-500 border-green-500/20' }
   };
 
@@ -40,12 +48,9 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
         <div className="flex-1 space-y-3">
           <div className="flex items-start gap-3">
             <button
-              onClick={() => {
-                const nextStatus = task.status === 'not_started' ? 'in_progress' : 
-                                 task.status === 'in_progress' ? 'completed' : 'not_started';
-                onStatusChange(task.id, nextStatus);
-              }}
+              onClick={() => setStatusDialogOpen(true)}
               className="mt-1"
+              title="Atualizar status"
             >
               <StatusIcon className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
             </button>
@@ -106,6 +111,13 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
+              Atualizar Status
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setHistoryDialogOpen(true)}>
+              <History className="h-4 w-4 mr-2" />
+              Ver Histórico
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(task)}>
               Editar
             </DropdownMenuItem>
@@ -118,6 +130,19 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <TaskStatusUpdateDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        task={task}
+      />
+
+      <TaskStatusHistoryDialog
+        open={historyDialogOpen}
+        onOpenChange={setHistoryDialogOpen}
+        taskId={task.id}
+        taskTitle={task.title}
+      />
     </Card>
   );
 }

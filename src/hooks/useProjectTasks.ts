@@ -3,7 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-export type TaskStatus = 'not_started' | 'in_progress' | 'completed';
+export type TaskStatus = 
+  | 'not_started' 
+  | 'in_progress' 
+  | 'blocked' 
+  | 'review' 
+  | 'paused' 
+  | 'completed';
 
 export interface ProjectTask {
   id: string;
