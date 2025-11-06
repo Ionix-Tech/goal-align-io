@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Target, LayoutGrid, List } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,25 @@ const Prioritization = () => {
 
   const { role } = useUserRole();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Limpar parâmetros de URL inválidos
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && tabParam !== 'kanban' && tabParam !== 'list') {
+      searchParams.delete('tab');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Garantir que apenas valores válidos sejam aceitos
+  const handleViewChange = (v: string) => {
+    if (v === 'kanban' || v === 'list') {
+      setView(v as 'kanban' | 'list');
+    } else {
+      setView('kanban'); // fallback seguro
+    }
+  };
   
   const filters = {
     search,
@@ -135,7 +154,7 @@ const Prioritization = () => {
         />
 
         {/* View Toggle and Content */}
-        <Tabs value={view} onValueChange={(v) => setView(v as 'kanban' | 'list')}>
+        <Tabs value={view} onValueChange={handleViewChange} defaultValue="kanban">
           <TabsList>
             <TabsTrigger value="kanban" className="gap-2">
               <LayoutGrid className="h-4 w-4" />
