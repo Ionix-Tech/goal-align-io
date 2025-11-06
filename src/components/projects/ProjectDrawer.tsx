@@ -10,11 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, X, Users, Save, Send, CheckCircle2, XCircle, AlertCircle, Archive } from "lucide-react";
+import { Plus, X, Users, Save, Send, CheckCircle2, XCircle, AlertCircle, Archive, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,6 +49,7 @@ interface Situation {
   currentProblem: string;
   targetGoal: string;
   indicators: SituationIndicator[];
+  attachments: File[];
 }
 
 interface Profile {
@@ -83,6 +85,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
   const [availableMembers, setAvailableMembers] = useState<Profile[]>([]);
   const [newComment, setNewComment] = useState("");
   const [membersPopoverOpen, setMembersPopoverOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'idea' | 'detail'>('detail');
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -229,7 +232,8 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
           currentValue: String(ind.current_value),
           targetValue: String(ind.target_value),
           unit: ind.unit || ''
-        }))
+        })),
+        attachments: []
       })));
     }
   };
@@ -239,7 +243,8 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       id: crypto.randomUUID(),
       currentProblem: "",
       targetGoal: "",
-      indicators: []
+      indicators: [],
+      attachments: []
     }]);
   };
 
@@ -288,6 +293,55 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
               ind.id === indicatorId ? { ...ind, [field]: value } : ind
             ) 
           }
+        : s
+    ));
+  };
+
+  const addAttachmentsToSituation = (situationId: string, files: FileList | null) => {
+    if (!files) return;
+
+    const validFiles: File[] = [];
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/png',
+      'image/jpeg',
+      'image/jpg'
+    ];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > maxSize) {
+        toast.error(`Arquivo ${file.name} excede o tamanho máximo de 50MB`);
+        continue;
+      }
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`Tipo de arquivo ${file.name} não permitido`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setSituations(situations.map(s => 
+        s.id === situationId 
+          ? { ...s, attachments: [...s.attachments, ...validFiles] } 
+          : s
+      ));
+      toast.success(`${validFiles.length} arquivo(s) adicionado(s)`);
+    }
+  };
+
+  const removeAttachmentFromSituation = (situationId: string, index: number) => {
+    setSituations(situations.map(s => 
+      s.id === situationId 
+        ? { ...s, attachments: s.attachments.filter((_, i) => i !== index) } 
         : s
     ));
   };
@@ -568,6 +622,36 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
 
           <ScrollArea className="flex-1 px-6">
             <div className="space-y-6 py-6">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'idea' | 'detail')} className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="idea">💡 Ideia Original</TabsTrigger>
+                  <TabsTrigger value="detail">📝 Detalhamento</TabsTrigger>
+                </TabsList>
+
+                {/* Aba: Ideia Original */}
+                <TabsContent value="idea" className="space-y-4">
+                  <Card className="p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-base font-semibold">Descrição da Ideia</Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Ideia original submetida quando o projeto foi criado
+                        </p>
+                      </div>
+                      <Separator />
+                      <div className="prose prose-sm max-w-none">
+                        {project.description ? (
+                          <p className="whitespace-pre-wrap">{project.description}</p>
+                        ) : (
+                          <p className="text-muted-foreground italic">Nenhuma descrição de ideia disponível</p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </TabsContent>
+
+                {/* Aba: Detalhamento */}
+                <TabsContent value="detail" className="space-y-6">
               {/* Modo Edição - Draft */}
               {canEdit && (
                 <>
@@ -763,15 +847,60 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                                         </div>
                                       ))}
                                     </div>
-                                  )}
-                                </div>
-                              </div>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
+                                   )}
+                                 </div>
+
+                                 {/* Separador de Anexos */}
+                                 <div className="border-t pt-3">
+                                   <div className="flex items-center justify-between mb-2">
+                                     <Label className="text-sm font-semibold">Anexos</Label>
+                                   </div>
+
+                                   {situation.attachments.length > 0 && (
+                                     <div className="space-y-1 mb-2">
+                                       {situation.attachments.map((file, fileIndex) => (
+                                         <div key={fileIndex} className="flex items-center justify-between p-2 border rounded bg-muted/30">
+                                           <div className="flex items-center gap-2 flex-1 min-w-0">
+                                             <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                             <span className="text-sm truncate">{file.name}</span>
+                                             <span className="text-xs text-muted-foreground">
+                                               ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                             </span>
+                                           </div>
+                                           <Button
+                                             type="button"
+                                             variant="ghost"
+                                             size="sm"
+                                             onClick={() => removeAttachmentFromSituation(situation.id, fileIndex)}
+                                           >
+                                             <Trash2 className="h-3 w-3 text-destructive" />
+                                           </Button>
+                                         </div>
+                                       ))}
+                                     </div>
+                                   )}
+
+                                   <div>
+                                     <Input
+                                       type="file"
+                                       multiple
+                                       accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                       onChange={(e) => addAttachmentsToSituation(situation.id, e.target.files)}
+                                       className="text-sm"
+                                       id={`file-${situation.id}`}
+                                     />
+                                     <p className="text-xs text-muted-foreground mt-1">
+                                       Máx. 50MB por arquivo. Formatos: PDF, PPT, DOC, XLS, imagens
+                                     </p>
+                                   </div>
+                                 </div>
+                               </div>
+                             </Card>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                   </Card>
 
                   {/* Membros */}
                   <Card className="p-4">
@@ -1104,7 +1233,10 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                 </>
               )}
 
-              {/* Comentários */}
+              </TabsContent>
+            </Tabs>
+
+            {/* Comentários */}
               {(isReviewMode || project.comments.length > 0) && (
                 <>
                   <Separator />
