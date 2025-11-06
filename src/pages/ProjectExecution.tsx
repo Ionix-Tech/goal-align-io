@@ -19,7 +19,6 @@ import { AddIndicatorDialog } from "@/components/execution/AddIndicatorDialog";
 import { TaskManagementPanel } from "@/components/execution/TaskManagementPanel";
 import { IndicatorEvolutionChart } from "@/components/execution/IndicatorEvolutionChart";
 import { SituationManagement } from "@/components/execution/SituationManagement";
-import { A3ReportExporter } from "@/components/execution/A3ReportExporter";
 import { useProjectSituations } from "@/hooks/useProjectSituations";
 
 const strategicPillars = [
@@ -97,11 +96,14 @@ const ProjectExecution = () => {
               </div>
             </div>
             
-            <A3ReportExporter 
-              project={project} 
-              situations={situations || []}
-              pillarLabel={pillarConfig?.label}
-            />
+            <Button
+              variant="default"
+              size="sm"
+              disabled
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Exportar Relatório A3
+            </Button>
           </div>
         </div>
       </div>
@@ -110,9 +112,8 @@ const ProjectExecution = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">📋 Visão Geral</TabsTrigger>
-            <TabsTrigger value="a3">🎯 Metodologia A3</TabsTrigger>
             <TabsTrigger value="thesis">📄 Tese do Projeto</TabsTrigger>
             <TabsTrigger value="progress">📊 Progresso</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atualizações</TabsTrigger>
@@ -181,62 +182,6 @@ const ProjectExecution = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Aba: Metodologia A3 */}
-          <TabsContent value="a3" className="space-y-6">
-            {/* Situação Atual vs Alvo */}
-            <SituationManagement projectId={projectId!} />
-
-            <Separator className="my-8" />
-
-            {/* Requisitos do Projeto */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Requisitos do Projeto</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Lista os requisitos estratégicos que guiam todas as ações do projeto
-                </p>
-              </CardHeader>
-              <CardContent>
-                {project.requirements ? (
-                  <div className="whitespace-pre-wrap text-sm">{project.requirements}</div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Nenhum requisito definido ainda</p>
-                    <p className="text-xs mt-2">Edite o projeto para adicionar requisitos</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Separator className="my-8" />
-
-            {/* Gráficos de Indicadores */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Evolução de Indicadores</h2>
-              {project.indicators.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8">
-                    <div className="text-center text-muted-foreground">
-                      <p>Nenhum indicador definido ainda</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 gap-6">
-                  {project.indicators.map(indicator => (
-                    <IndicatorEvolutionChart
-                      key={indicator.id}
-                      indicatorId={indicator.id}
-                      indicatorName={indicator.name}
-                      targetValue={indicator.target_state}
-                      unit={indicator.unit}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
           </TabsContent>
 
           {/* Aba: Tese do Projeto */}
