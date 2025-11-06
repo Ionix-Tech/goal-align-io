@@ -149,6 +149,51 @@ export type Database = {
           },
         ]
       }
+      project_health_status: {
+        Row: {
+          health_status: string
+          id: string
+          project_id: string
+          reason: string | null
+          reported_at: string
+          reported_by: string
+          resolved_at: string | null
+        }
+        Insert: {
+          health_status: string
+          id?: string
+          project_id: string
+          reason?: string | null
+          reported_at?: string
+          reported_by: string
+          resolved_at?: string | null
+        }
+        Update: {
+          health_status?: string
+          id?: string
+          project_id?: string
+          reason?: string | null
+          reported_at?: string
+          reported_by?: string
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_health_status_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_health_status_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_indicators: {
         Row: {
           created_at: string | null
@@ -247,6 +292,127 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          project_id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          project_id: string
+          status?: string
+          title: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          project_id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_weekly_updates: {
+        Row: {
+          challenges: string | null
+          health_status: string
+          id: string
+          key_metrics: Json | null
+          next_steps: string | null
+          progress_summary: string
+          project_id: string
+          submitted_at: string
+          submitted_by: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          challenges?: string | null
+          health_status: string
+          id?: string
+          key_metrics?: Json | null
+          next_steps?: string | null
+          progress_summary: string
+          project_id: string
+          submitted_at?: string
+          submitted_by: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          challenges?: string | null
+          health_status?: string
+          id?: string
+          key_metrics?: Json | null
+          next_steps?: string | null
+          progress_summary?: string
+          project_id?: string
+          submitted_at?: string
+          submitted_by?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_weekly_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_weekly_updates_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
