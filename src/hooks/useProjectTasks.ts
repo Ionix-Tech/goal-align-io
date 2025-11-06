@@ -11,12 +11,12 @@ export interface ProjectTask {
   title: string;
   description: string | null;
   status: TaskStatus;
+  priority: string;
   assigned_to: string | null;
   created_by: string;
   completed_at: string | null;
   due_date: string | null;
   created_at: string;
-  updated_at: string;
   assignee?: {
     full_name: string;
     avatar_url: string | null;
@@ -123,7 +123,7 @@ export function useUpdateTask() {
         // Auto-set completed_at when marking as completed
         if (status === 'completed') {
           updateData.completed_at = new Date().toISOString();
-        } else if (status !== 'completed') {
+        } else {
           updateData.completed_at = null;
         }
       }

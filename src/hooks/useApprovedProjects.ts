@@ -39,7 +39,7 @@ export function useApprovedProjects(pillar?: string | null) {
         .order('approved_at', { ascending: false });
 
       if (pillar) {
-        query = query.eq('strategic_pillar', pillar);
+        query = query.eq('strategic_pillar', pillar as any);
       }
 
       const { data: projects, error: projectsError } = await query;

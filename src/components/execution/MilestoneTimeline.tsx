@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 interface Milestone {
   id: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   target_date: string;
   completed: boolean;
   completed_at: string | null;

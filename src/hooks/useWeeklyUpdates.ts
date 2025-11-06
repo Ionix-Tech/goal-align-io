@@ -11,11 +11,10 @@ export interface WeeklyUpdate {
   week_start_date: string;
   week_end_date: string;
   health_status: HealthStatus;
+  progress_summary: string;
   challenges: string | null;
-  key_initiatives: string | null;
-  results_achieved: string | null;
-  blockers: string | null;
-  next_week_focus: string | null;
+  next_steps: string | null;
+  key_metrics: any | null;
   submitted_by: string;
   submitted_at: string;
   submitter: {
@@ -56,21 +55,19 @@ export function useCreateWeeklyUpdate() {
       weekStartDate,
       weekEndDate,
       healthStatus,
+      progressSummary,
       challenges,
-      keyInitiatives,
-      resultsAchieved,
-      blockers,
-      nextWeekFocus
+      nextSteps,
+      keyMetrics
     }: {
       projectId: string;
       weekStartDate: string;
       weekEndDate: string;
       healthStatus: HealthStatus;
+      progressSummary: string;
       challenges?: string;
-      keyInitiatives?: string;
-      resultsAchieved?: string;
-      blockers?: string;
-      nextWeekFocus?: string;
+      nextSteps?: string;
+      keyMetrics?: any;
     }) => {
       const { data, error} = await supabase
         .from('project_weekly_updates')
@@ -79,11 +76,10 @@ export function useCreateWeeklyUpdate() {
           week_start_date: weekStartDate,
           week_end_date: weekEndDate,
           health_status: healthStatus,
+          progress_summary: progressSummary,
           challenges: challenges || null,
-          key_initiatives: keyInitiatives || null,
-          results_achieved: resultsAchieved || null,
-          blockers: blockers || null,
-          next_week_focus: nextWeekFocus || null,
+          next_steps: nextSteps || null,
+          key_metrics: keyMetrics || null,
           submitted_by: user?.id
         })
         .select()
@@ -111,28 +107,25 @@ export function useUpdateWeeklyUpdate() {
       updateId,
       projectId,
       healthStatus,
+      progressSummary,
       challenges,
-      keyInitiatives,
-      resultsAchieved,
-      blockers,
-      nextWeekFocus
+      nextSteps,
+      keyMetrics
     }: {
       updateId: string;
       projectId: string;
       healthStatus?: HealthStatus;
+      progressSummary?: string;
       challenges?: string;
-      keyInitiatives?: string;
-      resultsAchieved?: string;
-      blockers?: string;
-      nextWeekFocus?: string;
+      nextSteps?: string;
+      keyMetrics?: any;
     }) => {
       const updateData: any = {};
       if (healthStatus !== undefined) updateData.health_status = healthStatus;
+      if (progressSummary !== undefined) updateData.progress_summary = progressSummary;
       if (challenges !== undefined) updateData.challenges = challenges;
-      if (keyInitiatives !== undefined) updateData.key_initiatives = keyInitiatives;
-      if (resultsAchieved !== undefined) updateData.results_achieved = resultsAchieved;
-      if (blockers !== undefined) updateData.blockers = blockers;
-      if (nextWeekFocus !== undefined) updateData.next_week_focus = nextWeekFocus;
+      if (nextSteps !== undefined) updateData.next_steps = nextSteps;
+      if (keyMetrics !== undefined) updateData.key_metrics = keyMetrics;
 
       const { data, error } = await supabase
         .from('project_weekly_updates')

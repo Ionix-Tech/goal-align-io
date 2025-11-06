@@ -286,6 +286,8 @@ const ProjectExecution = () => {
               <IndicatorCards
                 indicators={project.indicators.map(ind => ({
                   ...ind,
+                  name: `${ind.current_state} → ${ind.target_state}`,
+                  unit: null,
                   progress: 0, // TODO: calculate from indicator updates
                   trend: undefined,
                   lastUpdate: undefined
@@ -293,14 +295,22 @@ const ProjectExecution = () => {
                 onUpdateIndicator={(indicatorId) => {
                   const indicator = project.indicators.find(i => i.id === indicatorId);
                   if (indicator) {
-                    setSelectedIndicator({ id: indicator.id, name: indicator.name, unit: indicator.unit });
+                    setSelectedIndicator({ 
+                      id: indicator.id, 
+                      name: `${indicator.current_state} → ${indicator.target_state}`, 
+                      unit: null 
+                    });
                     setShowIndicatorMeasurementDialog(true);
                   }
                 }}
                 onViewHistory={(indicatorId) => {
                   const indicator = project.indicators.find(i => i.id === indicatorId);
                   if (indicator) {
-                    setSelectedIndicator({ id: indicator.id, name: indicator.name, unit: indicator.unit });
+                    setSelectedIndicator({ 
+                      id: indicator.id, 
+                      name: `${indicator.current_state} → ${indicator.target_state}`, 
+                      unit: null 
+                    });
                     setShowIndicatorHistoryDialog(true);
                   }
                 }}
