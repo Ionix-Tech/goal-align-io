@@ -4,7 +4,10 @@
       "Bash(npm run dev:*)",
       "Bash(npm install:*)",
       "Bash(timeout 3 echo:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Implementar aprovação de projetos com 3 ações no modo revisão\n\n**Funcionalidades implementadas:**\n\n1. **Modo Detalhamento (draft):**\n   - Drawer abre ao clicar em cards da coluna \"Detalhamento\"\n   - Edição completa de projetos (nome, contexto, pilar, objetivo, indicadores, milestones, membros)\n   - Botões: \"Salvar\" e \"Enviar para Aprovação\"\n\n2. **Modo Revisão (review) - CEO:**\n   - 3 ações disponíveis ao revisar projetos:\n     - **Solicitar Ajustes**: Devolve para draft com comentário obrigatório\n     - **Arquivar**: Arquiva o projeto permanentemente com comentário obrigatório\n     - **Aprovar Projeto**: Aprova com comentário opcional\n   - Visualização de todos os detalhes do projeto\n   - Checklist de requisitos para aprovação\n\n3. **Melhorias técnicas:**\n   - Fix: Movido drag-and-drop attributes para botão handle apenas (permite clique no card)\n   - Fix: Refatorado useProjectDetails para queries separadas (resolve erro de foreign keys)\n   - Added: Transição review → archived permitida para CEOs\n   - Added: Notificações para todas as ações (aprovar, solicitar ajustes, arquivar)\n   - Added: Diálogos de confirmação para cada ação\n\n**Arquivos modificados:**\n- src/components/projects/ProjectDrawer.tsx (3 botões de ação + diálogo de arquivamento)\n- src/components/projects/SortableKanbanCard.tsx (fix clique no card)\n- src/hooks/useProjectDetails.ts (queries refatoradas)\n- src/hooks/useProjectTransitions.ts (suporte para arquivar em revisão)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(pkill:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

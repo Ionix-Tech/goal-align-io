@@ -9,11 +9,13 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CreateProject from "./pages/CreateProject";
+import ProjectDetail from "./pages/ProjectDetail";
 import QuickIdea from "./pages/QuickIdea";
 import Prioritization from "./pages/Prioritization";
 import Portfolio from "./pages/Portfolio";
 import Theses from "./pages/Theses";
 import Management from "./pages/Management";
+import ProjectExecution from "./pages/ProjectExecution";
 import Intelligence from "./pages/Intelligence";
 import NotFound from "./pages/NotFound";
 
@@ -31,10 +33,12 @@ const App = () => (
           <Route path="/quick-idea" element={<ProtectedRoute><AppLayout><QuickIdea /></AppLayout></ProtectedRoute>} />
           <Route path="/create-project" element={<ProtectedRoute><AppLayout><CreateProject /></AppLayout></ProtectedRoute>} />
           <Route path="/projects/:id/structure" element={<ProtectedRoute><AppLayout><CreateProject mode="structure" /></AppLayout></ProtectedRoute>} />
+          <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
           <Route path="/prioritization" element={<ProtectedRoute><AppLayout><Prioritization /></AppLayout></ProtectedRoute>} />
           <Route path="/portfolio" element={<ProtectedRoute><AppLayout><Portfolio /></AppLayout></ProtectedRoute>} />
           <Route path="/theses" element={<ProtectedRoute><AppLayout><Theses /></AppLayout></ProtectedRoute>} />
           <Route path="/management" element={<ProtectedRoute><AppLayout><Management /></AppLayout></ProtectedRoute>} />
+          <Route path="/management/:projectId" element={<ProtectedRoute><AppLayout><ProjectExecution /></AppLayout></ProtectedRoute>} />
           <Route path="/intelligence" element={<ProtectedRoute><AppLayout><Intelligence /></AppLayout></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

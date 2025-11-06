@@ -51,13 +51,14 @@ The application uses React Router with protected routes:
 - `/quick-idea` - Quick project idea submission
 - `/create-project` - Full project creation form
 - `/projects/:id/structure` - Project structuring (uses CreateProject with mode="structure")
+- `/projects/:id` - Full-page project detail/edit view with tabs for "Ideia Original" and "Detalhamento"
 - `/prioritization` - Project prioritization view
 - `/portfolio` - Portfolio dashboard
 - `/theses` - Strategic theses management
 - `/management` - Project management (Kanban board)
 - `/intelligence` - Intelligence/analytics dashboard
 
-All routes except `/` and `/auth` are wrapped with `ProtectedRoute` and `AppLayout` components.
+All routes except `/`, `/auth`, and `/projects/:id` are wrapped with `ProtectedRoute` and `AppLayout` components. The `/projects/:id` route uses `ProtectedRoute` but implements its own full-page layout.
 
 ### Authentication & Authorization
 
