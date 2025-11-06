@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { HealthStatusBadge } from "@/components/management/HealthStatusBadge";
+import { MilestoneTimeline } from "@/components/execution/MilestoneTimeline";
+import { IndicatorCards } from "@/components/execution/IndicatorCards";
+import { AddMilestoneUpdateDialog } from "@/components/execution/AddMilestoneUpdateDialog";
+import { MilestoneHistoryDialog } from "@/components/execution/MilestoneHistoryDialog";
+import { AddIndicatorMeasurementDialog } from "@/components/execution/AddIndicatorMeasurementDialog";
+import { IndicatorHistoryDialog } from "@/components/execution/IndicatorHistoryDialog";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -20,6 +26,15 @@ const ProjectExecution = () => {
   const navigate = useNavigate();
   const { data: project, isLoading } = useProjectDetails(projectId || null);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Dialog states
+  const [showMilestoneUpdateDialog, setShowMilestoneUpdateDialog] = useState(false);
+  const [showMilestoneHistoryDialog, setShowMilestoneHistoryDialog] = useState(false);
+  const [showIndicatorMeasurementDialog, setShowIndicatorMeasurementDialog] = useState(false);
+  const [showIndicatorHistoryDialog, setShowIndicatorHistoryDialog] = useState(false);
+
+  const [selectedMilestone, setSelectedMilestone] = useState<{ id: string; title: string; progress: number } | null>(null);
+  const [selectedIndicator, setSelectedIndicator] = useState<{ id: string; name: string; unit?: string | null } | null>(null);
 
   if (isLoading) {
     return (
@@ -233,19 +248,67 @@ const ProjectExecution = () => {
 
           {/* Aba: Progresso */}
           <TabsContent value="progress" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Acompanhamento de Progresso</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Esta funcionalidade permite atualizar o progresso de milestones e indicadores.
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Em desenvolvimento: Formulários para atualizar milestones e indicadores.
-                </p>
-              </CardContent>
-            </Card>
+            {/* Milestones Timeline */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Timeline de Milestones</h2>
+                <Badge variant="secondary">
+                  {project.milestones.filter(m => m.completed).length} de {project.milestones.length} concluídos
+                </Badge>
+              </div>
+              <MilestoneTimeline
+                milestones={project.milestones.map(m => ({
+                  ...m,
+                  progress: 0 // TODO: calculate from milestone updates
+                }))}
+                onUpdateMilestone={(milestoneId) => {
+                  const milestone = project.milestones.find(m => m.id === milestoneId);
+                  if (milestone) {
+                    setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: 0 });
+                    setShowMilestoneUpdateDialog(true);
+                  }
+                }}
+                onViewHistory={(milestoneId) => {
+                  const milestone = project.milestones.find(m => m.id === milestoneId);
+                  if (milestone) {
+                    setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: 0 });
+                    setShowMilestoneHistoryDialog(true);
+                  }
+                }}
+              />
+            </div>
+
+            <Separator className="my-8" />
+
+            {/* Indicators */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Indicadores de Desempenho</h2>
+                <Badge variant="secondary">{project.indicators.length} indicadores</Badge>
+              </div>
+              <IndicatorCards
+                indicators={project.indicators.map(ind => ({
+                  ...ind,
+                  progress: 0, // TODO: calculate from indicator updates
+                  trend: undefined,
+                  lastUpdate: undefined
+                }))}
+                onUpdateIndicator={(indicatorId) => {
+                  const indicator = project.indicators.find(i => i.id === indicatorId);
+                  if (indicator) {
+                    setSelectedIndicator({ id: indicator.id, name: indicator.name, unit: indicator.unit });
+                    setShowIndicatorMeasurementDialog(true);
+                  }
+                }}
+                onViewHistory={(indicatorId) => {
+                  const indicator = project.indicators.find(i => i.id === indicatorId);
+                  if (indicator) {
+                    setSelectedIndicator({ id: indicator.id, name: indicator.name, unit: indicator.unit });
+                    setShowIndicatorHistoryDialog(true);
+                  }
+                }}
+              />
+            </div>
           </TabsContent>
 
           {/* Aba: Atualizações */}
@@ -266,6 +329,44 @@ const ProjectExecution = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialogs */}
+      {selectedMilestone && (
+        <>
+          <AddMilestoneUpdateDialog
+            open={showMilestoneUpdateDialog}
+            onOpenChange={setShowMilestoneUpdateDialog}
+            milestoneId={selectedMilestone.id}
+            milestoneTitle={selectedMilestone.title}
+            currentProgress={selectedMilestone.progress}
+          />
+          <MilestoneHistoryDialog
+            open={showMilestoneHistoryDialog}
+            onOpenChange={setShowMilestoneHistoryDialog}
+            milestoneId={selectedMilestone.id}
+            milestoneTitle={selectedMilestone.title}
+          />
+        </>
+      )}
+
+      {selectedIndicator && (
+        <>
+          <AddIndicatorMeasurementDialog
+            open={showIndicatorMeasurementDialog}
+            onOpenChange={setShowIndicatorMeasurementDialog}
+            indicatorId={selectedIndicator.id}
+            indicatorName={selectedIndicator.name}
+            unit={selectedIndicator.unit}
+          />
+          <IndicatorHistoryDialog
+            open={showIndicatorHistoryDialog}
+            onOpenChange={setShowIndicatorHistoryDialog}
+            indicatorId={selectedIndicator.id}
+            indicatorName={selectedIndicator.name}
+            unit={selectedIndicator.unit}
+          />
+        </>
+      )}
     </div>
   );
 };
