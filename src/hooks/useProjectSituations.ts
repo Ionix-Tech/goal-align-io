@@ -8,14 +8,13 @@ export interface ProjectSituation {
   project_id: string;
   current_problem: string;
   target_goal: string;
-  numeric_current: number | null;
-  numeric_target: number | null;
-  unit: string | null;
   display_order: number;
   created_by: string;
   created_at: string;
   updated_at: string;
-  linked_tasks?: string[];
+  linked_tasks?: any[];
+  indicators?: any[];
+  attachments?: any[];
 }
 
 export function useProjectSituations(projectId: string | null) {
@@ -32,22 +31,49 @@ export function useProjectSituations(projectId: string | null) {
 
       if (error) throw error;
 
-      // Fetch linked tasks for each situation
-      const situationsWithTasks = await Promise.all(
+      // Fetch linked tasks, indicators, and attachments for each situation
+      const situationsWithDetails = await Promise.all(
         (data || []).map(async (situation) => {
-          const { data: links } = await supabase
+          // Fetch linked tasks
+          const { data: taskLinks } = await supabase
             .from('situation_tasks')
             .select('task_id')
             .eq('situation_id', situation.id);
 
+          const taskIds = taskLinks?.map(link => link.task_id) || [];
+          let tasksData = [];
+          if (taskIds.length > 0) {
+            const { data: tasks } = await supabase
+              .from('project_tasks')
+              .select('*')
+              .in('id', taskIds);
+            tasksData = tasks || [];
+          }
+
+          // Fetch indicators
+          const { data: indicators } = await supabase
+            .from('situation_indicators')
+            .select('*')
+            .eq('situation_id', situation.id)
+            .order('display_order');
+
+          // Fetch attachments
+          const { data: attachments } = await supabase
+            .from('situation_attachments')
+            .select('*')
+            .eq('situation_id', situation.id)
+            .order('uploaded_at', { ascending: false });
+
           return {
             ...situation,
-            linked_tasks: links?.map(l => l.task_id) || []
+            linked_tasks: tasksData || [],
+            indicators: indicators || [],
+            attachments: attachments || []
           };
         })
       );
 
-      return situationsWithTasks as ProjectSituation[];
+      return situationsWithDetails as ProjectSituation[];
     },
     enabled: !!projectId
   });
@@ -62,18 +88,20 @@ export function useCreateSituation() {
       projectId,
       currentProblem,
       targetGoal,
-      numericCurrent,
-      numericTarget,
-      unit,
-      linkedTasks
+      linkedTasks,
+      indicators
     }: {
       projectId: string;
       currentProblem: string;
       targetGoal: string;
-      numericCurrent?: number;
-      numericTarget?: number;
-      unit?: string;
       linkedTasks?: string[];
+      indicators?: Array<{
+        name: string;
+        currentValue: number;
+        targetValue: number;
+        unit?: string;
+        displayOrder: number;
+      }>;
     }) => {
       // Create situation
       const { data: situation, error } = await supabase
@@ -82,15 +110,30 @@ export function useCreateSituation() {
           project_id: projectId,
           current_problem: currentProblem,
           target_goal: targetGoal,
-          numeric_current: numericCurrent || null,
-          numeric_target: numericTarget || null,
-          unit: unit || null,
           created_by: user?.id
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Create indicators if provided
+      if (indicators && indicators.length > 0) {
+        const indicatorRecords = indicators.map(ind => ({
+          situation_id: situation.id,
+          name: ind.name,
+          current_value: ind.currentValue,
+          target_value: ind.targetValue,
+          unit: ind.unit || null,
+          display_order: ind.displayOrder
+        }));
+
+        const { error: indicatorError } = await supabase
+          .from('situation_indicators')
+          .insert(indicatorRecords);
+
+        if (indicatorError) throw indicatorError;
+      }
 
       // Link tasks if provided
       if (linkedTasks && linkedTasks.length > 0) {
@@ -128,27 +171,18 @@ export function useUpdateSituation() {
       projectId,
       currentProblem,
       targetGoal,
-      numericCurrent,
-      numericTarget,
-      unit,
       linkedTasks
     }: {
       situationId: string;
       projectId: string;
       currentProblem?: string;
       targetGoal?: string;
-      numericCurrent?: number | null;
-      numericTarget?: number | null;
-      unit?: string | null;
       linkedTasks?: string[];
     }) => {
       // Update situation
       const updateData: any = { updated_at: new Date().toISOString() };
       if (currentProblem !== undefined) updateData.current_problem = currentProblem;
       if (targetGoal !== undefined) updateData.target_goal = targetGoal;
-      if (numericCurrent !== undefined) updateData.numeric_current = numericCurrent;
-      if (numericTarget !== undefined) updateData.numeric_target = numericTarget;
-      if (unit !== undefined) updateData.unit = unit;
 
       const { error } = await supabase
         .from('project_situations')

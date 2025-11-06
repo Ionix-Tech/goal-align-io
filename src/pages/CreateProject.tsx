@@ -33,9 +33,6 @@ interface Situation {
   id: string;
   currentProblem: string;
   targetGoal: string;
-  numericCurrent?: string;
-  numericTarget?: string;
-  unit?: string;
 }
 
 interface Profile {
@@ -158,10 +155,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
             setSituations(situationsData.map(s => ({
               id: s.id,
               currentProblem: s.current_problem,
-              targetGoal: s.target_goal,
-              numericCurrent: s.numeric_current?.toString() || "",
-              numericTarget: s.numeric_target?.toString() || "",
-              unit: s.unit || ""
+              targetGoal: s.target_goal
             })));
           }
 
@@ -227,10 +221,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     const newSituation: Situation = {
       id: crypto.randomUUID(),
       currentProblem: "",
-      targetGoal: "",
-      numericCurrent: "",
-      numericTarget: "",
-      unit: ""
+      targetGoal: ""
     };
     setSituations([...situations, newSituation]);
   };
@@ -396,9 +387,6 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
               project_id: projectId,
               current_problem: sit.currentProblem,
               target_goal: sit.targetGoal,
-              numeric_current: sit.numericCurrent ? parseFloat(sit.numericCurrent) : null,
-              numeric_target: sit.numericTarget ? parseFloat(sit.numericTarget) : null,
-              unit: sit.unit || null,
               display_order: index,
               created_by: user?.id
             }))
@@ -605,38 +593,6 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                           onChange={(e) => updateSituation(situation.id, "targetGoal", e.target.value)}
                           rows={2}
                           className="resize-none"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Valores Numéricos (Opcional) */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Valor Atual</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Ex: 45"
-                          value={situation.numericCurrent}
-                          onChange={(e) => updateSituation(situation.id, "numericCurrent", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Valor Alvo</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Ex: 15"
-                          value={situation.numericTarget}
-                          onChange={(e) => updateSituation(situation.id, "numericTarget", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Unidade</Label>
-                        <Input
-                          placeholder="Ex: %"
-                          value={situation.unit}
-                          onChange={(e) => updateSituation(situation.id, "unit", e.target.value)}
                         />
                       </div>
                     </div>

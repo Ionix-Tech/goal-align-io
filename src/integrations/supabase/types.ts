@@ -405,11 +405,8 @@ export type Database = {
           current_problem: string
           display_order: number
           id: string
-          numeric_current: number | null
-          numeric_target: number | null
           project_id: string
           target_goal: string
-          unit: string | null
           updated_at: string
         }
         Insert: {
@@ -418,11 +415,8 @@ export type Database = {
           current_problem: string
           display_order?: number
           id?: string
-          numeric_current?: number | null
-          numeric_target?: number | null
           project_id: string
           target_goal: string
-          unit?: string | null
           updated_at?: string
         }
         Update: {
@@ -431,11 +425,8 @@ export type Database = {
           current_problem?: string
           display_order?: number
           id?: string
-          numeric_current?: number | null
-          numeric_target?: number | null
           project_id?: string
           target_goal?: string
-          unit?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -667,6 +658,98 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      situation_attachments: {
+        Row: {
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          situation_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          situation_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          situation_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "situation_attachments_situation_id_fkey"
+            columns: ["situation_id"]
+            isOneToOne: false
+            referencedRelation: "project_situations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "situation_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      situation_indicators: {
+        Row: {
+          created_at: string
+          current_value: number
+          display_order: number
+          id: string
+          name: string
+          situation_id: string
+          target_value: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_value: number
+          display_order?: number
+          id?: string
+          name: string
+          situation_id: string
+          target_value: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          display_order?: number
+          id?: string
+          name?: string
+          situation_id?: string
+          target_value?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "situation_indicators_situation_id_fkey"
+            columns: ["situation_id"]
+            isOneToOne: false
+            referencedRelation: "project_situations"
             referencedColumns: ["id"]
           },
         ]

@@ -91,11 +91,6 @@ export function SituationManagement({ projectId }: SituationManagementProps) {
                               Situação Atual
                             </p>
                             <p className="text-sm">{situation.current_problem}</p>
-                            {situation.numeric_current !== null && (
-                              <p className="text-lg font-bold text-red-600">
-                                {situation.numeric_current} {situation.unit}
-                              </p>
-                            )}
                           </div>
 
                           {/* Arrow */}
@@ -109,13 +104,44 @@ export function SituationManagement({ projectId }: SituationManagementProps) {
                               Situação Alvo
                             </p>
                             <p className="text-sm">{situation.target_goal}</p>
-                            {situation.numeric_target !== null && (
-                              <p className="text-lg font-bold text-green-600">
-                                {situation.numeric_target} {situation.unit}
-                              </p>
-                            )}
                           </div>
                         </div>
+
+                        {/* Indicators */}
+                        {situation.indicators && situation.indicators.length > 0 && (
+                          <div className="pt-3 border-t space-y-2">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase">
+                              Indicadores
+                            </p>
+                            <div className="space-y-1">
+                              {situation.indicators.map((ind: any) => (
+                                <div key={ind.id} className="flex items-center gap-2 text-sm">
+                                  <span className="font-medium">{ind.name}:</span>
+                                  <span className="text-red-600">{ind.current_value}</span>
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-green-600">{ind.target_value}</span>
+                                  {ind.unit && <span className="text-muted-foreground">{ind.unit}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Attachments */}
+                        {situation.attachments && situation.attachments.length > 0 && (
+                          <div className="pt-2 border-t">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                              Anexos
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {situation.attachments.map((att: any) => (
+                                <Badge key={att.id} variant="secondary" className="text-xs">
+                                  📎 {att.file_name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Linked Tasks */}
                         {situation.linked_tasks && situation.linked_tasks.length > 0 && (
