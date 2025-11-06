@@ -37,18 +37,18 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="flex-1 flex flex-col">
           <header className="sticky top-0 z-10 h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-full items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger />
-                <FreitasLogo className="h-8 w-8" />
-                <div>
-                  <div className="font-bold text-lg bg-gradient-to-r from-freitas-magenta to-freitas-orange bg-clip-text text-transparent">
-                    COMPASS
-                  </div>
-                  <div className="text-[10px] text-muted-foreground -mt-1">
-                    by Freitas
-                  </div>
-                </div>
+          <div className="flex items-center gap-3">
+            <SidebarTrigger />
+            <FreitasLogo className="h-8 w-8" />
+            <div>
+              <div className="font-bold text-lg text-foreground">
+                COMPASS
               </div>
+              <div className="text-[10px] text-muted-foreground -mt-1">
+                by Freitas
+              </div>
+            </div>
+          </div>
               <div className="flex items-center gap-2">
                 <NotificationBell />
                 <Button variant="ghost" size="sm" onClick={handleSignOut}>

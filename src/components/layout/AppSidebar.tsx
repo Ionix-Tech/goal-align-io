@@ -68,7 +68,7 @@ export function AppSidebar() {
           <FreitasLogo className="h-10 w-10" />
           {open && (
             <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-freitas-magenta to-freitas-orange bg-clip-text text-transparent">
+              <h2 className="text-xl font-bold text-foreground">
                 COMPASS
               </h2>
               <p className="text-xs text-muted-foreground">Freitas Portfolio</p>
