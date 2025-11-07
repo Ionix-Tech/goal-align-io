@@ -64,14 +64,15 @@ export async function createNotification(
   type: string,
   message: string
 ) {
-  const { error } = await supabase
-    .from('notifications')
-    .insert({
-      user_id: userId,
-      project_id: projectId,
+  const { data, error } = await supabase.functions.invoke('create-notification', {
+    body: {
+      userId,
+      projectId,
       type,
       message
-    });
+    }
+  });
 
   if (error) throw error;
+  return data;
 }

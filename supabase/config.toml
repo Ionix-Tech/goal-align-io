@@ -1,4 +1,4 @@
 project_id = "oddjqyvmkkzcagcyeofv"
 
-[functions.populate-test-data]
-verify_jwt = false
+[functions.create-notification]
+verify_jwt = true
