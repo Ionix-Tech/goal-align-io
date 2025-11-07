@@ -32,7 +32,7 @@ export default function Auth() {
 
   // Redirect if already logged in
   if (user) {
-    navigate("/strategy");
+    navigate("/prioritization");
     return null;
   }
 
@@ -59,7 +59,7 @@ export default function Auth() {
         toast({
           title: "Login realizado com sucesso!",
         });
-        navigate("/strategy");
+        navigate("/prioritization");
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -100,7 +100,7 @@ export default function Auth() {
           title: "Conta criada com sucesso!",
           description: "Você já pode fazer login.",
         });
-        navigate("/strategy");
+        navigate("/prioritization");
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
