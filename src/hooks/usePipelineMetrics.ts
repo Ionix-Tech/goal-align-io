@@ -82,6 +82,11 @@ export function usePipelineMetrics() {
           fill: 'hsl(142, 76%, 36%)',
           conversionRate: approvalRate,
         },
+        {
+          name: 'Arquivados',
+          count: statusCounts.archived,
+          fill: 'hsl(var(--muted))',
+        },
       ];
 
       return {

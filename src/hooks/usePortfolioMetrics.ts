@@ -104,9 +104,13 @@ export function usePortfolioMetrics() {
 
       // Pillar distribution
       const pillarCounts: Record<string, number> = {};
+      let projectsWithoutPillar = 0;
+      
       allProjects.forEach(p => {
         if (p.strategic_pillar) {
           pillarCounts[p.strategic_pillar] = (pillarCounts[p.strategic_pillar] || 0) + 1;
+        } else {
+          projectsWithoutPillar++;
         }
       });
 
@@ -115,6 +119,15 @@ export function usePortfolioMetrics() {
         value,
         fill: PILLAR_COLORS[key] || 'hsl(var(--chart-1))',
       }));
+
+      // Add projects without pillar if any exist
+      if (projectsWithoutPillar > 0) {
+        pillarDistribution.push({
+          name: 'Sem Pilar Definido',
+          value: projectsWithoutPillar,
+          fill: 'hsl(var(--muted))',
+        });
+      }
 
       // Health distribution for approved projects
       const healthCounts = { green: 0, yellow: 0, red: 0, unknown: 0 };
