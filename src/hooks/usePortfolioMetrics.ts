@@ -35,11 +35,11 @@ export interface PortfolioMetrics {
 }
 
 const PILLAR_COLORS: Record<string, string> = {
-  'operational_efficiency': 'hsl(var(--chart-1))',
-  'sales_expansion': 'hsl(var(--chart-2))',
-  'new_business': 'hsl(var(--chart-3))',
-  'customer_experience': 'hsl(var(--chart-4))',
-  'digital_transformation': 'hsl(var(--chart-5))',
+  'operational_efficiency': 'hsl(217, 91%, 60%)',
+  'sales_expansion': 'hsl(142, 76%, 45%)',
+  'new_business': 'hsl(271, 91%, 65%)',
+  'customer_experience': 'hsl(330, 85%, 55%)',
+  'digital_transformation': 'hsl(188, 85%, 50%)',
 };
 
 const PILLAR_LABELS: Record<string, string> = {
@@ -125,7 +125,7 @@ export function usePortfolioMetrics() {
         pillarDistribution.push({
           name: 'Sem Pilar Definido',
           value: projectsWithoutPillar,
-          fill: 'hsl(var(--muted))',
+          fill: 'hsl(240, 5%, 65%)',
         });
       }
 
