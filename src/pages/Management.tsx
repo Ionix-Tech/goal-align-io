@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings2, Filter } from "lucide-react";
+import { Settings2, Filter, Database as DatabaseIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -15,8 +17,32 @@ const Management = () => {
   const navigate = useNavigate();
   const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
   const [selectedHealth, setSelectedHealth] = useState<HealthStatus | 'all'>('all');
+  const [isGeneratingTestData, setIsGeneratingTestData] = useState(false);
 
   const { data: projects, isLoading } = useApprovedProjects(selectedPillar);
+
+  const handleGenerateTestData = async () => {
+    setIsGeneratingTestData(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('populate-test-data');
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        toast.success(data.message || 'Projeto de teste criado com sucesso!');
+        // Refresh the page to show the new project
+        window.location.reload();
+      } else {
+        throw new Error(data.error || 'Erro ao criar projeto de teste');
+      }
+    } catch (error) {
+      console.error('Error generating test data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error('Erro ao criar projeto de teste: ' + errorMessage);
+    } finally {
+      setIsGeneratingTestData(false);
+    }
+  };
 
   // Filter by health status
   const filteredProjects = selectedHealth === 'all'
@@ -48,6 +74,16 @@ const Management = () => {
               </p>
             </div>
           </div>
+          
+          <Button
+            onClick={handleGenerateTestData}
+            disabled={isGeneratingTestData}
+            variant="outline"
+            size="sm"
+          >
+            <DatabaseIcon className="h-4 w-4 mr-2" />
+            {isGeneratingTestData ? 'Gerando...' : 'Gerar Projeto A3 de Teste'}
+          </Button>
         </div>
 
         {/* Stats Cards */}
