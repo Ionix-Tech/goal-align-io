@@ -45,7 +45,13 @@ export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  const { role } = useUserRole();
+  const { role, loading } = useUserRole();
+  
+  console.log('[AppSidebar] Role state:', { role, loading });
+  
+  if (!loading && !role) {
+    console.log('[AppSidebar] No role found after loading, button will be hidden');
+  }
   
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     "Estratégia": true,
@@ -79,7 +85,12 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <div className="px-3 py-2 space-y-2">
-            {role && (
+            {loading ? (
+              <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"} disabled>
+                <Plus className="h-4 w-4 animate-pulse" />
+                {open && <span className="animate-pulse">Carregando...</span>}
+              </Button>
+            ) : role ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"}>
@@ -109,7 +120,7 @@ export function AppSidebar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
+            ) : null}
           </div>
 
           <SidebarGroupContent>
