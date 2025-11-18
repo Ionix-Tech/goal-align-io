@@ -22,6 +22,8 @@ import { SituationManagement } from "@/components/execution/SituationManagement"
 import { useProjectSituations } from "@/hooks/useProjectSituations";
 import { useA3ReportData } from "@/hooks/useA3ReportData";
 import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
+import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachmentsCard";
+import { Target, FileCheck } from "lucide-react";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -120,13 +122,13 @@ const ProjectExecution = () => {
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">📋 Visão Geral</TabsTrigger>
+            <TabsTrigger value="overview">📄 Capa</TabsTrigger>
             <TabsTrigger value="thesis">📄 Tese do Projeto</TabsTrigger>
             <TabsTrigger value="progress">📊 Progresso</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atualizações</TabsTrigger>
           </TabsList>
 
-          {/* Aba: Visão Geral */}
+          {/* Aba: Capa */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
@@ -162,6 +164,44 @@ const ProjectExecution = () => {
               </Card>
             </div>
 
+            {/* Objetivo do Projeto */}
+            {project.objective && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Objetivo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {project.objective}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Requisitos */}
+            {project.requirements && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileCheck className="h-5 w-5" />
+                    Requisitos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {project.requirements}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Anexos do Projeto */}
+            <ProjectAttachmentsCard projectId={projectId!} />
+
+            {/* Informações Rápidas */}
             <Card>
               <CardHeader>
                 <CardTitle>Informações Rápidas</CardTitle>
