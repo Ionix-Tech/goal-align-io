@@ -15,6 +15,7 @@ const Prioritization = () => {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [search, setSearch] = useState('');
   const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
+  const [selectedThesis, setSelectedThesis] = useState<string | null>(null);
 
   const { role } = useUserRole();
   const navigate = useNavigate();
@@ -151,6 +152,8 @@ const Prioritization = () => {
           onSearchChange={setSearch}
           selectedPillar={selectedPillar}
           onPillarChange={setSelectedPillar}
+          selectedThesis={selectedThesis}
+          onThesisChange={setSelectedThesis}
         />
 
         {/* View Toggle and Content */}

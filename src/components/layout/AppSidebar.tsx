@@ -1,5 +1,5 @@
 import { Plus, Target, ClipboardCheck, Brain, Lightbulb, ChevronDown, ChevronRight, ListOrdered, FolderKanban, FileText } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   Sidebar,
@@ -44,6 +44,7 @@ const menuItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
   const { role, loading } = useUserRole();
   
@@ -118,6 +119,13 @@ export function AppSidebar() {
                       <span>Novo Projeto</span>
                     </NavLink>
                   </DropdownMenuItem>
+
+                  {(role === 'ceo' || role === 'pmo_manager') && (
+                    <DropdownMenuItem onClick={() => navigate("/theses")}>
+                      <Target className="h-4 w-4" />
+                      <span>Nova Tese</span>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
