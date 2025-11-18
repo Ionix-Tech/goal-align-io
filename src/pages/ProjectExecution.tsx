@@ -121,16 +121,17 @@ const ProjectExecution = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
+            <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
             <TabsTrigger value="thesis">📄 Tese do Projeto</TabsTrigger>
-            <TabsTrigger value="progress">📊 Progresso</TabsTrigger>
+            <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atualizações</TabsTrigger>
           </TabsList>
 
           {/* Aba: Capa */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">Milestones</CardTitle>
@@ -140,16 +141,6 @@ const ProjectExecution = () => {
                     {project.milestones.filter(m => m.completed).length}/{project.milestones.length}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">concluídos</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Indicadores</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{project.indicators.length}</div>
-                  <p className="text-xs text-muted-foreground mt-1">em acompanhamento</p>
                 </CardContent>
               </Card>
 
@@ -229,6 +220,57 @@ const ProjectExecution = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Aba: Indicadores */}
+          <TabsContent value="indicators" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Indicadores de Desempenho</h3>
+                <p className="text-sm text-muted-foreground">
+                  Acompanhe as métricas e evolução do projeto
+                </p>
+              </div>
+              <Button onClick={() => setShowAddIndicatorDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Indicador
+              </Button>
+            </div>
+
+            <IndicatorCards
+              indicators={project.indicators.map(ind => ({
+                id: ind.id,
+                name: ind.name,
+                current_state: ind.current_state,
+                target_state: ind.target_state,
+                unit: ind.unit,
+                progress: 0, // TODO: calculate from indicator updates
+                trend: undefined,
+                lastUpdate: undefined
+              }))}
+              onUpdateIndicator={(indicatorId) => {
+                const indicator = project.indicators.find(i => i.id === indicatorId);
+                if (indicator) {
+                  setSelectedIndicator({
+                    id: indicator.id,
+                    name: indicator.name,
+                    unit: indicator.unit
+                  });
+                  setShowIndicatorMeasurementDialog(true);
+                }
+              }}
+              onViewHistory={(indicatorId) => {
+                const indicator = project.indicators.find(i => i.id === indicatorId);
+                if (indicator) {
+                  setSelectedIndicator({
+                    id: indicator.id,
+                    name: indicator.name,
+                    unit: indicator.unit
+                  });
+                  setShowIndicatorHistoryDialog(true);
+                }
+              }}
+            />
           </TabsContent>
 
           {/* Aba: Tese do Projeto */}
@@ -311,7 +353,7 @@ const ProjectExecution = () => {
             </Card>
           </TabsContent>
 
-          {/* Aba: Progresso */}
+          {/* Aba: Milestones */}
           <TabsContent value="progress" className="space-y-6">
             {/* Milestones Timeline */}
             <div className="space-y-3">
@@ -341,52 +383,6 @@ const ProjectExecution = () => {
                   if (milestone) {
                     setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: milestone.progress || 0 });
                     setShowMilestoneHistoryDialog(true);
-                  }
-                }}
-              />
-            </div>
-
-            <Separator className="my-8" />
-
-            {/* Indicators */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Indicadores de Desempenho</h2>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{project.indicators.length} indicadores</Badge>
-                  <Button size="sm" onClick={() => setShowAddIndicatorDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Indicador
-                  </Button>
-                </div>
-              </div>
-              <IndicatorCards
-                indicators={project.indicators.map(ind => ({
-                  ...ind,
-                  progress: 0, // TODO: calculate from indicator updates
-                  trend: undefined,
-                  lastUpdate: undefined
-                }))}
-                onUpdateIndicator={(indicatorId) => {
-                  const indicator = project.indicators.find(i => i.id === indicatorId);
-                  if (indicator) {
-                    setSelectedIndicator({ 
-                      id: indicator.id, 
-                      name: indicator.name, 
-                      unit: indicator.unit 
-                    });
-                    setShowIndicatorMeasurementDialog(true);
-                  }
-                }}
-                onViewHistory={(indicatorId) => {
-                  const indicator = project.indicators.find(i => i.id === indicatorId);
-                  if (indicator) {
-                    setSelectedIndicator({ 
-                      id: indicator.id, 
-                      name: indicator.name, 
-                      unit: indicator.unit 
-                    });
-                    setShowIndicatorHistoryDialog(true);
                   }
                 }}
               />
