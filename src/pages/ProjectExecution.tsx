@@ -244,9 +244,9 @@ const ProjectExecution = () => {
                 current_state: ind.current_state,
                 target_state: ind.target_state,
                 unit: ind.unit,
-                progress: 0, // TODO: calculate from indicator updates
-                trend: undefined,
-                lastUpdate: undefined
+                progress: ind.progress ?? 0,
+                trend: ind.trend,
+                lastUpdate: ind.lastUpdate ?? null
               }))}
               onUpdateIndicator={(indicatorId) => {
                 const indicator = project.indicators.find(i => i.id === indicatorId);
@@ -427,6 +427,7 @@ const ProjectExecution = () => {
             indicatorId={selectedIndicator.id}
             indicatorName={selectedIndicator.name}
             unit={selectedIndicator.unit}
+            projectId={projectId!}
           />
           <IndicatorHistoryDialog
             open={showIndicatorHistoryDialog}

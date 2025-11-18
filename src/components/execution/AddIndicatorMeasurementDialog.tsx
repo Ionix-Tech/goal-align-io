@@ -15,6 +15,7 @@ interface AddIndicatorMeasurementDialogProps {
   indicatorId: string;
   indicatorName: string;
   unit?: string | null;
+  projectId: string;
 }
 
 export function AddIndicatorMeasurementDialog({
@@ -22,7 +23,8 @@ export function AddIndicatorMeasurementDialog({
   onOpenChange,
   indicatorId,
   indicatorName,
-  unit
+  unit,
+  projectId
 }: AddIndicatorMeasurementDialogProps) {
   const [measuredValue, setMeasuredValue] = useState("");
   const [measurementDate, setMeasurementDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -39,6 +41,7 @@ export function AddIndicatorMeasurementDialog({
     }
 
     await createUpdate.mutateAsync({
+      projectId,
       indicatorId,
       measuredValue: measuredValue.trim(),
       measurementDate,
