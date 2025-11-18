@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Zap, FileText, Lightbulb } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { THESIS_TYPE_COLORS } from "@/config/thesisTemplates";
 
@@ -15,6 +16,7 @@ interface KanbanCardProps {
     name: string;
     strategic_pillar: StrategicPillar | null;
     updated_at: string | null;
+    initiative_type?: string;
     assigned_to_profile?: {
       full_name: string;
       avatar_url: string | null;
@@ -47,6 +49,22 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
 
   const pillarConfig = project.strategic_pillar ? PILLAR_CONFIG[project.strategic_pillar] : null;
 
+  const getInitiativeTypeInfo = () => {
+    switch (project.initiative_type) {
+      case 'action_plan':
+        return { icon: Zap, label: 'Plano', variant: 'secondary' as const, className: 'text-green-600 bg-green-500/10' };
+      case 'project':
+        return { icon: FileText, label: 'Projeto', variant: 'default' as const, className: 'text-blue-600 bg-blue-500/10' };
+      case 'idea':
+        return { icon: Lightbulb, label: 'Ideia', variant: 'outline' as const, className: 'text-yellow-600 bg-yellow-500/10' };
+      default:
+        return { icon: FileText, label: 'Projeto', variant: 'default' as const, className: 'text-blue-600 bg-blue-500/10' };
+    }
+  };
+
+  const typeInfo = getInitiativeTypeInfo();
+  const TypeIcon = typeInfo.icon;
+
   return (
     <Card
       className={cn(
@@ -57,10 +75,16 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
       onClick={onClick}
     >
       <div className="space-y-3">
-        {/* Nome do projeto */}
-        <h4 className="font-medium text-sm line-clamp-2 leading-snug">
-          {project.name}
-        </h4>
+        {/* Nome e tipo */}
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="font-medium text-sm line-clamp-2 leading-snug flex-1">
+            {project.name}
+          </h4>
+          <Badge variant={typeInfo.variant} className={cn("text-xs shrink-0", typeInfo.className)}>
+            <TypeIcon className="h-3 w-3 mr-1" />
+            {typeInfo.label}
+          </Badge>
+        </div>
 
         {/* Tese e Pilar estratégico */}
         <div className="flex flex-wrap gap-2">

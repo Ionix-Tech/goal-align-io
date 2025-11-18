@@ -16,6 +16,7 @@ const Prioritization = () => {
   const [search, setSearch] = useState('');
   const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
   const [selectedThesis, setSelectedThesis] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<Database['public']['Enums']['initiative_type'] | null>(null);
 
   const { role } = useUserRole();
   const navigate = useNavigate();
@@ -41,7 +42,8 @@ const Prioritization = () => {
   
   const filters = {
     search,
-    strategic_pillar: selectedPillar || undefined
+    strategic_pillar: selectedPillar || undefined,
+    initiative_type: selectedType || undefined
   };
   
   const { data, isLoading } = useProjects(filters);
@@ -58,12 +60,15 @@ const Prioritization = () => {
     navigate(`/projects/${project.id}`);
   };
 
-  // Calculate stats
+  // Calculate stats with type separation
   const stats = {
     ideas: projectsByStatus.idea?.length || 0,
-    drafts: projectsByStatus.draft?.length || 0,
-    review: projectsByStatus.review?.length || 0,
-    approved: projectsByStatus.approved?.length || 0,
+    drafts_projects: projectsByStatus.draft?.filter(p => p.initiative_type === 'project').length || 0,
+    drafts_plans: projectsByStatus.draft?.filter(p => p.initiative_type === 'action_plan').length || 0,
+    review_projects: projectsByStatus.review?.filter(p => p.initiative_type === 'project').length || 0,
+    review_plans: projectsByStatus.review?.filter(p => p.initiative_type === 'action_plan').length || 0,
+    approved_projects: projectsByStatus.approved?.filter(p => p.initiative_type === 'project').length || 0,
+    approved_plans: projectsByStatus.approved?.filter(p => p.initiative_type === 'action_plan').length || 0,
     archived: projectsByStatus.archived?.length || 0
   };
 
@@ -105,19 +110,25 @@ const Prioritization = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.drafts}</div>
+              <div className="text-2xl font-bold">{stats.drafts_projects + stats.drafts_plans}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {stats.drafts_projects} projetos · {stats.drafts_plans} planos
+              </div>
             </CardContent>
           </Card>
 
-          <Card className={role === 'ceo' && stats.review > 0 ? "ring-2 ring-orange-500" : ""}>
+          <Card className={role === 'ceo' && (stats.review_projects + stats.review_plans) > 0 ? "ring-2 ring-orange-500" : ""}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 ⏳ Em Análise
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.review}</div>
-              {role === 'ceo' && stats.review > 0 && (
+              <div className="text-2xl font-bold">{stats.review_projects + stats.review_plans}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {stats.review_projects} projetos · {stats.review_plans} planos
+              </div>
+              {role === 'ceo' && (stats.review_projects + stats.review_plans) > 0 && (
                 <p className="text-xs text-orange-600 mt-1">Aguardando sua aprovação</p>
               )}
             </CardContent>
@@ -130,7 +141,10 @@ const Prioritization = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.approved}</div>
+              <div className="text-2xl font-bold">{stats.approved_projects + stats.approved_plans}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {stats.approved_projects} projetos · {stats.approved_plans} planos
+              </div>
             </CardContent>
           </Card>
 
@@ -154,6 +168,8 @@ const Prioritization = () => {
           onPillarChange={setSelectedPillar}
           selectedThesis={selectedThesis}
           onThesisChange={setSelectedThesis}
+          selectedType={selectedType}
+          onTypeChange={setSelectedType}
         />
 
         {/* View Toggle and Content */}
