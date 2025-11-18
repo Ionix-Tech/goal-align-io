@@ -46,12 +46,14 @@ export function useCreateIndicatorUpdate() {
 
   return useMutation({
     mutationFn: async ({
+      projectId,
       indicatorId,
       measuredValue,
       measurementDate,
       progressPercentage,
       notes
     }: {
+      projectId: string;
       indicatorId: string;
       measuredValue: string;
       measurementDate: string;
@@ -76,7 +78,7 @@ export function useCreateIndicatorUpdate() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['indicator-updates', variables.indicatorId] });
-      queryClient.invalidateQueries({ queryKey: ['project-details'] });
+      queryClient.invalidateQueries({ queryKey: ['project-details', variables.projectId] });
       queryClient.invalidateQueries({ queryKey: ['approved-projects'] });
       toast.success('Indicador atualizado com sucesso');
     },
