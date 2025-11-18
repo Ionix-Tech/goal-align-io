@@ -123,8 +123,8 @@ const ProjectExecution = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
-            <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
             <TabsTrigger value="thesis">📄 Tese do Projeto</TabsTrigger>
+            <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atualizações</TabsTrigger>
           </TabsList>
