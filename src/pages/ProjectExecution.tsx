@@ -92,6 +92,9 @@ const ProjectExecution = () => {
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold">{project.name}</h1>
+                  <Badge variant={project.initiative_type === 'action_plan' ? "secondary" : "default"}>
+                    {project.initiative_type === 'action_plan' ? "Plano de Ação" : "Projeto"}
+                  </Badge>
                   <HealthStatusBadge status={null} size="md" showLabel />
                 </div>
                 <div className="flex items-center gap-2 mt-1">
@@ -131,95 +134,182 @@ const ProjectExecution = () => {
 
           {/* Aba: Capa */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Milestones</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {project.milestones.filter(m => m.completed).length}/{project.milestones.length}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">concluídos</p>
-                </CardContent>
-              </Card>
+            {project.initiative_type === 'action_plan' ? (
+              // Visualização 5W2H para Plano de Ação
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="h-5 w-5" />
+                      Plano de Ação - 5W2H
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">O quê? (What)</h4>
+                      <p className="text-sm text-muted-foreground">{project.what || 'Não definido'}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-2">Por quê? (Why)</h4>
+                      <p className="text-sm text-muted-foreground">{project.why || 'Não definido'}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-2">Quem? (Who)</h4>
+                      <p className="text-sm text-muted-foreground">{project.who || 'Não definido'}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-2">Onde? (Where)</h4>
+                      <p className="text-sm text-muted-foreground">{project.where_location || 'Não definido'}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-2">Quando? (When)</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Início: {project.when_start ? new Date(project.when_start).toLocaleDateString('pt-BR') : 'Não definido'}
+                        <br />
+                        Fim: {project.when_end ? new Date(project.when_end).toLocaleDateString('pt-BR') : 'Não definido'}
+                      </p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-2">Como? (How)</h4>
+                      <p className="text-sm text-muted-foreground">{project.how || 'Ver aba Tarefas'}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-2">Quanto? (How Much)</h4>
+                      <p className="text-sm text-muted-foreground">{project.how_much || 'Não definido'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Membros</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{project.members.length}</div>
-                  <p className="text-xs text-muted-foreground mt-1">no time</p>
-                </CardContent>
-              </Card>
-            </div>
+                <ProjectAttachmentsCard projectId={projectId!} />
 
-            {/* Objetivo do Projeto */}
-            {project.objective && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Objetivo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {project.objective}
-                  </p>
-                </CardContent>
-              </Card>
+                {/* Informações Rápidas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informações Rápidas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Gestor Responsável</p>
+                      <p className="text-base mt-1">
+                        {project.assignee?.full_name || 'Não atribuído'}
+                      </p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Criado por</p>
+                      <p className="text-base mt-1">{project.creator?.full_name}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Data de Aprovação</p>
+                      <p className="text-base mt-1">
+                        {project.approved_at
+                          ? new Date(project.approved_at).toLocaleDateString('pt-BR')
+                          : 'N/A'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              // Visualização normal para Projeto
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium">Milestones</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {project.milestones.filter(m => m.completed).length}/{project.milestones.length}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">concluídos</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium">Membros</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{project.members.length}</div>
+                      <p className="text-xs text-muted-foreground mt-1">no time</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Objetivo do Projeto */}
+                {project.objective && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        Objetivo
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {project.objective}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Requisitos */}
+                {project.requirements && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileCheck className="h-5 w-5" />
+                        Requisitos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {project.requirements}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <ProjectAttachmentsCard projectId={projectId!} />
+
+                {/* Informações Rápidas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informações Rápidas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Gestor Responsável</p>
+                      <p className="text-base mt-1">
+                        {project.assignee?.full_name || 'Não atribuído'}
+                      </p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Criado por</p>
+                      <p className="text-base mt-1">{project.creator?.full_name}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Data de Aprovação</p>
+                      <p className="text-base mt-1">
+                        {project.approved_at
+                          ? new Date(project.approved_at).toLocaleDateString('pt-BR')
+                          : 'N/A'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
-
-            {/* Requisitos */}
-            {project.requirements && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileCheck className="h-5 w-5" />
-                    Requisitos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {project.requirements}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Anexos do Projeto */}
-            <ProjectAttachmentsCard projectId={projectId!} />
-
-            {/* Informações Rápidas */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Gestor Responsável</p>
-                  <p className="text-base mt-1">
-                    {project.assignee?.full_name || 'Não atribuído'}
-                  </p>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Criado por</p>
-                  <p className="text-base mt-1">{project.creator?.full_name}</p>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Data de Aprovação</p>
-                  <p className="text-base mt-1">
-                    {project.approved_at
-                      ? new Date(project.approved_at).toLocaleDateString('pt-BR')
-                      : 'N/A'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Aba: Indicadores */}
