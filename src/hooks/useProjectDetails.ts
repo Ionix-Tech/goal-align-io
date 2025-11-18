@@ -137,9 +137,9 @@ export function useProjectDetails(projectId: string | null) {
       const { data: indicatorUpdates } = indicators?.length
         ? await supabase
             .from('project_indicator_updates')
-            .select('indicator_id, progress_percentage, measured_value, measurement_date, updated_at')
+            .select('indicator_id, progress_percentage, measured_value, measurement_date')
             .in('indicator_id', indicators.map((ind: any) => ind.id))
-            .order('updated_at', { ascending: false })
+            .order('measurement_date', { ascending: false })
         : { data: null };
 
       // Calcular progresso, trend e última atualização de cada indicator
