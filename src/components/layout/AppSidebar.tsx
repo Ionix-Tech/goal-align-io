@@ -1,6 +1,7 @@
 import { Plus, Target, ClipboardCheck, Brain, Lightbulb, ChevronDown, ChevronRight, ListOrdered, FolderKanban, FileText } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { InitiativeTypeSelector } from "@/components/projects/InitiativeTypeSelector";
 import {
   Sidebar,
   SidebarContent,
@@ -47,6 +48,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const { role, loading } = useUserRole();
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
   
   console.log('[AppSidebar] Role state:', { role, loading });
   
@@ -192,6 +194,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <InitiativeTypeSelector 
+        open={showTypeSelector} 
+        onClose={() => setShowTypeSelector(false)} 
+      />
     </Sidebar>
   );
 }

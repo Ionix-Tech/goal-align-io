@@ -4,6 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 
 type ProjectStatus = Database['public']['Enums']['project_status'];
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
+type InitiativeType = Database['public']['Enums']['initiative_type'];
 
 export type Project = Database['public']['Tables']['projects']['Row'] & {
   created_by_profile?: {
@@ -29,6 +30,7 @@ interface UseProjectsFilters {
   assigned_to?: string;
   search?: string;
   thesis_id?: string;
+  initiative_type?: InitiativeType;
 }
 
 export function useProjects(filters?: UseProjectsFilters) {
@@ -68,6 +70,10 @@ export function useProjects(filters?: UseProjectsFilters) {
         query = query.eq('thesis_id', filters.thesis_id);
       }
 
+      if (filters?.initiative_type) {
+        query = query.eq('initiative_type', filters.initiative_type);
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
@@ -88,9 +94,17 @@ export function useProjects(filters?: UseProjectsFilters) {
         archived: []
       } as Record<ProjectStatus, any[]>);
 
+      // Group by type
+      const projectsByType = {
+        projects: (data || []).filter(p => p.initiative_type === 'project'),
+        action_plans: (data || []).filter(p => p.initiative_type === 'action_plan'),
+        ideas: (data || []).filter(p => p.initiative_type === 'idea')
+      };
+
       return {
         all: (data || []) as any[],
-        byStatus: projectsByStatus
+        byStatus: projectsByStatus,
+        byType: projectsByType
       };
     }
   });

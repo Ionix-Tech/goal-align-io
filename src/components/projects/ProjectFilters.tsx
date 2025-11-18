@@ -8,6 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { useTheses } from "@/hooks/useTheses";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
+type InitiativeType = Database['public']['Enums']['initiative_type'];
 
 interface ProjectFiltersProps {
   search: string;
@@ -16,6 +17,8 @@ interface ProjectFiltersProps {
   onPillarChange: (pillar: StrategicPillar | null) => void;
   selectedThesis?: string | null;
   onThesisChange?: (thesisId: string | null) => void;
+  selectedType?: InitiativeType | null;
+  onTypeChange?: (type: InitiativeType | null) => void;
 }
 
 const PILLARS: Array<{ value: StrategicPillar; label: string; icon: string }> = [
@@ -30,7 +33,9 @@ export function ProjectFilters({
   selectedPillar, 
   onPillarChange,
   selectedThesis,
-  onThesisChange
+  onThesisChange,
+  selectedType,
+  onTypeChange
 }: ProjectFiltersProps) {
   const { data: theses } = useTheses({ year: new Date().getFullYear() });
 
@@ -127,6 +132,26 @@ export function ProjectFilters({
               </button>
             </Badge>
           )}
+        </div>
+      )}
+
+      {/* Type filter */}
+      {onTypeChange && (
+        <div className="flex-1 min-w-[200px]">
+          <Select
+            value={selectedType || "all"}
+            onValueChange={(value) => onTypeChange(value === "all" ? null : value as InitiativeType)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Todos os tipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="idea">💡 Ideias</SelectItem>
+              <SelectItem value="project">📋 Projetos</SelectItem>
+              <SelectItem value="action_plan">⚡ Planos de Ação</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       )}
     </div>

@@ -596,7 +596,10 @@ export type Database = {
           created_at: string | null
           created_by: string
           description: string | null
+          how: string | null
+          how_much: string | null
           id: string
+          initiative_type: Database["public"]["Enums"]["initiative_type"]
           name: string
           objective: string | null
           requirements: string | null
@@ -607,6 +610,12 @@ export type Database = {
           submitted_for_review_at: string | null
           thesis_id: string | null
           updated_at: string | null
+          what: string | null
+          when_end: string | null
+          when_start: string | null
+          where_location: string | null
+          who: string | null
+          why: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -616,7 +625,10 @@ export type Database = {
           created_at?: string | null
           created_by: string
           description?: string | null
+          how?: string | null
+          how_much?: string | null
           id?: string
+          initiative_type?: Database["public"]["Enums"]["initiative_type"]
           name: string
           objective?: string | null
           requirements?: string | null
@@ -627,6 +639,12 @@ export type Database = {
           submitted_for_review_at?: string | null
           thesis_id?: string | null
           updated_at?: string | null
+          what?: string | null
+          when_end?: string | null
+          when_start?: string | null
+          where_location?: string | null
+          who?: string | null
+          why?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -636,7 +654,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           description?: string | null
+          how?: string | null
+          how_much?: string | null
           id?: string
+          initiative_type?: Database["public"]["Enums"]["initiative_type"]
           name?: string
           objective?: string | null
           requirements?: string | null
@@ -647,6 +668,12 @@ export type Database = {
           submitted_for_review_at?: string | null
           thesis_id?: string | null
           updated_at?: string | null
+          what?: string | null
+          when_end?: string | null
+          when_start?: string | null
+          where_location?: string | null
+          who?: string | null
+          why?: string | null
         }
         Relationships: [
           {
@@ -1032,6 +1059,7 @@ export type Database = {
     }
     Enums: {
       app_role: "ceo" | "pmo_manager" | "project_member"
+      initiative_type: "idea" | "project" | "action_plan"
       project_status: "idea" | "draft" | "review" | "approved" | "archived"
       strategic_pillar:
         | "operational_efficiency"
@@ -1170,6 +1198,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["ceo", "pmo_manager", "project_member"],
+      initiative_type: ["idea", "project", "action_plan"],
       project_status: ["idea", "draft", "review", "approved", "archived"],
       strategic_pillar: [
         "operational_efficiency",
