@@ -5,9 +5,18 @@ export interface ProjectDetails {
   id: string;
   name: string;
   description: string | null;
+  initiative_type: 'idea' | 'project' | 'action_plan';
   context: string | null;
   objective: string | null;
   requirements: string | null;
+  what: string | null;
+  why: string | null;
+  who: string | null;
+  where_location: string | null;
+  when_start: string | null;
+  when_end: string | null;
+  how: string | null;
+  how_much: string | null;
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
   status: 'idea' | 'draft' | 'review' | 'approved' | 'archived';
   created_at: string;
