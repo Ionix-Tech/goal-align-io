@@ -98,7 +98,7 @@ export function IndicatorCards({
               {/* Current vs Target */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Estado Atual</p>
+                  <p className="text-xs text-muted-foreground">Marcação inicial</p>
                   <p className="text-lg font-bold text-primary">
                     {indicator.current_state}
                     {indicator.unit && <span className="text-sm ml-1">{indicator.unit}</span>}

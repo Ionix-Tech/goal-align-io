@@ -22,6 +22,9 @@ export interface ProjectDetails {
     current_state: string;
     target_state: string;
     unit: string | null;
+    progress?: number;
+    trend?: 'up' | 'down' | 'stable';
+    lastUpdate?: string | null;
   }>;
   milestones: Array<{
     id: string;
@@ -130,10 +133,62 @@ export function useProjectDetails(projectId: string | null) {
         }
       });
 
+      // Buscar indicator updates apenas se houver indicators
+      const { data: indicatorUpdates } = indicators?.length
+        ? await supabase
+            .from('project_indicator_updates')
+            .select('indicator_id, progress_percentage, measured_value, measurement_date, updated_at')
+            .in('indicator_id', indicators.map((ind: any) => ind.id))
+            .order('updated_at', { ascending: false })
+        : { data: null };
+
+      // Calcular progresso, trend e última atualização de cada indicator
+      const indicatorProgressMap = new Map<string, number>();
+      const indicatorLastUpdateMap = new Map<string, string>();
+      const indicatorTrendMap = new Map<string, 'up' | 'down' | 'stable'>();
+
+      // Agrupar updates por indicator
+      const indicatorUpdatesGrouped = new Map<string, any[]>();
+      indicatorUpdates?.forEach((update: any) => {
+        if (!indicatorUpdatesGrouped.has(update.indicator_id)) {
+          indicatorUpdatesGrouped.set(update.indicator_id, []);
+        }
+        indicatorUpdatesGrouped.get(update.indicator_id)!.push(update);
+      });
+
+      // Processar cada indicator
+      indicatorUpdatesGrouped.forEach((updates, indicatorId) => {
+        if (updates.length > 0) {
+          // Pegar o progresso mais recente
+          indicatorProgressMap.set(indicatorId, updates[0].progress_percentage);
+          indicatorLastUpdateMap.set(indicatorId, updates[0].measurement_date);
+
+          // Calcular trend se houver pelo menos 2 medições
+          if (updates.length >= 2) {
+            const latest = updates[0].progress_percentage;
+            const previous = updates[1].progress_percentage;
+            const diff = latest - previous;
+
+            if (diff > 5) {
+              indicatorTrendMap.set(indicatorId, 'up');
+            } else if (diff < -5) {
+              indicatorTrendMap.set(indicatorId, 'down');
+            } else {
+              indicatorTrendMap.set(indicatorId, 'stable');
+            }
+          }
+        }
+      });
+
       // Montar o objeto final
       const data = {
         ...projectData,
-        indicators: indicators || [],
+        indicators: (indicators || []).map((ind: any) => ({
+          ...ind,
+          progress: indicatorProgressMap.get(ind.id) || 0,
+          trend: indicatorTrendMap.get(ind.id) || undefined,
+          lastUpdate: indicatorLastUpdateMap.get(ind.id) || null
+        })),
         milestones: (milestones || []).map((m: any) => ({
           ...m,
           progress: milestoneProgressMap.get(m.id) || 0
