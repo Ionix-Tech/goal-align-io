@@ -1,5 +1,5 @@
-import { Plus, Target, ClipboardCheck, Brain, Lightbulb, ChevronDown, ChevronRight, ListOrdered, FolderKanban, FileText } from "lucide-react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Plus, Target, ClipboardCheck, Brain, ChevronRight, ListOrdered, FolderKanban, FileText } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { InitiativeTypeSelector } from "@/components/projects/InitiativeTypeSelector";
 import {
@@ -20,12 +20,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const menuItems = [
@@ -45,7 +39,6 @@ const menuItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
-  const navigate = useNavigate();
   const currentPath = location.pathname;
   const { role, loading } = useUserRole();
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -94,42 +87,14 @@ export function AppSidebar() {
                 {open && <span className="animate-pulse">Carregando...</span>}
               </Button>
             ) : role ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button className="w-full justify-start gap-2" size={open ? "default" : "icon"}>
-                    <Plus className="h-4 w-4" />
-                    {open && (
-                      <>
-                        <span>Novo</span>
-                        <ChevronDown className="h-4 w-4 ml-auto" />
-                      </>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                
-                <DropdownMenuContent align="start" className="w-56 bg-background border border-border shadow-lg z-50">
-                  <DropdownMenuItem asChild>
-                    <NavLink to="/quick-idea" className="flex items-center gap-2 cursor-pointer">
-                      <Lightbulb className="h-4 w-4" />
-                      <span>Nova Ideia</span>
-                    </NavLink>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem asChild>
-                    <NavLink to="/create-project" className="flex items-center gap-2 cursor-pointer">
-                      <Plus className="h-4 w-4" />
-                      <span>Novo Projeto</span>
-                    </NavLink>
-                  </DropdownMenuItem>
-
-                  {(role === 'ceo' || role === 'pmo_manager') && (
-                    <DropdownMenuItem onClick={() => navigate("/theses")}>
-                      <Target className="h-4 w-4" />
-                      <span>Nova Tese</span>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button 
+                className="w-full justify-start gap-2" 
+                size={open ? "default" : "icon"}
+                onClick={() => setShowTypeSelector(true)}
+              >
+                <Plus className="h-4 w-4" />
+                {open && <span>Novo</span>}
+              </Button>
             ) : null}
           </div>
 
