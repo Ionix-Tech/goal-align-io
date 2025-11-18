@@ -13,8 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { useTheses } from "@/hooks/useTheses";
 import { useAuth } from "@/hooks/useAuth";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionPlanTaskManager";
 
 const actionPlanSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -25,7 +28,6 @@ const actionPlanSchema = z.object({
   where_location: z.string().optional(),
   when_start: z.string().optional(),
   when_end: z.string().min(1, "Prazo final é obrigatório"),
-  how: z.string().optional(),
   how_much: z.string().optional(),
 });
 
@@ -36,7 +38,9 @@ const CreateActionPlan = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: thesesData } = useTheses({});
+  const { data: teamMembers } = useTeamMembers();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tasks, setTasks] = useState<TaskInput[]>([]);
 
   const form = useForm<ActionPlanFormData>({
     resolver: zodResolver(actionPlanSchema),
@@ -49,7 +53,6 @@ const CreateActionPlan = () => {
       where_location: "",
       when_start: "",
       when_end: "",
-      how: "",
       how_much: "",
     },
   });
@@ -65,25 +68,46 @@ const CreateActionPlan = () => {
         where_location: data.where_location || null,
         when_start: data.when_start || null,
         when_end: data.when_end,
-        how: data.how || null,
+        how: null,
         how_much: data.how_much || null,
         initiative_type: "action_plan" as const,
         status: "draft" as const,
         created_by: user?.id!,
       };
 
-      const { data: plan, error } = await supabase
+      const { data: plan, error: planError } = await supabase
         .from("projects")
         .insert([insertData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (planError) throw planError;
+
+      // Criar as tarefas associadas
+      if (tasks.length > 0) {
+        const taskInserts = tasks.map(task => ({
+          project_id: plan.id,
+          title: task.title,
+          assigned_to: task.assigned_to || null,
+          due_date: task.due_date || null,
+          created_by: user?.id,
+          status: 'not_started',
+          priority: 'medium'
+        }));
+
+        const { error: tasksError } = await supabase
+          .from('project_tasks')
+          .insert(taskInserts);
+
+        if (tasksError) throw tasksError;
+      }
+
       return plan;
     },
-    onSuccess: () => {
+    onSuccess: (plan) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Plano de ação criado com sucesso!");
+      const taskCount = tasks.length;
+      toast.success(`Plano de ação criado com ${taskCount} ${taskCount === 1 ? 'tarefa' : 'tarefas'}!`);
       navigate("/prioritization");
     },
     onError: (error) => {
@@ -274,23 +298,14 @@ const CreateActionPlan = () => {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="how"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Como? (How)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Como será executado?" 
-                          {...field}
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <Label>Como? (How) - Tarefas do Plano</Label>
+                  <ActionPlanTaskManager
+                    tasks={tasks}
+                    onTasksChange={setTasks}
+                    members={teamMembers || []}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
