@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import { THESIS_TYPE_COLORS } from "@/config/thesisTemplates";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
 
@@ -18,6 +19,11 @@ interface KanbanCardProps {
       full_name: string;
       avatar_url: string | null;
     };
+    thesis?: {
+      id: string;
+      name: string;
+      thesis_type: string;
+    } | null;
     indicators: Array<{ id: string }>;
     milestones: Array<{ id: string; completed: boolean | null }>;
   };
@@ -56,12 +62,26 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
           {project.name}
         </h4>
 
-        {/* Pilar estratégico */}
-        {pillarConfig && (
-          <Badge variant="outline" className={cn("text-xs", pillarConfig.color)}>
-            {pillarConfig.label}
-          </Badge>
-        )}
+        {/* Tese e Pilar estratégico */}
+        <div className="flex flex-wrap gap-2">
+          {project.thesis && (
+            <Badge 
+              variant="outline" 
+              className="text-xs"
+              style={{ 
+                borderColor: THESIS_TYPE_COLORS[project.thesis.thesis_type],
+                color: THESIS_TYPE_COLORS[project.thesis.thesis_type]
+              }}
+            >
+              {project.thesis.name}
+            </Badge>
+          )}
+          {pillarConfig && (
+            <Badge variant="outline" className={cn("text-xs", pillarConfig.color)}>
+              {pillarConfig.label}
+            </Badge>
+          )}
+        </div>
 
         {/* Progresso */}
         <div className="flex items-center gap-3 text-xs text-muted-foreground">

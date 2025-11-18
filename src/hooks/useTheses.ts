@@ -1,0 +1,177 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
+
+type ThesisType = Database['public']['Enums']['thesis_type'];
+
+export interface Thesis {
+  id: string;
+  name: string;
+  description: string | null;
+  objective: string;
+  year: number;
+  period_start: string;
+  period_end: string;
+  thesis_type: ThesisType;
+  is_active: boolean;
+  is_archived: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  created_by_profile?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
+
+interface UseThesesFilters {
+  year?: number;
+  type?: ThesisType;
+  includeArchived?: boolean;
+}
+
+export function useTheses(filters?: UseThesesFilters) {
+  return useQuery({
+    queryKey: ['theses', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('strategic_theses')
+        .select(`
+          *,
+          created_by_profile:profiles!strategic_theses_created_by_fkey(full_name, avatar_url)
+        `)
+        .order('year', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (!filters?.includeArchived) {
+        query = query.eq('is_archived', false);
+      }
+
+      if (filters?.year) {
+        query = query.eq('year', filters.year);
+      }
+
+      if (filters?.type) {
+        query = query.eq('thesis_type', filters.type);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data as Thesis[];
+    }
+  });
+}
+
+export function useCreateThesis() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (thesis: Omit<Thesis, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'created_by_profile'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('strategic_theses')
+        .insert({
+          ...thesis,
+          created_by: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['theses'] });
+      toast({
+        title: "Tese criada",
+        description: "A tese estratégica foi criada com sucesso."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao criar tese",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+}
+
+export function useUpdateThesis() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Thesis> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('strategic_theses')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['theses'] });
+      toast({
+        title: "Tese atualizada",
+        description: "As alterações foram salvas com sucesso."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar tese",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+}
+
+export function useDeleteThesis() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Verificar se há projetos vinculados
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('thesis_id', id)
+        .limit(1);
+
+      if (projects && projects.length > 0) {
+        throw new Error('Não é possível excluir uma tese com projetos vinculados. Arquive-a ao invés disso.');
+      }
+
+      const { error } = await supabase
+        .from('strategic_theses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['theses'] });
+      toast({
+        title: "Tese excluída",
+        description: "A tese foi removida com sucesso."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao excluir tese",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+}

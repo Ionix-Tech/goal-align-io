@@ -605,6 +605,7 @@ export type Database = {
             | Database["public"]["Enums"]["strategic_pillar"]
             | null
           submitted_for_review_at: string | null
+          thesis_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -624,6 +625,7 @@ export type Database = {
             | Database["public"]["Enums"]["strategic_pillar"]
             | null
           submitted_for_review_at?: string | null
+          thesis_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -643,6 +645,7 @@ export type Database = {
             | Database["public"]["Enums"]["strategic_pillar"]
             | null
           submitted_for_review_at?: string | null
+          thesis_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -658,6 +661,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_thesis_id_fkey"
+            columns: ["thesis_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_theses"
             referencedColumns: ["id"]
           },
         ]
@@ -790,6 +800,62 @@ export type Database = {
           },
         ]
       }
+      strategic_theses: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_archived: boolean | null
+          name: string
+          objective: string
+          period_end: string
+          period_start: string
+          thesis_type: Database["public"]["Enums"]["thesis_type"]
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          name: string
+          objective: string
+          period_end: string
+          period_start: string
+          thesis_type: Database["public"]["Enums"]["thesis_type"]
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          name?: string
+          objective?: string
+          period_end?: string
+          period_start?: string
+          thesis_type?: Database["public"]["Enums"]["thesis_type"]
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_theses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_status_history: {
         Row: {
           changed_at: string
@@ -831,6 +897,97 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thesis_kpis: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          description: string | null
+          display_order: number | null
+          id: string
+          name: string
+          target_value: number
+          thesis_id: string
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          target_value: number
+          thesis_id: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          target_value?: number
+          thesis_id?: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thesis_kpis_thesis_id_fkey"
+            columns: ["thesis_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_theses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thesis_template_fields: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          field_key: string
+          field_label: string
+          field_type: string
+          field_value: string | null
+          id: string
+          options: Json | null
+          thesis_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          field_key: string
+          field_label: string
+          field_type: string
+          field_value?: string | null
+          id?: string
+          options?: Json | null
+          thesis_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          field_key?: string
+          field_label?: string
+          field_type?: string
+          field_value?: string | null
+          id?: string
+          options?: Json | null
+          thesis_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thesis_template_fields_thesis_id_fkey"
+            columns: ["thesis_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_theses"
             referencedColumns: ["id"]
           },
         ]
@@ -880,6 +1037,11 @@ export type Database = {
         | "operational_efficiency"
         | "sales_expansion"
         | "new_business"
+      thesis_type:
+        | "operational_efficiency"
+        | "sales_expansion"
+        | "new_business"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1013,6 +1175,12 @@ export const Constants = {
         "operational_efficiency",
         "sales_expansion",
         "new_business",
+      ],
+      thesis_type: [
+        "operational_efficiency",
+        "sales_expansion",
+        "new_business",
+        "custom",
       ],
     },
   },

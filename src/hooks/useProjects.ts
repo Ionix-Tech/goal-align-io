@@ -14,6 +14,11 @@ export type Project = Database['public']['Tables']['projects']['Row'] & {
     full_name: string;
     avatar_url: string | null;
   } | null;
+  thesis?: {
+    id: string;
+    name: string;
+    thesis_type: string;
+  } | null;
   indicators: Array<{ id: string }>;
   milestones: Array<{ id: string; completed: boolean | null }>;
 };
@@ -23,6 +28,7 @@ interface UseProjectsFilters {
   strategic_pillar?: StrategicPillar;
   assigned_to?: string;
   search?: string;
+  thesis_id?: string;
 }
 
 export function useProjects(filters?: UseProjectsFilters) {
@@ -35,6 +41,7 @@ export function useProjects(filters?: UseProjectsFilters) {
           *,
           created_by_profile:profiles!projects_created_by_fkey(full_name, avatar_url),
           assigned_to_profile:profiles!projects_assigned_to_fkey(full_name, avatar_url),
+          thesis:strategic_theses(id, name, thesis_type),
           indicators:project_indicators(id),
           milestones:project_milestones(id, completed)
         `)
@@ -55,6 +62,10 @@ export function useProjects(filters?: UseProjectsFilters) {
 
       if (filters?.search) {
         query = query.ilike('name', `%${filters.search}%`);
+      }
+
+      if (filters?.thesis_id) {
+        query = query.eq('thesis_id', filters.thesis_id);
       }
 
       const { data, error } = await query;

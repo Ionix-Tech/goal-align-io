@@ -2,8 +2,10 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
+import { useTheses } from "@/hooks/useTheses";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
 
@@ -12,6 +14,8 @@ interface ProjectFiltersProps {
   onSearchChange: (value: string) => void;
   selectedPillar: StrategicPillar | null;
   onPillarChange: (pillar: StrategicPillar | null) => void;
+  selectedThesis?: string | null;
+  onThesisChange?: (thesisId: string | null) => void;
 }
 
 const PILLARS: Array<{ value: StrategicPillar; label: string; icon: string }> = [
@@ -24,8 +28,12 @@ export function ProjectFilters({
   search, 
   onSearchChange, 
   selectedPillar, 
-  onPillarChange 
+  onPillarChange,
+  selectedThesis,
+  onThesisChange
 }: ProjectFiltersProps) {
+  const { data: theses } = useTheses({ year: new Date().getFullYear() });
+
   return (
     <div className="space-y-4">
       {/* Search */}
@@ -39,32 +47,51 @@ export function ProjectFilters({
         />
       </div>
 
-      {/* Pillar filters */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={selectedPillar === null ? "default" : "outline"}
-          size="sm"
-          onClick={() => onPillarChange(null)}
-        >
-          Todos
-        </Button>
-        
-        {PILLARS.map((pillar) => (
+      <div className="flex flex-wrap gap-3">
+        {/* Thesis filter */}
+        {onThesisChange && (
+          <Select value={selectedThesis || "all"} onValueChange={(v) => onThesisChange(v === "all" ? null : v)}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Filtrar por tese" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as teses</SelectItem>
+              {theses?.map(thesis => (
+                <SelectItem key={thesis.id} value={thesis.id}>
+                  {thesis.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Pillar filters */}
+        <div className="flex flex-wrap gap-2">
           <Button
-            key={pillar.value}
-            variant={selectedPillar === pillar.value ? "default" : "outline"}
+            variant={selectedPillar === null ? "default" : "outline"}
             size="sm"
-            onClick={() => onPillarChange(pillar.value)}
-            className="gap-1"
+            onClick={() => onPillarChange(null)}
           >
-            <span>{pillar.icon}</span>
-            {pillar.label}
+            Todos
           </Button>
-        ))}
+          
+          {PILLARS.map((pillar) => (
+            <Button
+              key={pillar.value}
+              variant={selectedPillar === pillar.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => onPillarChange(pillar.value)}
+              className="gap-1"
+            >
+              <span>{pillar.icon}</span>
+              {pillar.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Active filters */}
-      {(search || selectedPillar) && (
+      {(search || selectedPillar || selectedThesis) && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Filtros ativos:</span>
           {search && (
@@ -72,6 +99,17 @@ export function ProjectFilters({
               Busca: {search}
               <button
                 onClick={() => onSearchChange('')}
+                className="ml-1 hover:bg-muted rounded-full"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {selectedThesis && onThesisChange && (
+            <Badge variant="secondary" className="gap-1">
+              Tese: {theses?.find(t => t.id === selectedThesis)?.name}
+              <button
+                onClick={() => onThesisChange(null)}
                 className="ml-1 hover:bg-muted rounded-full"
               >
                 ×
