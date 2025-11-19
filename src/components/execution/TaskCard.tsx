@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock, XCircle, Eye, PauseCircle, History } from 'lucide-react';
+import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock, XCircle, Eye, PauseCircle, History, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TaskStatusUpdateDialog } from './TaskStatusUpdateDialog';
 import { TaskStatusHistoryDialog } from './TaskStatusHistoryDialog';
+import { TaskDateHistoryDialog } from './TaskDateHistoryDialog';
 
 interface TaskCardProps {
   task: ProjectTask;
@@ -20,6 +21,7 @@ interface TaskCardProps {
 export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [dateHistoryDialogOpen, setDateHistoryDialogOpen] = useState(false);
 
   const statusConfig = {
     not_started: { label: 'Não iniciada', icon: Circle, className: 'bg-muted text-muted-foreground' },
@@ -116,7 +118,11 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setHistoryDialogOpen(true)}>
               <History className="h-4 w-4 mr-2" />
-              Ver Histórico
+              Ver Histórico de Status
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDateHistoryDialogOpen(true)}>
+              <Calendar className="h-4 w-4 mr-2" />
+              Ver Histórico de Datas
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(task)}>
               Editar
@@ -140,6 +146,13 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       <TaskStatusHistoryDialog
         open={historyDialogOpen}
         onOpenChange={setHistoryDialogOpen}
+        taskId={task.id}
+        taskTitle={task.title}
+      />
+
+      <TaskDateHistoryDialog
+        open={dateHistoryDialogOpen}
+        onOpenChange={setDateHistoryDialogOpen}
         taskId={task.id}
         taskTitle={task.title}
       />

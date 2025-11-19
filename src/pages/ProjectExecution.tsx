@@ -12,6 +12,7 @@ import { MilestoneTimeline } from "@/components/execution/MilestoneTimeline";
 import { IndicatorCards } from "@/components/execution/IndicatorCards";
 import { AddMilestoneUpdateDialog } from "@/components/execution/AddMilestoneUpdateDialog";
 import { MilestoneHistoryDialog } from "@/components/execution/MilestoneHistoryDialog";
+import { MilestoneDateHistoryDialog } from "@/components/execution/MilestoneDateHistoryDialog";
 import { AddIndicatorMeasurementDialog } from "@/components/execution/AddIndicatorMeasurementDialog";
 import { IndicatorHistoryDialog } from "@/components/execution/IndicatorHistoryDialog";
 import { AddMilestoneDialog } from "@/components/execution/AddMilestoneDialog";
@@ -42,6 +43,7 @@ const ProjectExecution = () => {
   // Dialog states
   const [showMilestoneUpdateDialog, setShowMilestoneUpdateDialog] = useState(false);
   const [showMilestoneHistoryDialog, setShowMilestoneHistoryDialog] = useState(false);
+  const [showMilestoneDateHistoryDialog, setShowMilestoneDateHistoryDialog] = useState(false);
   const [showIndicatorMeasurementDialog, setShowIndicatorMeasurementDialog] = useState(false);
   const [showIndicatorHistoryDialog, setShowIndicatorHistoryDialog] = useState(false);
   const [showAddMilestoneDialog, setShowAddMilestoneDialog] = useState(false);
@@ -542,6 +544,13 @@ const ProjectExecution = () => {
                     setShowMilestoneHistoryDialog(true);
                   }
                 }}
+                onViewDateHistory={(milestoneId) => {
+                  const milestone = project.milestones.find(m => m.id === milestoneId);
+                  if (milestone) {
+                    setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: milestone.progress || 0 });
+                    setShowMilestoneDateHistoryDialog(true);
+                  }
+                }}
               />
             </div>
           </TabsContent>
@@ -570,6 +579,12 @@ const ProjectExecution = () => {
           <MilestoneHistoryDialog
             open={showMilestoneHistoryDialog}
             onOpenChange={setShowMilestoneHistoryDialog}
+            milestoneId={selectedMilestone.id}
+            milestoneTitle={selectedMilestone.title}
+          />
+          <MilestoneDateHistoryDialog
+            open={showMilestoneDateHistoryDialog}
+            onOpenChange={setShowMilestoneDateHistoryDialog}
             milestoneId={selectedMilestone.id}
             milestoneTitle={selectedMilestone.title}
           />

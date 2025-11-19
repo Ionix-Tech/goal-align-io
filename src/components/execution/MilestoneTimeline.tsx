@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, Plus } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -21,12 +21,14 @@ interface MilestoneTimelineProps {
   milestones: Milestone[];
   onUpdateMilestone: (milestoneId: string) => void;
   onViewHistory: (milestoneId: string) => void;
+  onViewDateHistory: (milestoneId: string) => void;
 }
 
 export function MilestoneTimeline({
   milestones,
   onUpdateMilestone,
-  onViewHistory
+  onViewHistory,
+  onViewDateHistory
 }: MilestoneTimelineProps) {
   if (milestones.length === 0) {
     return (
@@ -149,6 +151,14 @@ export function MilestoneTimeline({
                         onClick={() => onViewHistory(milestone.id)}
                       >
                         Ver Histórico
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onViewDateHistory(milestone.id)}
+                      >
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Histórico de Datas
                       </Button>
                     </div>
                   </div>
