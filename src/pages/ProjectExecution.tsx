@@ -48,7 +48,7 @@ const ProjectExecution = () => {
   const [showAddIndicatorDialog, setShowAddIndicatorDialog] = useState(false);
 
   const [selectedMilestone, setSelectedMilestone] = useState<{ id: string; title: string; progress: number } | null>(null);
-  const [selectedIndicator, setSelectedIndicator] = useState<{ id: string; name: string; unit?: string | null } | null>(null);
+  const [selectedIndicator, setSelectedIndicator] = useState<{ id: string; name: string; targetValue?: string; unit?: string | null } | null>(null);
 
   if (isLoading) {
     return (
@@ -357,6 +357,7 @@ const ProjectExecution = () => {
                   setSelectedIndicator({
                     id: indicator.id,
                     name: indicator.name,
+                    targetValue: indicator.target_state,
                     unit: indicator.unit
                   });
                   setShowIndicatorHistoryDialog(true);
@@ -526,6 +527,7 @@ const ProjectExecution = () => {
             onOpenChange={setShowIndicatorHistoryDialog}
             indicatorId={selectedIndicator.id}
             indicatorName={selectedIndicator.name}
+            targetValue={selectedIndicator.targetValue}
             unit={selectedIndicator.unit}
           />
         </>
