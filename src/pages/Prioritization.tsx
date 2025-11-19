@@ -9,12 +9,9 @@ import { useProjects } from "@/hooks/useProjects";
 import { useUserRole } from "@/hooks/useUserRole";
 import type { Database } from "@/integrations/supabase/types";
 
-type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
-
 const Prioritization = () => {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [search, setSearch] = useState('');
-  const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
   const [selectedThesis, setSelectedThesis] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<Database['public']['Enums']['initiative_type'] | null>(null);
 
@@ -42,7 +39,7 @@ const Prioritization = () => {
   
   const filters = {
     search,
-    strategic_pillar: selectedPillar || undefined,
+    thesis_id: selectedThesis || undefined,
     initiative_type: selectedType || undefined
   };
   
@@ -181,8 +178,6 @@ const Prioritization = () => {
         <ProjectFilters
           search={search}
           onSearchChange={setSearch}
-          selectedPillar={selectedPillar}
-          onPillarChange={setSelectedPillar}
           selectedThesis={selectedThesis}
           onThesisChange={setSelectedThesis}
           selectedType={selectedType}
