@@ -70,7 +70,7 @@ const Management = () => {
             <div>
               <h1 className="text-3xl font-bold">Gestão e Execução</h1>
               <p className="text-muted-foreground">
-                Acompanhe e gerencie projetos aprovados em execução
+                Acompanhe e gerencie projetos em andamento
               </p>
             </div>
           </div>

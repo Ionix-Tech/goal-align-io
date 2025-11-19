@@ -17,7 +17,8 @@ const STATUS_LABELS: Record<string, string> = {
   idea: 'Ideia',
   draft: 'Rascunho',
   review: 'Em Revisão',
-  approved: 'Aprovado',
+  approved: 'Em Andamento',
+  completed: 'Finalizado',
   archived: 'Arquivado',
 };
 

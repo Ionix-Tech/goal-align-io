@@ -35,7 +35,7 @@ export function useApprovedProjects(pillar?: string | null) {
           updated_at,
           assigned_to_profile:profiles!projects_assigned_to_fkey(full_name, avatar_url)
         `)
-        .eq('status', 'approved')
+        .in('status', ['approved', 'completed'])
         .order('approved_at', { ascending: false });
 
       if (pillar) {

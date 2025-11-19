@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { Lightbulb, FileText, Clock, CheckCircle2, Archive } from 'lucide-react';
+import { Lightbulb, FileText, Clock, PlayCircle, CheckCircle2, Archive } from 'lucide-react';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { useProjectTransitions } from '@/hooks/useProjectTransitions';
@@ -20,7 +20,8 @@ const STATUS_COLUMNS = [
   { id: 'idea' as ProjectStatus, title: 'Ideias', icon: Lightbulb },
   { id: 'draft' as ProjectStatus, title: 'Detalhamento', icon: FileText },
   { id: 'review' as ProjectStatus, title: 'Em Análise', icon: Clock },
-  { id: 'approved' as ProjectStatus, title: 'Aprovados', icon: CheckCircle2 },
+  { id: 'approved' as ProjectStatus, title: 'Em Andamento', icon: PlayCircle },
+  { id: 'completed' as ProjectStatus, title: 'Finalizados', icon: CheckCircle2 },
   { id: 'archived' as ProjectStatus, title: 'Arquivados', icon: Archive }
 ];
 

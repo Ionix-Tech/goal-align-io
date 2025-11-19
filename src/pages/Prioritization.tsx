@@ -52,6 +52,7 @@ const Prioritization = () => {
     draft: [],
     review: [],
     approved: [],
+    completed: [],
     archived: []
   };
   const allProjects = data?.all || [];
@@ -69,6 +70,8 @@ const Prioritization = () => {
     review_plans: projectsByStatus.review?.filter(p => p.initiative_type === 'action_plan').length || 0,
     approved_projects: projectsByStatus.approved?.filter(p => p.initiative_type === 'project').length || 0,
     approved_plans: projectsByStatus.approved?.filter(p => p.initiative_type === 'action_plan').length || 0,
+    completed_projects: projectsByStatus.completed?.filter(p => p.initiative_type === 'project').length || 0,
+    completed_plans: projectsByStatus.completed?.filter(p => p.initiative_type === 'action_plan').length || 0,
     archived: projectsByStatus.archived?.length || 0
   };
 
@@ -91,7 +94,7 @@ const Prioritization = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -137,13 +140,27 @@ const Prioritization = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                ✅ Aprovados
+                🚀 Em Andamento
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.approved_projects + stats.approved_plans}</div>
               <div className="text-xs text-muted-foreground mt-1">
                 {stats.approved_projects} projetos · {stats.approved_plans} planos
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                ✅ Finalizados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.completed_projects + stats.completed_plans}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {stats.completed_projects} projetos · {stats.completed_plans} planos
               </div>
             </CardContent>
           </Card>

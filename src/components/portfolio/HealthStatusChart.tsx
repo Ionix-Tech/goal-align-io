@@ -17,9 +17,9 @@ export function HealthStatusChart({ data }: HealthStatusChartProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Health Status dos Aprovados</CardTitle>
+          <CardTitle>Health Status - Em Andamento</CardTitle>
           <CardDescription>
-            Nenhum projeto aprovado com status de saúde
+            Nenhum projeto em andamento com status de saúde
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[300px]">
@@ -42,9 +42,9 @@ export function HealthStatusChart({ data }: HealthStatusChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Health Status dos Aprovados</CardTitle>
+        <CardTitle>Health Status - Em Andamento</CardTitle>
         <CardDescription>
-          {total} {total === 1 ? 'projeto aprovado' : 'projetos aprovados'}
+          {total} {total === 1 ? 'projeto em andamento' : 'projetos em andamento'}
         </CardDescription>
       </CardHeader>
       <CardContent>

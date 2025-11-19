@@ -23,8 +23,9 @@ interface Project {
 const ALLOWED_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   idea: ['draft', 'archived'],
   draft: ['review', 'archived'],
-  review: ['approved', 'draft', 'archived'], // CEO pode aprovar, devolver para ajustes ou arquivar
-  approved: ['archived'],
+  review: ['approved', 'draft', 'archived'],
+  approved: ['completed', 'archived'],
+  completed: ['archived'],
   archived: []
 };
 
@@ -51,6 +52,20 @@ export function useProjectTransitions() {
     // Validação: apenas CEO pode aprovar
     if (to === 'approved' && role !== 'ceo') {
       return { allowed: false, reason: 'Apenas CEO pode aprovar projetos' };
+    }
+
+    // Validação: marcar como finalizado
+    if (to === 'completed' && from === 'approved') {
+      // Qualquer membro do projeto pode marcar como finalizado
+      return { allowed: true };
+    }
+
+    // Validação: não permitir editar projetos finalizados (exceto CEO)
+    if (from === 'completed' && role !== 'ceo') {
+      return { 
+        allowed: false, 
+        reason: 'Projetos finalizados não podem ser alterados. Apenas CEO pode modificá-los.' 
+      };
     }
 
     // Validação: apenas CEO pode arquivar projetos em revisão
