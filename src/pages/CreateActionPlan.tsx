@@ -175,14 +175,17 @@ const CreateActionPlan = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tese Estratégica (Opcional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "none" ? undefined : value)} 
+                        value={field.value || "none"}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a tese ou deixe em branco" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sem tese estratégica</SelectItem>
+                          <SelectItem value="none">Sem tese estratégica</SelectItem>
                           {activeTheses.map((thesis) => (
                             <SelectItem key={thesis.id} value={thesis.id}>
                               {thesis.name} - {thesis.objective}
