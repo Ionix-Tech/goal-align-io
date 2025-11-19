@@ -1108,7 +1108,13 @@ export type Database = {
     Enums: {
       app_role: "ceo" | "pmo_manager" | "project_member"
       initiative_type: "idea" | "project" | "action_plan"
-      project_status: "idea" | "draft" | "review" | "approved" | "archived"
+      project_status:
+        | "idea"
+        | "draft"
+        | "review"
+        | "approved"
+        | "archived"
+        | "completed"
       strategic_pillar:
         | "operational_efficiency"
         | "sales_expansion"
@@ -1247,7 +1253,14 @@ export const Constants = {
     Enums: {
       app_role: ["ceo", "pmo_manager", "project_member"],
       initiative_type: ["idea", "project", "action_plan"],
-      project_status: ["idea", "draft", "review", "approved", "archived"],
+      project_status: [
+        "idea",
+        "draft",
+        "review",
+        "approved",
+        "archived",
+        "completed",
+      ],
       strategic_pillar: [
         "operational_efficiency",
         "sales_expansion",

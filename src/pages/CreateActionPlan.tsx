@@ -21,7 +21,7 @@ import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionP
 
 const actionPlanSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  thesis_id: z.string().min(1, "Tese é obrigatória"),
+  thesis_id: z.string().optional(),
   what: z.string().min(1, "O quê é obrigatório"),
   why: z.string().min(1, "Por quê é obrigatório"),
   who: z.string().optional(),
@@ -61,7 +61,7 @@ const CreateActionPlan = () => {
     mutationFn: async (data: ActionPlanFormData) => {
       const insertData = {
         name: data.name,
-        thesis_id: data.thesis_id,
+        thesis_id: data.thesis_id || null,
         what: data.what,
         why: data.why,
         who: data.who || null,
@@ -174,14 +174,15 @@ const CreateActionPlan = () => {
                   name="thesis_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tese Estratégica *</FormLabel>
+                      <FormLabel>Tese Estratégica (Opcional)</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a tese" />
+                            <SelectValue placeholder="Selecione a tese ou deixe em branco" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="">Sem tese estratégica</SelectItem>
                           {activeTheses.map((thesis) => (
                             <SelectItem key={thesis.id} value={thesis.id}>
                               {thesis.name} - {thesis.objective}
