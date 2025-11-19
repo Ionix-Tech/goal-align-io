@@ -124,9 +124,11 @@ const ProjectExecution = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className={`grid w-full ${project.initiative_type === 'action_plan' ? 'grid-cols-4' : 'grid-cols-5'}`}>
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
-            <TabsTrigger value="thesis">📄 Tese do Projeto</TabsTrigger>
+            {project.initiative_type !== 'action_plan' && (
+              <TabsTrigger value="thesis">📄 Tese do Projeto</TabsTrigger>
+            )}
             <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atualizações</TabsTrigger>
