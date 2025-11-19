@@ -89,7 +89,7 @@ export function AddMilestoneUpdateDialog({
                   setProgressPercentage(value[0]);
                 }
               }}
-              min={currentProgress}
+              min={0}
               max={100}
               step={5}
               className={cn("w-full", markAsComplete && "opacity-50 pointer-events-none")}
