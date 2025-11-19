@@ -68,7 +68,10 @@ export function KanbanBoard({ projectsByStatus, onProjectClick }: KanbanBoardPro
     if (!project || !fromStatus) return;
 
     // Check if transition is allowed
-    const validation = canTransition(fromStatus, newStatus, project);
+    const validation = canTransition(fromStatus, newStatus, {
+      ...project,
+      initiative_type: project.initiative_type
+    });
     
     if (!validation.allowed) {
       toast({
