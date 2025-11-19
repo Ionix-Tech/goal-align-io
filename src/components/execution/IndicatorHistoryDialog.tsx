@@ -3,7 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIndicatorUpdates } from "@/hooks/useIndicatorUpdates";
+import { IndicatorEvolutionChart } from "./IndicatorEvolutionChart";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TrendingUp, TrendingDown } from "lucide-react";
@@ -13,6 +15,7 @@ interface IndicatorHistoryDialogProps {
   onOpenChange: (open: boolean) => void;
   indicatorId: string;
   indicatorName: string;
+  targetValue?: string;
   unit?: string | null;
 }
 
@@ -21,33 +24,41 @@ export function IndicatorHistoryDialog({
   onOpenChange,
   indicatorId,
   indicatorName,
+  targetValue,
   unit
 }: IndicatorHistoryDialogProps) {
   const { data: updates, isLoading } = useIndicatorUpdates(indicatorId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Histórico de Medições</DialogTitle>
           <p className="text-sm text-muted-foreground">{indicatorName}</p>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Carregando histórico...
-            </div>
-          ) : !updates || updates.length === 0 ? (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-muted-foreground">
-                  <p>Nenhuma medição registrada ainda</p>
+        <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">📋 Detalhes</TabsTrigger>
+            <TabsTrigger value="chart">📊 Gráfico</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="flex-1 overflow-y-auto mt-4">
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Carregando histórico...
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            updates.map((update, index) => {
+              ) : !updates || updates.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8">
+                    <div className="text-center text-muted-foreground">
+                      <p>Nenhuma medição registrada ainda</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                updates.map((update, index) => {
               const isFirst = index === 0;
               const previousValue = index < updates.length - 1
                 ? updates[index + 1].measured_value
@@ -70,92 +81,92 @@ export function IndicatorHistoryDialog({
                 }
               }
 
-              return (
-                <Card key={update.id}>
-                  <CardContent className="pt-4">
-                    <div className="space-y-3">
-                      {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={update.updater.avatar_url || undefined} />
-                            <AvatarFallback>
-                              {update.updater.full_name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{update.updater.full_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Medição em: {format(new Date(update.measurement_date), "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
-                            </p>
+                  return (
+                    <Card key={update.id}>
+                      <CardContent className="pt-4">
+                        <div className="space-y-3">
+                          {/* Header */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarImage src={update.updater.avatar_url || undefined} />
+                                <AvatarFallback>
+                                  {update.updater.full_name.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-sm">{update.updater.full_name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Medição em: {format(new Date(update.measurement_date), "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {index === 0 && (
+                                <Badge variant="secondary">Mais recente</Badge>
+                              )}
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-2">
-                          {isFirst && (
-                            <Badge variant="secondary">Mais recente</Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Measured Value */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-3xl font-bold text-primary">
-                            {update.measured_value}
-                            {unit && <span className="text-lg ml-1">{unit}</span>}
-                          </span>
-                          {trend === 'up' && (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 gap-1">
-                              <TrendingUp className="h-3 w-3" />
-                              Subiu
-                            </Badge>
-                          )}
-                          {trend === 'down' && (
-                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 gap-1">
-                              <TrendingDown className="h-3 w-3" />
-                              Caiu
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Progress */}
-                      <div className="bg-muted/50 rounded p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Progresso da Meta</span>
-                          <span className="text-lg font-bold">{update.progress_percentage}%</span>
-                        </div>
-                      </div>
-
-                      {/* Previous Value Comparison */}
-                      {previousValue && (
-                        <p className="text-xs text-muted-foreground">
-                          Medição anterior: {previousValue} {unit}
-                        </p>
-                      )}
-
-                      {/* Notes */}
-                      {update.notes && (
-                        <>
                           <Separator />
-                          <div>
-                            <p className="text-sm font-medium mb-1">Observações:</p>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                              {update.notes}
-                            </p>
+
+                          {/* Measured Value */}
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-primary">
+                              {update.measured_value}
+                            </span>
+                            {unit && <span className="text-lg text-muted-foreground">{unit}</span>}
+                            {trend && (
+                              <div className="ml-2">
+                                {trend === 'up' && <TrendingUp className="h-5 w-5 text-green-600" />}
+                                {trend === 'down' && <TrendingDown className="h-5 w-5 text-red-600" />}
+                              </div>
+                            )}
                           </div>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
+
+                          {/* Progress */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">Progresso da Meta</span>
+                              <span className="font-semibold">{update.progress_percentage}%</span>
+                            </div>
+                            <div className="w-full bg-secondary rounded-full h-2">
+                              <div
+                                className="bg-primary rounded-full h-2 transition-all"
+                                style={{ width: `${Math.min(update.progress_percentage, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Notes */}
+                          {update.notes && (
+                            <>
+                              <Separator />
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium">Observações</p>
+                                <p className="text-sm text-muted-foreground">{update.notes}</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="chart" className="flex-1 overflow-y-auto mt-4">
+            <IndicatorEvolutionChart
+              indicatorId={indicatorId}
+              indicatorName={indicatorName}
+              targetValue={targetValue}
+              unit={unit}
+            />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
