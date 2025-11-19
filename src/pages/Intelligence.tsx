@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Brain, List, FolderTree } from "lucide-react";
+import { Brain, List, FolderTree, AlertCircle } from "lucide-react";
 import ActivityFeedFilters from "@/components/intelligence/ActivityFeedFilters";
 import ActivityFeedItem from "@/components/intelligence/ActivityFeedItem";
 import CascadeView from "@/components/intelligence/CascadeView";
+import AttentionPointsView from "@/components/intelligence/AttentionPointsView";
 import { useActivityFeed, ActivityFeedFilters as Filters } from "@/hooks/useActivityFeed";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,9 +38,9 @@ const Intelligence = () => {
           onFiltersChange={setFilters}
         />
 
-        {/* Tabs para alternar entre Feed e Cascata */}
+        {/* Tabs para alternar entre Feed, Cascata e Pontos de Atenção */}
         <Tabs defaultValue="feed" className="w-full mt-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="feed" className="gap-2">
               <List className="h-4 w-4" />
               Feed Cronológico
@@ -47,6 +48,10 @@ const Intelligence = () => {
             <TabsTrigger value="cascade" className="gap-2">
               <FolderTree className="h-4 w-4" />
               O que está acontecendo
+            </TabsTrigger>
+            <TabsTrigger value="attention" className="gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Pontos de Atenção
             </TabsTrigger>
           </TabsList>
 
@@ -70,6 +75,10 @@ const Intelligence = () => {
 
           <TabsContent value="cascade" className="mt-6">
             <CascadeView activities={activities} isLoading={isLoading} />
+          </TabsContent>
+
+          <TabsContent value="attention" className="mt-6">
+            <AttentionPointsView />
           </TabsContent>
         </Tabs>
       </div>
