@@ -23,7 +23,7 @@ import { useProjectSituations } from "@/hooks/useProjectSituations";
 import { useA3ReportData } from "@/hooks/useA3ReportData";
 import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
 import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachmentsCard";
-import { Target, FileCheck } from "lucide-react";
+import { Target, FileCheck, AlertCircle } from "lucide-react";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -259,6 +259,70 @@ const ProjectExecution = () => {
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                         {project.objective}
                       </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Situações Atual vs Situação Alvo */}
+                {situations && situations.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5" />
+                        Situação Atual vs Situação Alvo
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Problemas identificados e metas correspondentes que o projeto deve alcançar
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {situations.map((situation, index) => (
+                          <div key={situation.id} className="space-y-3">
+                            {index > 0 && <Separator className="my-4" />}
+                            
+                            <div className="grid gap-4 md:grid-cols-2">
+                              {/* Situação Atual */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <AlertCircle className="h-4 w-4 text-destructive" />
+                                  <h4 className="font-semibold text-sm">Situação Atual / Problema</h4>
+                                </div>
+                                <p className="text-sm text-muted-foreground bg-destructive/10 p-3 rounded-md border border-destructive/20">
+                                  {situation.current_problem}
+                                </p>
+                              </div>
+
+                              {/* Situação Alvo */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                  <h4 className="font-semibold text-sm">Situação Alvo / Meta</h4>
+                                </div>
+                                <p className="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded-md border border-green-200 dark:border-green-900/30">
+                                  {situation.target_goal}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Indicadores da situação (se existirem) */}
+                            {situation.indicators && situation.indicators.length > 0 && (
+                              <div className="mt-3 pt-3 border-t">
+                                <p className="text-xs font-medium text-muted-foreground mb-2">
+                                  Indicadores vinculados ({situation.indicators.length})
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {situation.indicators.map((ind: any) => (
+                                    <Badge key={ind.id} variant="outline" className="text-xs">
+                                      {ind.name}: {ind.current_value} → {ind.target_value} {ind.unit}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
