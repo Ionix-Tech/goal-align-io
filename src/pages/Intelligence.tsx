@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Brain } from "lucide-react";
+import { Brain, List, FolderTree } from "lucide-react";
 import ActivityFeedFilters from "@/components/intelligence/ActivityFeedFilters";
 import ActivityFeedItem from "@/components/intelligence/ActivityFeedItem";
+import CascadeView from "@/components/intelligence/CascadeView";
 import { useActivityFeed, ActivityFeedFilters as Filters } from "@/hooks/useActivityFeed";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Intelligence = () => {
   const [filters, setFilters] = useState<Filters>({
@@ -35,25 +37,41 @@ const Intelligence = () => {
           onFiltersChange={setFilters}
         />
 
-        {/* Feed */}
-        <div className="mt-6 space-y-4">
-          {isLoading ? (
-            // Skeleton loading
-            Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
-            ))
-          ) : activities?.length === 0 ? (
-            // Empty state
-            <div className="text-center py-12 text-muted-foreground">
-              Nenhuma atividade encontrada para os filtros selecionados
+        {/* Tabs para alternar entre Feed e Cascata */}
+        <Tabs defaultValue="feed" className="w-full mt-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="feed" className="gap-2">
+              <List className="h-4 w-4" />
+              Feed Cronológico
+            </TabsTrigger>
+            <TabsTrigger value="cascade" className="gap-2">
+              <FolderTree className="h-4 w-4" />
+              O que está acontecendo
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="feed" className="mt-6">
+            <div className="space-y-4">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-32 w-full" />
+                ))
+              ) : activities?.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  Nenhuma atividade encontrada para os filtros selecionados
+                </div>
+              ) : (
+                activities?.map((activity) => (
+                  <ActivityFeedItem key={activity.id} activity={activity} />
+                ))
+              )}
             </div>
-          ) : (
-            // Lista de atividades
-            activities?.map((activity) => (
-              <ActivityFeedItem key={activity.id} activity={activity} />
-            ))
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="cascade" className="mt-6">
+            <CascadeView activities={activities} isLoading={isLoading} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
