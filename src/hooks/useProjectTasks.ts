@@ -123,6 +123,7 @@ export function useCreateTask() {
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -135,7 +136,8 @@ export function useUpdateTask() {
       dueDate,
       milestoneId,
       indicatorId,
-      priority
+      priority,
+      dateChangeReason
     }: {
       taskId: string;
       projectId: string;
@@ -147,7 +149,16 @@ export function useUpdateTask() {
       milestoneId?: string | null;
       indicatorId?: string | null;
       priority?: string;
+      dateChangeReason?: string;
     }) => {
+      // First, get the current task to compare dates
+      const { data: currentTask } = await supabase
+        .from('project_tasks')
+        .select('due_date')
+        .eq('id', taskId)
+        .single();
+      
+      const oldDueDate = currentTask?.due_date;
       const updateData: any = {};
       if (title !== undefined) updateData.title = title;
       if (description !== undefined) updateData.description = description;
@@ -174,6 +185,20 @@ export function useUpdateTask() {
         .single();
 
       if (error) throw error;
+
+      // If due_date changed, log it in task_date_history
+      if (dueDate !== undefined && oldDueDate !== dueDate) {
+        await supabase
+          .from('task_date_history')
+          .insert({
+            task_id: taskId,
+            old_date: oldDueDate,
+            new_date: dueDate,
+            reason: dateChangeReason || null,
+            changed_by: user?.id
+          });
+      }
+
       return { data, projectId };
     },
     onSuccess: (result) => {
