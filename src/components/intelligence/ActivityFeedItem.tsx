@@ -58,16 +58,10 @@ export default function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
               )}
             </div>
 
-            {/* Title and badges */}
+            {/* Project and Thesis badges - MOVED BEFORE TITLE */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-foreground truncate">
-                  {activity.title}
-                </h3>
-                {getTrendIcon()}
-              </div>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <Badge variant="secondary" className="text-xs">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <Badge variant="secondary" className="text-sm font-medium">
                   {activity.projectName}
                 </Badge>
                 {activity.thesisName && (
@@ -75,6 +69,14 @@ export default function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
                     {activity.thesisName}
                   </Badge>
                 )}
+              </div>
+              
+              {/* Title and trend icon */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-semibold text-foreground truncate">
+                  {activity.title}
+                </h3>
+                {getTrendIcon()}
               </div>
             </div>
           </div>
