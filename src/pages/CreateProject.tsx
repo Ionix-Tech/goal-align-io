@@ -378,7 +378,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     // Validações para envio para aprovação
     if (targetStatus === 'review') {
       if (!strategicPillar) {
-        toast.error("Pilar estratégico é obrigatório para enviar para aprovação");
+        toast.error("Objetivo estratégico é obrigatório para enviar para aprovação");
         return;
       }
       if (!objective.trim()) {
@@ -663,18 +663,18 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
             </div>
           </Card>
 
-          {/* Pilar Estratégico */}
+          {/* Objetivo Estratégico */}
           <Card className="p-6">
             <div className="space-y-2">
               <Label htmlFor="pillar" className="text-base font-semibold">
-                Pilar Estratégico *
+                Objetivo Estratégico *
               </Label>
               <p className="text-sm text-muted-foreground mb-2">
-                A qual pilar estratégico da empresa este projeto está alinhado?
+                A qual objetivo estratégico da empresa este projeto está alinhado?
               </p>
               <Select value={strategicPillar} onValueChange={setStrategicPillar}>
                 <SelectTrigger id="pillar" className="text-base">
-                  <SelectValue placeholder="Selecione o pilar estratégico" />
+                  <SelectValue placeholder="Selecione o objetivo estratégico" />
                 </SelectTrigger>
                 <SelectContent>
                   {strategicPillars.map(pillar => (

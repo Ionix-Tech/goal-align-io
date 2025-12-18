@@ -86,7 +86,7 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
           </Badge>
         </div>
 
-        {/* Tese e Pilar estratégico */}
+        {/* Objetivo estratégico */}
         <div className="flex flex-wrap gap-2">
           {project.thesis && (
             <Badge 

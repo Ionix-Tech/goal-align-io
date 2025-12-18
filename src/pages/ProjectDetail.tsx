@@ -353,7 +353,7 @@ const ProjectDetail = () => {
 
     if (targetStatus === 'review') {
       if (!strategicPillar) {
-        toast.error("Pilar estratégico é obrigatório");
+        toast.error("Objetivo estratégico é obrigatório");
         return;
       }
       if (!objective.trim()) {
@@ -693,7 +693,7 @@ const ProjectDetail = () => {
                   <Card className="p-6">
                     <div className="space-y-4">
                       <Label htmlFor="pillar" className="text-base font-semibold">
-                        Pilar Estratégico *
+                        Objetivo Estratégico *
                       </Label>
                       <Select value={strategicPillar} onValueChange={setStrategicPillar}>
                         <SelectTrigger id="pillar">
@@ -1142,7 +1142,7 @@ const ProjectDetail = () => {
                   <Card className="p-6">
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm text-muted-foreground">Pilar Estratégico</Label>
+                        <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
                         <p className="text-base mt-2">
                           {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
                           {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.label}

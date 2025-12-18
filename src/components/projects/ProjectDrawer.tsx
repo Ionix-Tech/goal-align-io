@@ -363,7 +363,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
     // Validações para envio para aprovação
     if (targetStatus === 'review') {
       if (!strategicPillar) {
-        toast.error("Pilar estratégico é obrigatório");
+        toast.error("Objetivo estratégico é obrigatório");
         return;
       }
       if (!objective.trim()) {
@@ -680,7 +680,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
 
                   <div className="space-y-2">
                     <Label htmlFor="pillar" className="text-base font-semibold">
-                      Pilar Estratégico *
+                      Objetivo Estratégico *
                     </Label>
                     <Select value={strategicPillar} onValueChange={setStrategicPillar}>
                       <SelectTrigger id="pillar">
@@ -1105,7 +1105,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                     <Separator />
 
                     <div>
-                      <Label className="text-sm text-muted-foreground">Pilar Estratégico</Label>
+                      <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
                       <p className="text-base mt-1">
                         {strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
                         {strategicPillars.find(p => p.value === project.strategic_pillar)?.label}
@@ -1167,7 +1167,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                           ) : (
                             <XCircle className="h-4 w-4 text-red-600" />
                           )}
-                          <span className="text-sm">Pilar estratégico definido</span>
+                          <span className="text-sm">Objetivo estratégico definido</span>
                         </div>
                       </div>
 
