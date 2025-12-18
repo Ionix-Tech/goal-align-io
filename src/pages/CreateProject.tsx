@@ -30,19 +30,10 @@ interface Milestone {
   targetDate: string;
 }
 
-interface SituationIndicator {
-  id: string;
-  name: string;
-  currentValue: string;
-  targetValue: string;
-  unit: string;
-}
-
 interface Situation {
   id: string;
   currentProblem: string;
   targetGoal: string;
-  indicators: SituationIndicator[];
   attachments: File[];
 }
 
@@ -164,37 +155,13 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
             .order('display_order');
 
           if (situationsData) {
-            // Carregar situações com indicadores e anexos
-            const situationsWithData = await Promise.all(
-              situationsData.map(async (s) => {
-                // Buscar indicadores
-                const { data: indicatorsData } = await supabase
-                  .from('situation_indicators')
-                  .select('*')
-                  .eq('situation_id', s.id)
-                  .order('display_order');
-
-                // Buscar anexos (só os metadados, não os arquivos em si)
-                const { data: attachmentsData } = await supabase
-                  .from('situation_attachments')
-                  .select('*')
-                  .eq('situation_id', s.id);
-
-                return {
-                  id: s.id,
-                  currentProblem: s.current_problem,
-                  targetGoal: s.target_goal,
-                  indicators: (indicatorsData || []).map(ind => ({
-                    id: ind.id,
-                    name: ind.name,
-                    currentValue: String(ind.current_value),
-                    targetValue: String(ind.target_value),
-                    unit: ind.unit || ''
-                  })),
-                  attachments: [] // Não carregamos arquivos existentes na edição (apenas metadados são exibidos em outro lugar)
-                };
-              })
-            );
+            // Carregar situações (sem indicadores)
+            const situationsWithData = situationsData.map((s) => ({
+              id: s.id,
+              currentProblem: s.current_problem,
+              targetGoal: s.target_goal,
+              attachments: [] // Não carregamos arquivos existentes na edição (apenas metadados são exibidos em outro lugar)
+            }));
             setSituations(situationsWithData);
           }
 
@@ -261,7 +228,6 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
       id: crypto.randomUUID(),
       currentProblem: "",
       targetGoal: "",
-      indicators: [],
       attachments: []
     };
     setSituations([...situations, newSituation]);
@@ -274,45 +240,6 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
   const updateSituation = (id: string, field: keyof Situation, value: any) => {
     setSituations(situations.map(s => 
       s.id === id ? { ...s, [field]: value } : s
-    ));
-  };
-
-  const addIndicatorToSituation = (situationId: string) => {
-    const newIndicator: SituationIndicator = {
-      id: crypto.randomUUID(),
-      name: "",
-      currentValue: "",
-      targetValue: "",
-      unit: ""
-    };
-    setSituations(situations.map(s => 
-      s.id === situationId ? { ...s, indicators: [...s.indicators, newIndicator] } : s
-    ));
-  };
-
-  const removeIndicatorFromSituation = (situationId: string, indicatorId: string) => {
-    setSituations(situations.map(s => 
-      s.id === situationId 
-        ? { ...s, indicators: s.indicators.filter(ind => ind.id !== indicatorId) } 
-        : s
-    ));
-  };
-
-  const updateIndicatorInSituation = (
-    situationId: string, 
-    indicatorId: string, 
-    field: keyof SituationIndicator, 
-    value: string
-  ) => {
-    setSituations(situations.map(s => 
-      s.id === situationId 
-        ? { 
-            ...s, 
-            indicators: s.indicators.map(ind => 
-              ind.id === indicatorId ? { ...ind, [field]: value } : ind
-            ) 
-          }
-        : s
     ));
   };
 
@@ -532,23 +459,6 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
 
           if (situationError) throw situationError;
 
-          // 5a. Inserir indicadores da situação
-          if (sit.indicators.length > 0) {
-            const { error: indicatorsError } = await supabase
-              .from('situation_indicators')
-              .insert(
-                sit.indicators.map((ind, indIndex) => ({
-                  situation_id: situationData.id,
-                  name: ind.name,
-                  current_value: parseFloat(ind.currentValue) || 0,
-                  target_value: parseFloat(ind.targetValue) || 0,
-                  unit: ind.unit || null,
-                  display_order: indIndex
-                }))
-              );
-
-            if (indicatorsError) throw indicatorsError;
-          }
 
           // 5b. Upload de anexos
           if (sit.attachments.length > 0) {
@@ -815,91 +725,6 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                           className="resize-none"
                         />
                       </div>
-                    </div>
-
-                    {/* Separador de Indicadores */}
-                    <div className="border-t pt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <Label className="text-sm font-semibold">Indicadores</Label>
-                      </div>
-                      
-                      {situation.indicators.length > 0 && (
-                        <div className="space-y-2 mb-2">
-                          {situation.indicators.map((indicator) => (
-                            <div key={indicator.id} className="p-3 border rounded bg-muted/30 space-y-2">
-                              <div className="flex items-start gap-2">
-                                <div className="flex-1 space-y-2">
-                                  <Input
-                                    placeholder="Nome do indicador"
-                                    value={indicator.name}
-                                    onChange={(e) => updateIndicatorInSituation(
-                                      situation.id, 
-                                      indicator.id, 
-                                      "name", 
-                                      e.target.value
-                                    )}
-                                    className="text-sm"
-                                  />
-                                  <div className="grid grid-cols-3 gap-2">
-                                    <Input
-                                      placeholder="Atual"
-                                      value={indicator.currentValue}
-                                      onChange={(e) => updateIndicatorInSituation(
-                                        situation.id, 
-                                        indicator.id, 
-                                        "currentValue", 
-                                        e.target.value
-                                      )}
-                                      className="text-sm"
-                                    />
-                                    <Input
-                                      placeholder="Meta"
-                                      value={indicator.targetValue}
-                                      onChange={(e) => updateIndicatorInSituation(
-                                        situation.id, 
-                                        indicator.id, 
-                                        "targetValue", 
-                                        e.target.value
-                                      )}
-                                      className="text-sm"
-                                    />
-                                    <Input
-                                      placeholder="Unid."
-                                      value={indicator.unit}
-                                      onChange={(e) => updateIndicatorInSituation(
-                                        situation.id, 
-                                        indicator.id, 
-                                        "unit", 
-                                        e.target.value
-                                      )}
-                                      className="text-sm"
-                                    />
-                                  </div>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeIndicatorFromSituation(situation.id, indicator.id)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addIndicatorToSituation(situation.id)}
-                        className="w-full"
-                      >
-                        <Plus className="mr-2 h-3 w-3" />
-                        Adicionar Indicador
-                      </Button>
                     </div>
 
                     {/* Separador de Anexos */}
