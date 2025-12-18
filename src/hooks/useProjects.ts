@@ -21,10 +21,6 @@ export type Project = Database['public']['Tables']['projects']['Row'] & {
     name: string;
     thesis_type: string;
   } | null;
-  source_idea?: {
-    id: string;
-    name: string;
-  } | null;
   indicators: Array<{ id: string }>;
   milestones: Array<{ id: string; completed: boolean | null }>;
 };
@@ -50,7 +46,6 @@ export function useProjects(filters?: UseProjectsFilters) {
           created_by_profile:profiles!projects_created_by_fkey(full_name, avatar_url),
           assigned_to_profile:profiles!projects_assigned_to_fkey(full_name, avatar_url),
           thesis:strategic_theses(id, name, thesis_type),
-          source_idea:projects!projects_source_idea_id_fkey(id, name),
           indicators:project_indicators(id),
           milestones:project_milestones(id, completed)
         `)
