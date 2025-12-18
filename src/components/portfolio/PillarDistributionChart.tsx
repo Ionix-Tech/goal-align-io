@@ -15,9 +15,9 @@ export function PillarDistributionChart({ data }: PillarDistributionChartProps) 
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Distribuição por Pilar Estratégico</CardTitle>
+          <CardTitle>Distribuição por Objetivo Estratégico</CardTitle>
           <CardDescription>
-            Nenhum projeto com pilar estratégico definido
+            Nenhum projeto com objetivo estratégico definido
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[300px]">
@@ -42,7 +42,7 @@ export function PillarDistributionChart({ data }: PillarDistributionChartProps) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Distribuição por Pilar Estratégico</CardTitle>
+        <CardTitle>Distribuição por Objetivo Estratégico</CardTitle>
         <CardDescription>
           {total} {total === 1 ? 'projeto' : 'projetos'} no portfólio
         </CardDescription>
