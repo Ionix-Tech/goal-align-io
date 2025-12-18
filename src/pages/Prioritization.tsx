@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { ProjectFilters } from "@/components/projects/ProjectFilters";
+import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
 import { useProjects } from "@/hooks/useProjects";
 import { useUserRole } from "@/hooks/useUserRole";
 import type { Database } from "@/integrations/supabase/types";
@@ -14,6 +15,8 @@ const Prioritization = () => {
   const [search, setSearch] = useState('');
   const [selectedThesis, setSelectedThesis] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<Database['public']['Enums']['initiative_type'] | null>(null);
+  const [selectedIdea, setSelectedIdea] = useState<{ id: string; name: string; description: string | null } | null>(null);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
 
   const { role } = useUserRole();
   const navigate = useNavigate();
@@ -55,7 +58,22 @@ const Prioritization = () => {
   const allProjects = data?.all || [];
 
   const handleProjectClick = (project: any) => {
-    navigate(`/projects/${project.id}`);
+    // If it's an idea, show convert dialog instead of navigating
+    if (project.initiative_type === 'idea') {
+      setSelectedIdea({
+        id: project.id,
+        name: project.name,
+        description: project.description
+      });
+      setShowConvertDialog(true);
+    } else {
+      navigate(`/projects/${project.id}`);
+    }
+  };
+
+  const handleCloseConvertDialog = () => {
+    setShowConvertDialog(false);
+    setSelectedIdea(null);
   };
 
   // Calculate stats with type separation
@@ -217,6 +235,13 @@ const Prioritization = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Convert Idea Dialog */}
+      <ConvertIdeaDialog
+        open={showConvertDialog}
+        onClose={handleCloseConvertDialog}
+        idea={selectedIdea}
+      />
     </div>
   );
 };

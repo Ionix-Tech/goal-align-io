@@ -696,6 +696,7 @@ export type Database = {
           name: string
           objective: string | null
           requirements: string | null
+          source_idea_id: string | null
           status: Database["public"]["Enums"]["project_status"]
           strategic_pillar:
             | Database["public"]["Enums"]["strategic_pillar"]
@@ -725,6 +726,7 @@ export type Database = {
           name: string
           objective?: string | null
           requirements?: string | null
+          source_idea_id?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           strategic_pillar?:
             | Database["public"]["Enums"]["strategic_pillar"]
@@ -754,6 +756,7 @@ export type Database = {
           name?: string
           objective?: string | null
           requirements?: string | null
+          source_idea_id?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           strategic_pillar?:
             | Database["public"]["Enums"]["strategic_pillar"]
@@ -781,6 +784,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_source_idea_id_fkey"
+            columns: ["source_idea_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {

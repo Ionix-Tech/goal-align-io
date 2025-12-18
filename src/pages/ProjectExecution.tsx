@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -97,6 +97,12 @@ const ProjectExecution = () => {
                   <Badge variant={project.initiative_type === 'action_plan' ? "secondary" : "default"}>
                     {project.initiative_type === 'action_plan' ? "Plano de Ação" : "Projeto"}
                   </Badge>
+                  {project.source_idea && (
+                    <Badge variant="outline" className="text-yellow-600 border-yellow-400 bg-yellow-50">
+                      <Lightbulb className="h-3 w-3 mr-1" />
+                      Originado de: {project.source_idea.name}
+                    </Badge>
+                  )}
                   <HealthStatusBadge status={null} size="md" showLabel />
                 </div>
                 <div className="flex items-center gap-2 mt-1">

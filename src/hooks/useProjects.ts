@@ -20,6 +20,10 @@ export type Project = Database['public']['Tables']['projects']['Row'] & {
     name: string;
     thesis_type: string;
   } | null;
+  source_idea?: {
+    id: string;
+    name: string;
+  } | null;
   indicators: Array<{ id: string }>;
   milestones: Array<{ id: string; completed: boolean | null }>;
 };
@@ -44,6 +48,7 @@ export function useProjects(filters?: UseProjectsFilters) {
           created_by_profile:profiles!projects_created_by_fkey(full_name, avatar_url),
           assigned_to_profile:profiles!projects_assigned_to_fkey(full_name, avatar_url),
           thesis:strategic_theses(id, name, thesis_type),
+          source_idea:projects!projects_source_idea_id_fkey(id, name),
           indicators:project_indicators(id),
           milestones:project_milestones(id, completed)
         `)
@@ -78,19 +83,26 @@ export function useProjects(filters?: UseProjectsFilters) {
 
       if (error) throw error;
 
-      // Group by status
+      // Group by status - but 'idea' column is based on initiative_type, not status
       const projectsByStatus = (data || []).reduce((acc, project) => {
-        const status = project.status;
-        if (!acc[status]) {
-          acc[status] = [];
+        // Ideas go to 'idea' column based on initiative_type, regardless of status
+        if (project.initiative_type === 'idea') {
+          acc.idea.push(project as any);
+        } else {
+          // Projects and action_plans use their actual status
+          const status = project.status;
+          if (!acc[status]) {
+            acc[status] = [];
+          }
+          acc[status].push(project as any);
         }
-        acc[status].push(project as any);
         return acc;
       }, {
         idea: [],
         draft: [],
         review: [],
         approved: [],
+        completed: [],
         archived: []
       } as Record<ProjectStatus, any[]>);
 

@@ -22,7 +22,7 @@ interface Project {
 }
 
 const ALLOWED_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
-  idea: ['draft', 'archived'],
+  idea: [], // Ideas cannot transition via drag - they must be converted
   draft: ['review', 'approved', 'archived'],
   review: ['approved', 'draft', 'archived'],
   approved: ['completed', 'archived'],

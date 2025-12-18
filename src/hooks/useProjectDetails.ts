@@ -25,6 +25,11 @@ export interface ProjectDetails {
   submitted_for_review_at: string | null;
   approved_at: string | null;
   approved_by: string | null;
+  source_idea_id: string | null;
+  source_idea?: {
+    id: string;
+    name: string;
+  } | null;
   indicators: Array<{
     id: string;
     name: string;
@@ -104,7 +109,8 @@ export function useProjectDetails(projectId: string | null) {
         { data: members },
         { data: comments },
         { data: creator },
-        { data: assignee }
+        { data: assignee },
+        { data: sourceIdea }
       ] = await Promise.all([
         supabase.from('project_indicators').select('*').eq('project_id', projectId),
         supabase.from('project_milestones').select('*').eq('project_id', projectId),
@@ -122,6 +128,9 @@ export function useProjectDetails(projectId: string | null) {
           : Promise.resolve({ data: null }),
         projectData.assigned_to
           ? supabase.from('profiles').select('id, full_name, email, avatar_url').eq('id', projectData.assigned_to).single()
+          : Promise.resolve({ data: null }),
+        projectData.source_idea_id
+          ? supabase.from('projects').select('id, name').eq('id', projectData.source_idea_id).single()
           : Promise.resolve({ data: null })
       ]);
 
@@ -192,6 +201,7 @@ export function useProjectDetails(projectId: string | null) {
       // Montar o objeto final
       const data = {
         ...projectData,
+        source_idea: sourceIdea || null,
         indicators: (indicators || []).map((ind: any) => ({
           ...ind,
           progress: indicatorProgressMap.get(ind.id) || 0,
