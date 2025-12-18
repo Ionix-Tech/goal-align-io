@@ -7,14 +7,17 @@ import { ptBR } from "date-fns/locale";
 import { Zap, FileText, Lightbulb } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { THESIS_TYPE_COLORS } from "@/config/thesisTemplates";
+import { getCategoryConfig } from "@/config/categories";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
+type ProjectCategory = Database['public']['Enums']['project_category'];
 
 interface KanbanCardProps {
   project: {
     id: string;
     name: string;
     strategic_pillar: StrategicPillar | null;
+    category?: ProjectCategory | null;
     updated_at: string | null;
     initiative_type?: string;
     assigned_to_profile?: {
@@ -48,6 +51,7 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
   const totalMilestones = project.milestones?.length || 0;
 
   const pillarConfig = project.strategic_pillar ? PILLAR_CONFIG[project.strategic_pillar] : null;
+  const categoryConfig = getCategoryConfig(project.category);
 
   const getInitiativeTypeInfo = () => {
     switch (project.initiative_type) {
@@ -86,8 +90,14 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
           </Badge>
         </div>
 
-        {/* Objetivo estratégico */}
+        {/* Categoria e tipo */}
         <div className="flex flex-wrap gap-2">
+          {categoryConfig && (
+            <Badge variant="outline" className={cn("text-xs", categoryConfig.colorClass)}>
+              <categoryConfig.icon className="h-3 w-3 mr-1" />
+              {categoryConfig.label}
+            </Badge>
+          )}
           {project.thesis && (
             <Badge 
               variant="outline" 
