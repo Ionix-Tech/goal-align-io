@@ -1,16 +1,20 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.78.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface NotificationRequest {
-  userId: string;
-  projectId: string;
-  type: string;
-  message: string;
-}
+// Server-side validation schema with proper format and length constraints
+const notificationSchema = z.object({
+  userId: z.string().uuid('Invalid user ID format'),
+  projectId: z.string().uuid('Invalid project ID format').optional(),
+  type: z.string().min(1, 'Type is required').max(50, 'Type must be 50 characters or less'),
+  message: z.string().min(1, 'Message is required').max(500, 'Message must be 500 characters or less'),
+});
+
+type NotificationRequest = z.infer<typeof notificationSchema>;
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -59,19 +63,23 @@ Deno.serve(async (req) => {
 
     console.log(`Authenticated user: ${user.id}`);
 
-    // Parse request body
-    const { userId, projectId, type, message }: NotificationRequest = await req.json();
-
-    // Validate required fields
-    if (!userId || !type || !message) {
+    // Parse and validate request body with Zod schema
+    const rawBody = await req.json();
+    const parseResult = notificationSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      const errorMessages = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      console.warn('Validation failed:', errorMessages);
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: userId, type, message' }),
+        JSON.stringify({ error: `Validation failed: ${errorMessages}` }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
+
+    const { userId, projectId, type, message } = parseResult.data;
 
     // Verify the authenticated user has access to the project (if projectId is provided)
     if (projectId) {
