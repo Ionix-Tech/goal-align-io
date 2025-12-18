@@ -549,9 +549,11 @@ export type Database = {
           due_date: string | null
           id: string
           indicator_id: string | null
+          link_url: string | null
           milestone_id: string | null
           priority: string
           project_id: string
+          start_date: string | null
           status: string
           title: string
         }
@@ -564,9 +566,11 @@ export type Database = {
           due_date?: string | null
           id?: string
           indicator_id?: string | null
+          link_url?: string | null
           milestone_id?: string | null
           priority?: string
           project_id: string
+          start_date?: string | null
           status?: string
           title: string
         }
@@ -579,9 +583,11 @@ export type Database = {
           due_date?: string | null
           id?: string
           indicator_id?: string | null
+          link_url?: string | null
           milestone_id?: string | null
           priority?: string
           project_id?: string
+          start_date?: string | null
           status?: string
           title?: string
         }

@@ -34,6 +34,8 @@ export function AddTaskDialog({
   const [indicatorId, setIndicatorId] = useState<string>('');
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [dueDate, setDueDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
 
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
@@ -48,6 +50,8 @@ export function AddTaskDialog({
       setIndicatorId(editTask.indicator_id || '');
       setAssignedTo(editTask.assigned_to || '');
       setDueDate(editTask.due_date || '');
+      setStartDate(editTask.start_date || '');
+      setLinkUrl(editTask.link_url || '');
     } else {
       resetForm();
     }
@@ -62,6 +66,8 @@ export function AddTaskDialog({
     setIndicatorId('');
     setAssignedTo('');
     setDueDate('');
+    setStartDate('');
+    setLinkUrl('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,7 +86,9 @@ export function AddTaskDialog({
         milestoneId: milestoneId || undefined,
         indicatorId: indicatorId || undefined,
         assignedTo: assignedTo || undefined,
-        dueDate: dueDate || undefined
+        dueDate: dueDate || undefined,
+        startDate: startDate || undefined,
+        linkUrl: linkUrl || undefined
       });
     } else {
       await createTask.mutateAsync({
@@ -91,7 +99,9 @@ export function AddTaskDialog({
         milestoneId: milestoneId || undefined,
         indicatorId: indicatorId || undefined,
         assignedTo: assignedTo || undefined,
-        dueDate: dueDate || undefined
+        dueDate: dueDate || undefined,
+        startDate: startDate || undefined,
+        linkUrl: linkUrl || undefined
       });
     }
 
@@ -211,13 +221,35 @@ export function AddTaskDialog({
             </Select>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Data de Início</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Data de Vencimento</Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="dueDate">Data de Vencimento</Label>
+            <Label htmlFor="linkUrl">Link/Anexo</Label>
             <Input
-              id="dueDate"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              id="linkUrl"
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://..."
             />
           </div>
 
