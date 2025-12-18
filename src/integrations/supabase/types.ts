@@ -539,6 +539,55 @@ export type Database = {
           },
         ]
       }
+      project_source_ideas: {
+        Row: {
+          added_at: string
+          added_by: string
+          id: string
+          idea_id: string
+          notes: string | null
+          project_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by: string
+          id?: string
+          idea_id: string
+          notes?: string | null
+          project_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string
+          id?: string
+          idea_id?: string
+          notes?: string | null
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_source_ideas_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_source_ideas_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_source_ideas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tasks: {
         Row: {
           assigned_to: string | null

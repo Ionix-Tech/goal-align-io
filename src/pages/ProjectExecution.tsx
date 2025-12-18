@@ -24,6 +24,7 @@ import { useProjectSituations } from "@/hooks/useProjectSituations";
 import { useA3ReportData } from "@/hooks/useA3ReportData";
 import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
 import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachmentsCard";
+import { LinkedIdeasCard } from "@/components/execution/LinkedIdeasCard";
 import { Target, FileCheck, AlertCircle } from "lucide-react";
 
 const strategicPillars = [
@@ -198,6 +199,9 @@ const ProjectExecution = () => {
 
                 <ProjectAttachmentsCard projectId={projectId!} />
 
+                {/* Ideias de Origem */}
+                <LinkedIdeasCard projectId={projectId!} />
+
                 {/* Informações Rápidas */}
                 <Card>
                   <CardHeader>
@@ -354,7 +358,9 @@ const ProjectExecution = () => {
 
                 <ProjectAttachmentsCard projectId={projectId!} />
 
-                {/* Informações Rápidas */}
+                {/* Ideias de Origem */}
+                <LinkedIdeasCard projectId={projectId!} />
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Informações Rápidas</CardTitle>
