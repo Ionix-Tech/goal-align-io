@@ -1,20 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Lightbulb, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PROJECT_CATEGORIES, ProjectCategory } from "@/config/categories";
 
 const QuickIdea = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<ProjectCategory | "">("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +49,7 @@ const QuickIdea = () => {
         initiative_type: 'idea' as const,
         created_by: user.id,
         assigned_to: null,
+        category: category || null,
       };
 
       console.log('Creating idea with data:', ideaData);
@@ -140,6 +144,29 @@ const QuickIdea = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 className="min-h-[120px]"
               />
+            </div>
+
+            {/* Categoria (Opcional) */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria (opcional)</Label>
+              <Select value={category} onValueChange={(val) => setCategory(val as ProjectCategory)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROJECT_CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          {cat.label}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>

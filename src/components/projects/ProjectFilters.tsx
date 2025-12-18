@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 import { useTheses } from "@/hooks/useTheses";
 import { THESIS_TEMPLATES } from "@/config/thesisTemplates";
+import { PROJECT_CATEGORIES, ProjectCategory } from "@/config/categories";
 
 type InitiativeType = Database['public']['Enums']['initiative_type'];
 
@@ -17,6 +18,8 @@ interface ProjectFiltersProps {
   onThesisChange?: (thesisId: string | null) => void;
   selectedType?: InitiativeType | null;
   onTypeChange?: (type: InitiativeType | null) => void;
+  selectedCategory?: ProjectCategory | null;
+  onCategoryChange?: (category: ProjectCategory | null) => void;
 }
 
 export function ProjectFilters({ 
@@ -25,7 +28,9 @@ export function ProjectFilters({
   selectedThesis,
   onThesisChange,
   selectedType,
-  onTypeChange
+  onTypeChange,
+  selectedCategory,
+  onCategoryChange
 }: ProjectFiltersProps) {
   const { data: theses } = useTheses({ year: new Date().getFullYear() });
 
@@ -73,8 +78,8 @@ export function ProjectFilters({
       )}
 
       {/* Active filters */}
-      {(search || selectedThesis) && (
-        <div className="flex items-center gap-2">
+      {(search || selectedThesis || selectedCategory) && (
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">Filtros ativos:</span>
           {search && (
             <Badge variant="secondary" className="gap-1">
@@ -98,28 +103,70 @@ export function ProjectFilters({
               </button>
             </Badge>
           )}
+          {selectedCategory && onCategoryChange && (
+            <Badge variant="secondary" className="gap-1">
+              Categoria: {PROJECT_CATEGORIES.find(c => c.value === selectedCategory)?.label}
+              <button
+                onClick={() => onCategoryChange(null)}
+                className="ml-1 hover:bg-muted rounded-full"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
         </div>
       )}
 
-      {/* Type filter */}
-      {onTypeChange && (
-        <div className="flex-1 min-w-[200px]">
-          <Select
-            value={selectedType || "all"}
-            onValueChange={(value) => onTypeChange(value === "all" ? null : value as InitiativeType)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Todos os tipos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="idea">💡 Ideias</SelectItem>
-              <SelectItem value="project">📋 Projetos</SelectItem>
-              <SelectItem value="action_plan">⚡ Planos de Ação</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {/* Category and Type filters */}
+      <div className="flex flex-wrap gap-4">
+        {/* Category filter */}
+        {onCategoryChange && (
+          <div className="min-w-[200px]">
+            <Select
+              value={selectedCategory || "all"}
+              onValueChange={(value) => onCategoryChange(value === "all" ? null : value as ProjectCategory)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todas as categorias" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as categorias</SelectItem>
+                {PROJECT_CATEGORIES.map((cat) => {
+                  const Icon = cat.icon;
+                  return (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        {cat.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Type filter */}
+        {onTypeChange && (
+          <div className="min-w-[200px]">
+            <Select
+              value={selectedType || "all"}
+              onValueChange={(value) => onTypeChange(value === "all" ? null : value as InitiativeType)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todos os tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="idea">💡 Ideias</SelectItem>
+                <SelectItem value="project">📋 Projetos</SelectItem>
+                <SelectItem value="action_plan">⚡ Planos de Ação</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -685,6 +685,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           assigned_to: string | null
+          category: Database["public"]["Enums"]["project_category"] | null
           context: string | null
           created_at: string | null
           created_by: string
@@ -715,6 +716,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
+          category?: Database["public"]["Enums"]["project_category"] | null
           context?: string | null
           created_at?: string | null
           created_by: string
@@ -745,6 +747,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
+          category?: Database["public"]["Enums"]["project_category"] | null
           context?: string | null
           created_at?: string | null
           created_by?: string
@@ -1208,6 +1211,12 @@ export type Database = {
     Enums: {
       app_role: "ceo" | "pmo_manager" | "project_member"
       initiative_type: "idea" | "project" | "action_plan"
+      project_category:
+        | "productivity"
+        | "safety"
+        | "customer"
+        | "market"
+        | "culture_team"
       project_status:
         | "idea"
         | "draft"
@@ -1353,6 +1362,13 @@ export const Constants = {
     Enums: {
       app_role: ["ceo", "pmo_manager", "project_member"],
       initiative_type: ["idea", "project", "action_plan"],
+      project_category: [
+        "productivity",
+        "safety",
+        "customer",
+        "market",
+        "culture_team",
+      ],
       project_status: [
         "idea",
         "draft",

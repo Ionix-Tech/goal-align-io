@@ -5,6 +5,7 @@ import type { Database } from '@/integrations/supabase/types';
 type ProjectStatus = Database['public']['Enums']['project_status'];
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
 type InitiativeType = Database['public']['Enums']['initiative_type'];
+type ProjectCategory = Database['public']['Enums']['project_category'];
 
 export type Project = Database['public']['Tables']['projects']['Row'] & {
   created_by_profile?: {
@@ -35,6 +36,7 @@ interface UseProjectsFilters {
   search?: string;
   thesis_id?: string;
   initiative_type?: InitiativeType;
+  category?: ProjectCategory;
 }
 
 export function useProjects(filters?: UseProjectsFilters) {
@@ -77,6 +79,10 @@ export function useProjects(filters?: UseProjectsFilters) {
 
       if (filters?.initiative_type) {
         query = query.eq('initiative_type', filters.initiative_type);
+      }
+
+      if (filters?.category) {
+        query = query.eq('category', filters.category);
       }
 
       const { data, error } = await query;

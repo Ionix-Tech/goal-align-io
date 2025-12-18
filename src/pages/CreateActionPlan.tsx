@@ -18,9 +18,11 @@ import { useTheses } from "@/hooks/useTheses";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionPlanTaskManager";
+import { PROJECT_CATEGORIES } from "@/config/categories";
 
 const actionPlanSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
+  category: z.string().min(1, "Categoria é obrigatória"),
   thesis_id: z.string().optional(),
   what: z.string().min(1, "O quê é obrigatório"),
   why: z.string().min(1, "Por quê é obrigatório"),
@@ -46,6 +48,7 @@ const CreateActionPlan = () => {
     resolver: zodResolver(actionPlanSchema),
     defaultValues: {
       name: "",
+      category: "",
       thesis_id: "",
       what: "",
       why: "",
@@ -61,6 +64,7 @@ const CreateActionPlan = () => {
     mutationFn: async (data: ActionPlanFormData) => {
       const insertData = {
         name: data.name,
+        category: data.category as any,
         thesis_id: data.thesis_id || null,
         what: data.what,
         why: data.why,
@@ -164,6 +168,37 @@ const CreateActionPlan = () => {
                       <FormControl>
                         <Input placeholder="Ex: Reduzir tempo de setup em 30%" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PROJECT_CATEGORIES.map((cat) => {
+                            const Icon = cat.icon;
+                            return (
+                              <SelectItem key={cat.value} value={cat.value}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4" />
+                                  {cat.label}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

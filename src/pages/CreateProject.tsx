@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { PROJECT_CATEGORIES, ProjectCategory } from "@/config/categories";
 
 interface Indicator {
   id: string;
@@ -63,6 +64,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
   const { role } = useUserRole();
   
   const [projectName, setProjectName] = useState("");
+  const [category, setCategory] = useState<ProjectCategory | "">("");
   const [context, setContext] = useState("");
   const [strategicPillar, setStrategicPillar] = useState("");
   const [objective, setObjective] = useState("");
@@ -370,6 +372,11 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
       return;
     }
 
+    if (!category) {
+      toast.error("Categoria é obrigatória");
+      return;
+    }
+
     if (!context.trim()) {
       toast.error("Contexto é obrigatório");
       return;
@@ -401,6 +408,7 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
       // 1. Salvar/atualizar projeto
       const projectData = {
         name: projectName,
+        category: category as any,
         context: context,
         requirements: requirements || null,
         strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
@@ -641,6 +649,36 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                 onChange={(e) => setProjectName(e.target.value)}
                 className="text-base"
               />
+            </div>
+          </Card>
+
+          {/* Categoria */}
+          <Card className="p-6">
+            <div className="space-y-2">
+              <Label htmlFor="category" className="text-base font-semibold">
+                Categoria *
+              </Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Classifique o projeto de acordo com o pilar da empresa.
+              </p>
+              <Select value={category} onValueChange={(val) => setCategory(val as ProjectCategory)}>
+                <SelectTrigger id="category" className="text-base">
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROJECT_CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          {cat.label}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </Card>
 

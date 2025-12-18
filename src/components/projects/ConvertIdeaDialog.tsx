@@ -10,10 +10,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Briefcase, ClipboardList, Lightbulb } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { PROJECT_CATEGORIES, ProjectCategory } from '@/config/categories';
 
 interface ConvertIdeaDialogProps {
   open: boolean;
@@ -22,6 +25,7 @@ interface ConvertIdeaDialogProps {
     id: string;
     name: string;
     description: string | null;
+    category?: string | null;
   } | null;
 }
 
@@ -32,9 +36,12 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isConverting, setIsConverting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory | "">(
+    (idea?.category as ProjectCategory) || ""
+  );
 
   const convertMutation = useMutation({
-    mutationFn: async (type: ConversionType) => {
+    mutationFn: async ({ type, category }: { type: ConversionType; category: ProjectCategory }) => {
       if (!idea || !user?.id) throw new Error('Missing data');
 
       // Create new project/action_plan with source_idea_id
@@ -47,6 +54,7 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
           status: 'draft',
           source_idea_id: idea.id,
           created_by: user.id,
+          category: category as any,
         })
         .select()
         .single();
@@ -76,9 +84,13 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
   });
 
   const handleConvert = async (type: ConversionType) => {
+    if (!selectedCategory) {
+      toast.error('Selecione uma categoria para continuar');
+      return;
+    }
     setIsConverting(true);
     try {
-      await convertMutation.mutateAsync(type);
+      await convertMutation.mutateAsync({ type, category: selectedCategory });
     } finally {
       setIsConverting(false);
     }
@@ -98,6 +110,29 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
             Transforme a ideia "<strong>{idea.name}</strong>" em um projeto ou plano de ação para começar a executá-la.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Category Selection */}
+        <div className="space-y-2 py-2">
+          <Label>Categoria *</Label>
+          <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val as ProjectCategory)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              {PROJECT_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      {cat.label}
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="grid gap-4 py-4">
           <Card 

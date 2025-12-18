@@ -9,13 +9,15 @@ import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
 import { useProjects } from "@/hooks/useProjects";
 import { useUserRole } from "@/hooks/useUserRole";
 import type { Database } from "@/integrations/supabase/types";
+import { ProjectCategory } from "@/config/categories";
 
 const Prioritization = () => {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [search, setSearch] = useState('');
   const [selectedThesis, setSelectedThesis] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<Database['public']['Enums']['initiative_type'] | null>(null);
-  const [selectedIdea, setSelectedIdea] = useState<{ id: string; name: string; description: string | null } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory | null>(null);
+  const [selectedIdea, setSelectedIdea] = useState<{ id: string; name: string; description: string | null; category?: string | null } | null>(null);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
 
   const { role } = useUserRole();
@@ -43,7 +45,8 @@ const Prioritization = () => {
   const filters = {
     search,
     thesis_id: selectedThesis || undefined,
-    initiative_type: selectedType || undefined
+    initiative_type: selectedType || undefined,
+    category: selectedCategory || undefined
   };
   
   const { data, isLoading } = useProjects(filters);
@@ -63,7 +66,8 @@ const Prioritization = () => {
       setSelectedIdea({
         id: project.id,
         name: project.name,
-        description: project.description
+        description: project.description,
+        category: project.category
       });
       setShowConvertDialog(true);
     } else {
@@ -200,6 +204,8 @@ const Prioritization = () => {
           onThesisChange={setSelectedThesis}
           selectedType={selectedType}
           onTypeChange={setSelectedType}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
         />
 
         {/* View Toggle and Content */}
