@@ -280,35 +280,19 @@ const CreateActionPlan = () => {
                   )}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="who"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Líder de Projeto</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Quem lidera este plano?" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="where_location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Onde? (Where)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Onde será executado?" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="who"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Líder de Projeto</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Quem lidera este plano?" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
