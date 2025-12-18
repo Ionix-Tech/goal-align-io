@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock, XCircle, Eye, PauseCircle, History, Calendar } from 'lucide-react';
+import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock, XCircle, Eye, PauseCircle, History, Calendar, Link2, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TaskStatusUpdateDialog } from './TaskStatusUpdateDialog';
@@ -84,11 +84,13 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
             )}
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {task.due_date && (
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            {(task.start_date || task.due_date) && (
               <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-500 font-medium' : ''}`}>
                 <CalendarDays className="h-4 w-4" />
-                {format(new Date(task.due_date), "dd 'de' MMM", { locale: ptBR })}
+                {task.start_date && format(new Date(task.start_date), "dd/MM", { locale: ptBR })}
+                {task.start_date && task.due_date && <ArrowRight className="h-3 w-3" />}
+                {task.due_date && format(new Date(task.due_date), "dd/MM", { locale: ptBR })}
                 {isOverdue && ' (Atrasada)'}
               </div>
             )}
@@ -102,6 +104,17 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
                 </Avatar>
                 <span className="text-sm">{task.assignee.full_name}</span>
               </div>
+            )}
+            {task.link_url && (
+              <a 
+                href={task.link_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-primary hover:underline"
+              >
+                <Link2 className="h-4 w-4" />
+                <span className="truncate max-w-[100px]">Link</span>
+              </a>
             )}
           </div>
         </div>

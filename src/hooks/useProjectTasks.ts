@@ -22,6 +22,8 @@ export interface ProjectTask {
   created_by: string;
   completed_at: string | null;
   due_date: string | null;
+  start_date: string | null;
+  link_url: string | null;
   created_at: string;
   milestone_id: string | null;
   indicator_id: string | null;
@@ -79,18 +81,24 @@ export function useCreateTask() {
       description,
       assignedTo,
       dueDate,
+      startDate,
+      linkUrl,
       milestoneId,
       indicatorId,
-      priority
+      priority,
+      status
     }: {
       projectId: string;
       title: string;
       description?: string;
       assignedTo?: string;
       dueDate?: string;
+      startDate?: string;
+      linkUrl?: string;
       milestoneId?: string;
       indicatorId?: string;
       priority?: string;
+      status?: string;
     }) => {
       const { data, error } = await supabase
         .from('project_tasks')
@@ -100,9 +108,12 @@ export function useCreateTask() {
           description: description || null,
           assigned_to: assignedTo || null,
           due_date: dueDate || null,
+          start_date: startDate || null,
+          link_url: linkUrl || null,
           milestone_id: milestoneId || null,
           indicator_id: indicatorId || null,
           priority: priority || 'medium',
+          status: status || 'not_started',
           created_by: user?.id
         })
         .select()
@@ -134,6 +145,8 @@ export function useUpdateTask() {
       status,
       assignedTo,
       dueDate,
+      startDate,
+      linkUrl,
       milestoneId,
       indicatorId,
       priority,
@@ -146,6 +159,8 @@ export function useUpdateTask() {
       status?: TaskStatus;
       assignedTo?: string | null;
       dueDate?: string | null;
+      startDate?: string | null;
+      linkUrl?: string | null;
       milestoneId?: string | null;
       indicatorId?: string | null;
       priority?: string;
@@ -173,6 +188,8 @@ export function useUpdateTask() {
       }
       if (assignedTo !== undefined) updateData.assigned_to = assignedTo;
       if (dueDate !== undefined) updateData.due_date = dueDate;
+      if (startDate !== undefined) updateData.start_date = startDate;
+      if (linkUrl !== undefined) updateData.link_url = linkUrl;
       if (milestoneId !== undefined) updateData.milestone_id = milestoneId;
       if (indicatorId !== undefined) updateData.indicator_id = indicatorId;
       if (priority !== undefined) updateData.priority = priority;

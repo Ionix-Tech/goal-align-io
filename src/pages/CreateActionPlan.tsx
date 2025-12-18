@@ -93,10 +93,13 @@ const CreateActionPlan = () => {
           project_id: plan.id,
           title: task.title,
           assigned_to: task.assigned_to || null,
+          start_date: task.start_date || null,
           due_date: task.due_date || null,
+          description: task.description || null,
+          link_url: task.link_url || null,
+          status: task.status || 'not_started',
+          priority: 'medium',
           created_by: user?.id,
-          status: 'not_started',
-          priority: 'medium'
         }));
 
         const { error: tasksError } = await supabase
