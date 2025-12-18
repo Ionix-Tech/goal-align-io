@@ -39,6 +39,13 @@ export function useProjects(filters?: UseProjectsFilters) {
   return useQuery({
     queryKey: ['projects', filters],
     queryFn: async () => {
+      // First, get all idea IDs that are linked to projects
+      const { data: linkedIdeas } = await supabase
+        .from('project_source_ideas')
+        .select('idea_id');
+      
+      const linkedIdeaIds = (linkedIdeas || []).map(l => l.idea_id);
+
       let query = supabase
         .from('projects')
         .select(`
@@ -84,8 +91,17 @@ export function useProjects(filters?: UseProjectsFilters) {
 
       if (error) throw error;
 
+      // Filter out ideas that are already linked to projects (consumed ideas)
+      const filteredData = (data || []).filter(project => {
+        // If it's an idea and it's linked to a project, exclude it from the list
+        if (project.initiative_type === 'idea' && linkedIdeaIds.includes(project.id)) {
+          return false;
+        }
+        return true;
+      });
+
       // Group by status - but 'idea' column is based on initiative_type, not status
-      const projectsByStatus = (data || []).reduce((acc, project) => {
+      const projectsByStatus = filteredData.reduce((acc, project) => {
         // Ideas go to 'idea' column based on initiative_type, regardless of status
         if (project.initiative_type === 'idea') {
           acc.idea.push(project as any);
@@ -109,13 +125,13 @@ export function useProjects(filters?: UseProjectsFilters) {
 
       // Group by type
       const projectsByType = {
-        projects: (data || []).filter(p => p.initiative_type === 'project'),
-        action_plans: (data || []).filter(p => p.initiative_type === 'action_plan'),
-        ideas: (data || []).filter(p => p.initiative_type === 'idea')
+        projects: filteredData.filter(p => p.initiative_type === 'project'),
+        action_plans: filteredData.filter(p => p.initiative_type === 'action_plan'),
+        ideas: filteredData.filter(p => p.initiative_type === 'idea')
       };
 
       return {
-        all: (data || []) as any[],
+        all: filteredData as any[],
         byStatus: projectsByStatus,
         byType: projectsByType
       };
