@@ -67,6 +67,26 @@ export function KanbanBoard({ projectsByStatus, onProjectClick }: KanbanBoardPro
 
     if (!project || !fromStatus) return;
 
+    // Ideas cannot be dragged - they must be converted via dialog
+    if (project.initiative_type === 'idea') {
+      toast({
+        title: 'Ideias não podem ser movidas',
+        description: 'Use a opção "Converter" para transformar esta ideia em projeto ou plano de ação.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Cannot drag into the idea column
+    if (newStatus === 'idea') {
+      toast({
+        title: 'Ação não permitida',
+        description: 'Projetos e planos de ação não podem voltar a ser ideias.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     // Check if transition is allowed
     const validation = canTransition(fromStatus, newStatus, {
       ...project,

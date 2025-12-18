@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Briefcase, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useProjectTransitions } from "@/hooks/useProjectTransitions";
 import { ProjectComments } from "@/components/projects/ProjectComments";
+import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
 
 interface Indicator {
   id: string;
@@ -83,7 +84,10 @@ const ProjectDetail = () => {
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const isIdea = project?.initiative_type === 'idea';
 
   const strategicPillars = [
     { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -625,6 +629,26 @@ const ProjectDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Idea Conversion Banner */}
+      {isIdea && (
+        <div className="max-w-6xl mx-auto px-8 pt-6">
+          <Card className="p-4 border-yellow-400 bg-yellow-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Lightbulb className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="font-medium text-yellow-800">Esta é uma ideia</p>
+                  <p className="text-sm text-yellow-700">Converta-a em projeto ou plano de ação para começar a executá-la.</p>
+                </div>
+              </div>
+              <Button onClick={() => setShowConvertDialog(true)} className="bg-yellow-600 hover:bg-yellow-700">
+                Converter Ideia
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-8 py-8">
@@ -1385,6 +1409,13 @@ const ProjectDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Convert Idea Dialog */}
+      <ConvertIdeaDialog
+        open={showConvertDialog}
+        onClose={() => setShowConvertDialog(false)}
+        idea={project ? { id: project.id, name: project.name, description: project.description } : null}
+      />
     </div>
   );
 };

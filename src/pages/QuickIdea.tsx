@@ -43,6 +43,7 @@ const QuickIdea = () => {
         name: title,
         description: description,
         status: 'idea' as const,
+        initiative_type: 'idea' as const,
         created_by: user.id,
         assigned_to: null,
       };
