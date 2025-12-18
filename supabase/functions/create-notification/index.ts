@@ -19,11 +19,24 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with service role key for admin operations
-    const supabaseAdmin = createClient(
+    // Verify user is authenticated by checking JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Create a Supabase client with the user's JWT to validate it
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
+        global: { headers: { Authorization: authHeader } },
         auth: {
           autoRefreshToken: false,
           persistSession: false,
@@ -31,11 +44,20 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Verify user is authenticated by checking JWT
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
+    // Validate the JWT and get the authenticated user
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
+
+    console.log(`Authenticated user: ${user.id}`);
 
     // Parse request body
     const { userId, projectId, type, message }: NotificationRequest = await req.json();
@@ -50,6 +72,48 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    // Verify the authenticated user has access to the project (if projectId is provided)
+    if (projectId) {
+      const { data: hasAccess, error: accessError } = await supabaseClient.rpc('user_has_project_access', {
+        _user_id: user.id,
+        _project_id: projectId
+      });
+
+      if (accessError) {
+        console.error('Access check error:', accessError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to verify project access' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      if (!hasAccess) {
+        console.warn(`User ${user.id} attempted to create notification for project ${projectId} without access`);
+        return new Response(
+          JSON.stringify({ error: 'User does not have access to this project' }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+
+    // Initialize Supabase admin client for creating the notification
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
 
     console.log(`Creating notification for user ${userId}: ${type}`);
 
