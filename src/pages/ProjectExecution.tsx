@@ -129,7 +129,7 @@ const ProjectExecution = () => {
           <TabsList className={`grid w-full ${project.initiative_type === 'action_plan' ? 'grid-cols-4' : 'grid-cols-5'}`}>
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
             {project.initiative_type !== 'action_plan' && (
-              <TabsTrigger value="thesis">📄 Tese do Projeto</TabsTrigger>
+              <TabsTrigger value="thesis">📄 Objetivo do Projeto</TabsTrigger>
             )}
             <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
@@ -432,13 +432,13 @@ const ProjectExecution = () => {
             />
           </TabsContent>
 
-          {/* Aba: Tese do Projeto */}
+          {/* Aba: Objetivo do Projeto */}
           <TabsContent value="thesis" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Tese Original do Projeto
+                  Objetivo Original do Projeto
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">

@@ -88,13 +88,13 @@ export function useCreateThesis() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['theses'] });
       toast({
-        title: "Tese criada",
-        description: "A tese estratégica foi criada com sucesso."
+        title: "Objetivo criado",
+        description: "O objetivo estratégico foi criado com sucesso."
       });
     },
     onError: (error) => {
       toast({
-        title: "Erro ao criar tese",
+        title: "Erro ao criar objetivo",
         description: error.message,
         variant: "destructive"
       });
@@ -121,13 +121,13 @@ export function useUpdateThesis() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['theses'] });
       toast({
-        title: "Tese atualizada",
+        title: "Objetivo atualizado",
         description: "As alterações foram salvas com sucesso."
       });
     },
     onError: (error) => {
       toast({
-        title: "Erro ao atualizar tese",
+        title: "Erro ao atualizar objetivo",
         description: error.message,
         variant: "destructive"
       });
@@ -149,7 +149,7 @@ export function useDeleteThesis() {
         .limit(1);
 
       if (projects && projects.length > 0) {
-        throw new Error('Não é possível excluir uma tese com projetos vinculados. Arquive-a ao invés disso.');
+        throw new Error('Não é possível excluir um objetivo com projetos vinculados. Arquive-o ao invés disso.');
       }
 
       const { error } = await supabase
@@ -162,13 +162,13 @@ export function useDeleteThesis() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['theses'] });
       toast({
-        title: "Tese excluída",
-        description: "A tese foi removida com sucesso."
+        title: "Objetivo excluído",
+        description: "O objetivo foi removido com sucesso."
       });
     },
     onError: (error) => {
       toast({
-        title: "Erro ao excluir tese",
+        title: "Erro ao excluir objetivo",
         description: error.message,
         variant: "destructive"
       });

@@ -28,10 +28,10 @@ const AttentionPointsFilters = ({
     <div className="flex flex-col sm:flex-row gap-3 mb-6">
       <Select value={selectedThesis} onValueChange={onThesisChange}>
         <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder="Todas as Teses" />
+          <SelectValue placeholder="Todos os Objetivos" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todas as Teses</SelectItem>
+          <SelectItem value="all">Todos os Objetivos</SelectItem>
           {theses?.map((thesis) => (
             <SelectItem key={thesis.id} value={thesis.id}>
               {thesis.name}
