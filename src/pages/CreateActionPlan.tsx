@@ -286,9 +286,9 @@ const CreateActionPlan = () => {
                     name="who"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quem? (Who)</FormLabel>
+                        <FormLabel>Líder de Projeto</FormLabel>
                         <FormControl>
-                          <Input placeholder="Quem é responsável?" {...field} />
+                          <Input placeholder="Quem lidera este plano?" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
