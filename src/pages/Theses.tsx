@@ -53,7 +53,7 @@ export default function Theses() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Teses Estratégicas</h1>
+          <h1 className="text-3xl font-bold">Objetivos Estratégicos</h1>
           <p className="text-muted-foreground">
             Gerencie os objetivos macro e KPIs estratégicos da organização
           </p>
@@ -62,7 +62,7 @@ export default function Theses() {
         {canManageTheses && (
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Nova Tese
+            Novo Objetivo
           </Button>
         )}
       </div>
@@ -98,16 +98,16 @@ export default function Theses() {
         </Select>
       </div>
 
-      {/* Lista de Teses */}
+      {/* Lista de Objetivos */}
       {!theses || theses.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
           <div className="text-muted-foreground mb-4">
-            Nenhuma tese estratégica encontrada para {selectedYear}
+            Nenhum objetivo estratégico encontrado para {selectedYear}
           </div>
           {canManageTheses && (
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Criar Primeira Tese
+              Criar Primeiro Objetivo
             </Button>
           )}
         </div>

@@ -124,7 +124,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova Tese Estratégica - Passo {step} de 3</DialogTitle>
+          <DialogTitle>Novo Objetivo Estratégico - Passo {step} de 3</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -132,7 +132,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Nome da Tese *</Label>
+                <Label htmlFor="name">Nome do Objetivo *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -142,23 +142,23 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
               </div>
 
               <div>
-                <Label htmlFor="objective">Objetivo *</Label>
+                <Label htmlFor="objective">Descrição do Objetivo *</Label>
                 <Textarea
                   id="objective"
                   value={formData.objective}
                   onChange={(e) => setFormData({ ...formData, objective: e.target.value })}
-                  placeholder="Descreva o objetivo principal desta tese"
+                  placeholder="Descreva o objetivo estratégico"
                   rows={3}
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">Detalhes Adicionais</Label>
                 <Textarea
                   id="description"
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Detalhes adicionais sobre a tese"
+                  placeholder="Informações complementares"
                   rows={2}
                 />
               </div>
@@ -197,11 +197,11 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
             </div>
           )}
 
-          {/* Step 2: Tipo de Tese */}
+          {/* Step 2: Tipo de Objetivo */}
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="thesis_type">Tipo de Tese *</Label>
+                <Label htmlFor="thesis_type">Tipo de Objetivo *</Label>
                 <Select
                   value={formData.thesis_type}
                   onValueChange={(value: any) => setFormData({ ...formData, thesis_type: value })}
@@ -220,7 +220,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
               </div>
 
               <div className="rounded-lg border p-4 bg-muted/50">
-                <h4 className="font-medium mb-2">Sobre este tipo de tese:</h4>
+                <h4 className="font-medium mb-2">Sobre este tipo de objetivo:</h4>
                 <p className="text-sm text-muted-foreground">
                   {(() => {
                     switch (formData.thesis_type) {
@@ -231,7 +231,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
                       case 'new_business':
                         return 'Voltada para explorar novos mercados, produtos e oportunidades de negócio.';
                       case 'custom':
-                        return 'Tese personalizada com objetivos específicos da organização.';
+                        return 'Objetivo personalizado com metas específicas da organização.';
                       default:
                         return '';
                     }
@@ -336,7 +336,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
               onClick={handleSubmit}
               disabled={createThesis.isPending || !formData.name || !formData.objective}
             >
-              Criar Tese
+              Criar Objetivo
             </Button>
           )}
         </div>

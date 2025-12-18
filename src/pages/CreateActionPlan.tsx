@@ -152,7 +152,7 @@ const CreateActionPlan = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Informações Básicas</CardTitle>
-                <CardDescription>Nome e tese vinculada</CardDescription>
+                <CardDescription>Nome e objetivo vinculado</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -174,18 +174,18 @@ const CreateActionPlan = () => {
                   name="thesis_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tese Estratégica (Opcional)</FormLabel>
+                      <FormLabel>Objetivo Estratégico (Opcional)</FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(value === "none" ? undefined : value)} 
                         value={field.value || "none"}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a tese ou deixe em branco" />
+                            <SelectValue placeholder="Selecione o objetivo ou deixe em branco" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="none">Sem tese estratégica</SelectItem>
+                          <SelectItem value="none">Sem objetivo estratégico</SelectItem>
                           {activeTheses.map((thesis) => (
                             <SelectItem key={thesis.id} value={thesis.id}>
                               {thesis.name} - {thesis.objective}

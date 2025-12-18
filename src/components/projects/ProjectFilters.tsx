@@ -89,7 +89,7 @@ export function ProjectFilters({
           )}
           {selectedThesis && onThesisChange && (
             <Badge variant="secondary" className="gap-1">
-              Tese: {theses?.find(t => t.id === selectedThesis)?.name}
+              Objetivo: {theses?.find(t => t.id === selectedThesis)?.name}
               <button
                 onClick={() => onThesisChange(null)}
                 className="ml-1 hover:bg-muted rounded-full"

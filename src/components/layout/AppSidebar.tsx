@@ -29,7 +29,7 @@ const menuItems = [
     subitems: [
       { title: "Priorização", url: "/prioritization", icon: ListOrdered },
       { title: "Portfólio", url: "/portfolio", icon: FolderKanban },
-      { title: "Teses", url: "/theses", icon: FileText },
+      { title: "Objetivos", url: "/theses", icon: FileText },
     ]
   },
   { title: "Gestão e Execução", url: "/management", icon: ClipboardCheck },
