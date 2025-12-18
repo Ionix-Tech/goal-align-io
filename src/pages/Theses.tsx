@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter } from "lucide-react";
 import { useTheses } from "@/hooks/useTheses";
-import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { ThesisCard } from "@/components/theses/ThesisCard";
 import { CreateThesisDialog } from "@/components/theses/CreateThesisDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Theses() {
+  const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedType, setSelectedType] = useState<string>("all");
@@ -132,6 +133,7 @@ export default function Theses() {
                   <ThesisCard
                     key={thesis.id}
                     thesis={thesis}
+                    onClick={(t) => navigate(`/theses/${t.id}`)}
                     onEdit={canManageTheses ? () => {} : undefined}
                     onArchive={canManageTheses ? () => {} : undefined}
                   />
