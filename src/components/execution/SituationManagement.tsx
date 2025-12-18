@@ -107,25 +107,6 @@ export function SituationManagement({ projectId }: SituationManagementProps) {
                           </div>
                         </div>
 
-                        {/* Indicators */}
-                        {situation.indicators && situation.indicators.length > 0 && (
-                          <div className="pt-3 border-t space-y-2">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase">
-                              Indicadores
-                            </p>
-                            <div className="space-y-1">
-                              {situation.indicators.map((ind: any) => (
-                                <div key={ind.id} className="flex items-center gap-2 text-sm">
-                                  <span className="font-medium">{ind.name}:</span>
-                                  <span className="text-red-600">{ind.current_value}</span>
-                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                                  <span className="text-green-600">{ind.target_value}</span>
-                                  {ind.unit && <span className="text-muted-foreground">{ind.unit}</span>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         {/* Attachments */}
                         {situation.attachments && situation.attachments.length > 0 && (
