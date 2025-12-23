@@ -32,6 +32,14 @@ const actionPlanSchema = z.object({
   when_start: z.string().optional(),
   when_end: z.string().min(1, "Prazo final é obrigatório"),
   how_much: z.string().optional(),
+}).refine((data) => {
+  if (data.when_start && data.when_end) {
+    return new Date(data.when_start) <= new Date(data.when_end);
+  }
+  return true;
+}, {
+  message: "Data de início não pode ser posterior ao prazo final",
+  path: ["when_end"],
 });
 
 type ActionPlanFormData = z.infer<typeof actionPlanSchema>;
@@ -141,6 +149,26 @@ const CreateActionPlan = () => {
   });
 
   const onSubmit = async (data: ActionPlanFormData) => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Aviso de data retroativa
+    if (data.when_end < today) {
+      toast.warning("⚠️ O prazo final é uma data passada. Isso é intencional?");
+    }
+    
+    // Aviso de plano sem ações
+    if (tasks.length === 0) {
+      toast.warning("⚠️ Plano criado sem nenhuma ação cadastrada");
+    }
+    
+    // Aviso de ações que ultrapassam o prazo do plano
+    const tasksExceedingDeadline = tasks.filter(task => 
+      task.due_date && task.due_date > data.when_end
+    );
+    if (tasksExceedingDeadline.length > 0) {
+      toast.warning(`⚠️ ${tasksExceedingDeadline.length} ação(ões) terminam DEPOIS do prazo final do plano`);
+    }
+    
     setIsSubmitting(true);
     try {
       await createPlanMutation.mutateAsync(data);
@@ -354,6 +382,7 @@ const CreateActionPlan = () => {
                     tasks={tasks}
                     onTasksChange={setTasks}
                     members={teamMembers || []}
+                    planEndDate={form.watch("when_end")}
                   />
                 </div>
 
