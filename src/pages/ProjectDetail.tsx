@@ -751,10 +751,11 @@ const ProjectDetail = () => {
               <>
                 {/* Modo Edição */}
                 <div className="space-y-6">
+                  {/* Nome - comum a todos os tipos */}
                   <Card className="p-6">
                     <div className="space-y-4">
                       <Label htmlFor="projectName" className="text-base font-semibold">
-                        Nome do Projeto *
+                        {labels.nameLabel} *
                       </Label>
                       <Input
                         id="projectName"
@@ -763,6 +764,158 @@ const ProjectDetail = () => {
                       />
                     </div>
                   </Card>
+
+                  {/* CAMPOS 5W2H - APENAS PARA PLANO DE AÇÃO */}
+                  {isActionPlan && (
+                    <>
+                      {/* O quê (What) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label htmlFor="what" className="text-base font-semibold">
+                            O quê? (What) *
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Descreva claramente o que será realizado neste plano de ação.
+                          </p>
+                          <Textarea
+                            id="what"
+                            value={what}
+                            onChange={(e) => setWhat(e.target.value)}
+                            placeholder="Descreva o que será feito..."
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                      </Card>
+
+                      {/* Por quê (Why) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label htmlFor="why" className="text-base font-semibold">
+                            Por quê? (Why) *
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Justifique a importância e necessidade desta ação.
+                          </p>
+                          <Textarea
+                            id="why"
+                            value={why}
+                            onChange={(e) => setWhy(e.target.value)}
+                            placeholder="Justifique por que esta ação é necessária..."
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                      </Card>
+
+                      {/* Como (How) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label htmlFor="how" className="text-base font-semibold">
+                            Como? (How)
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Descreva como a ação será executada.
+                          </p>
+                          <Textarea
+                            id="how"
+                            value={how}
+                            onChange={(e) => setHow(e.target.value)}
+                            placeholder="Descreva como será executado..."
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                      </Card>
+
+                      {/* Quem (Who) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label htmlFor="who" className="text-base font-semibold">
+                            Quem? (Who)
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Quem são os responsáveis pela execução?
+                          </p>
+                          <Input
+                            id="who"
+                            value={who}
+                            onChange={(e) => setWho(e.target.value)}
+                            placeholder="Responsáveis pela execução..."
+                          />
+                        </div>
+                      </Card>
+
+                      {/* Onde (Where) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label htmlFor="where" className="text-base font-semibold">
+                            Onde? (Where)
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Em qual local ou área será executado?
+                          </p>
+                          <Input
+                            id="where"
+                            value={whereLocation}
+                            onChange={(e) => setWhereLocation(e.target.value)}
+                            placeholder="Local ou área de execução..."
+                          />
+                        </div>
+                      </Card>
+
+                      {/* Quando (When) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label className="text-base font-semibold">
+                            Quando? (When) *
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Defina o período de execução do plano.
+                          </p>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="whenStart" className="text-sm">Data de Início</Label>
+                              <Input
+                                id="whenStart"
+                                type="date"
+                                value={whenStart}
+                                onChange={(e) => setWhenStart(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="whenEnd" className="text-sm">Prazo Final *</Label>
+                              <Input
+                                id="whenEnd"
+                                type="date"
+                                value={whenEnd}
+                                onChange={(e) => setWhenEnd(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Quanto (How Much) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label htmlFor="howMuch" className="text-base font-semibold">
+                            Quanto? (How Much)
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Qual o custo ou investimento estimado?
+                          </p>
+                          <Input
+                            id="howMuch"
+                            value={howMuch}
+                            onChange={(e) => setHowMuch(e.target.value)}
+                            placeholder="Custo ou investimento estimado..."
+                          />
+                        </div>
+                      </Card>
+                    </>
+                  )}
+
+                  {/* CAMPOS DE PROJETO - APENAS PARA PROJETOS */}
+                  {!isActionPlan && (
+                    <>
 
                   <Card className="p-6">
                     <div className="space-y-4">
@@ -1213,85 +1366,185 @@ const ProjectDetail = () => {
                       </Button>
                     </div>
                   </Card>
+                    </>
+                  )}
                 </div>
               </>
             ) : (
               <>
                 {/* Modo Visualização */}
                 <div className="space-y-6">
-                  <Card className="p-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm text-muted-foreground">Contexto</Label>
-                        <p className="text-sm mt-2 whitespace-pre-wrap">{project.context || 'Sem contexto'}</p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
-                        <p className="text-base mt-2">
-                          {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
-                          {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.label}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm text-muted-foreground">Objetivo</Label>
-                        <p className="text-sm mt-2 whitespace-pre-wrap">{project.objective || 'Sem objetivo'}</p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  {project.indicators.length > 0 && (
-                    <Card className="p-6">
-                      <div className="space-y-4">
-                        <h3 className="text-base font-semibold">Indicadores</h3>
-                        <div className="space-y-2">
-                          {project.indicators.map((ind, index) => (
-                            <Card key={ind.id} className="p-3">
-                              <div className="text-xs text-muted-foreground mb-1">
-                                Indicador {index + 1}
-                              </div>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Hoje:</span> {ind.current_state}
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Meta:</span> {ind.target_state}
-                                </div>
-                              </div>
-                            </Card>
-                          ))}
+                  {/* VISUALIZAÇÃO 5W2H - APENAS PARA PLANO DE AÇÃO */}
+                  {isActionPlan && (
+                    <>
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">O quê? (What)</Label>
+                            <p className="text-sm mt-2 whitespace-pre-wrap">{(project as any).what || 'Não informado'}</p>
+                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  )}
+                      </Card>
 
-                  {project.milestones.length > 0 && (
-                    <Card className="p-6">
-                      <div className="space-y-4">
-                        <h3 className="text-base font-semibold">Milestones</h3>
-                        <div className="space-y-2">
-                          {project.milestones.map((ms) => (
-                            <Card key={ms.id} className="p-3">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="font-medium">{ms.title}</span>
-                                <span className="text-muted-foreground">
-                                  {new Date(ms.target_date).toLocaleDateString('pt-BR')}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Por quê? (Why)</Label>
+                            <p className="text-sm mt-2 whitespace-pre-wrap">{(project as any).why || 'Não informado'}</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {(project as any).how && (
+                        <Card className="p-6">
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="text-sm text-muted-foreground">Como? (How)</Label>
+                              <p className="text-sm mt-2 whitespace-pre-wrap">{(project as any).how}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      {(project as any).who && (
+                        <Card className="p-6">
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="text-sm text-muted-foreground">Quem? (Who)</Label>
+                              <p className="text-sm mt-2">{(project as any).who}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      {(project as any).where_location && (
+                        <Card className="p-6">
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="text-sm text-muted-foreground">Onde? (Where)</Label>
+                              <p className="text-sm mt-2">{(project as any).where_location}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Quando? (When)</Label>
+                            <div className="grid grid-cols-2 gap-4 mt-2">
+                              <div>
+                                <span className="text-xs text-muted-foreground">Início: </span>
+                                <span className="text-sm">
+                                  {(project as any).when_start 
+                                    ? new Date((project as any).when_start).toLocaleDateString('pt-BR')
+                                    : 'Não definido'}
                                 </span>
                               </div>
-                            </Card>
-                          ))}
+                              <div>
+                                <span className="text-xs text-muted-foreground">Prazo: </span>
+                                <span className="text-sm">
+                                  {(project as any).when_end 
+                                    ? new Date((project as any).when_end).toLocaleDateString('pt-BR')
+                                    : 'Não definido'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </Card>
+                      </Card>
+
+                      {(project as any).how_much && (
+                        <Card className="p-6">
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="text-sm text-muted-foreground">Quanto? (How Much)</Label>
+                              <p className="text-sm mt-2">{(project as any).how_much}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+                    </>
+                  )}
+
+                  {/* VISUALIZAÇÃO DE PROJETO - APENAS PARA PROJETOS */}
+                  {!isActionPlan && (
+                    <>
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Contexto</Label>
+                            <p className="text-sm mt-2 whitespace-pre-wrap">{project.context || 'Sem contexto'}</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
+                            <p className="text-base mt-2">
+                              {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
+                              {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.label}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Objetivo</Label>
+                            <p className="text-sm mt-2 whitespace-pre-wrap">{project.objective || 'Sem objetivo'}</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {project.indicators.length > 0 && (
+                        <Card className="p-6">
+                          <div className="space-y-4">
+                            <h3 className="text-base font-semibold">Indicadores</h3>
+                            <div className="space-y-2">
+                              {project.indicators.map((ind, index) => (
+                                <Card key={ind.id} className="p-3">
+                                  <div className="text-xs text-muted-foreground mb-1">
+                                    Indicador {index + 1}
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">Hoje:</span> {ind.current_state}
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Meta:</span> {ind.target_state}
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      {project.milestones.length > 0 && (
+                        <Card className="p-6">
+                          <div className="space-y-4">
+                            <h3 className="text-base font-semibold">Milestones</h3>
+                            <div className="space-y-2">
+                              {project.milestones.map((ms) => (
+                                <Card key={ms.id} className="p-3">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="font-medium">{ms.title}</span>
+                                    <span className="text-muted-foreground">
+                                      {new Date(ms.target_date).toLocaleDateString('pt-BR')}
+                                    </span>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+                    </>
                   )}
                 </div>
               </>
