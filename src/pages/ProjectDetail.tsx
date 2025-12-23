@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Briefcase, ClipboardList } from "lucide-react";
+import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Briefcase, ClipboardList, UserCircle, Calendar, Link2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,9 +21,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useProjectTransitions } from "@/hooks/useProjectTransitions";
+import { useProjectTasks, useCreateTask, useDeleteTask, useUpdateTask } from "@/hooks/useProjectTasks";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
+import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionPlanTaskManager";
 import { getInitiativeLabels } from "@/config/initiativeLabels";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Indicator {
   id: string;
@@ -68,6 +73,13 @@ const ProjectDetail = () => {
   const queryClient = useQueryClient();
   const { data: project, isLoading } = useProjectDetails(projectId || null);
   const { transition, isTransitioning } = useProjectTransitions();
+  
+  // Hooks para tarefas do plano de ação
+  const { data: projectTasks = [] } = useProjectTasks(projectId || null);
+  const { data: teamMembers = [] } = useTeamMembers();
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
 
   const [activeTab, setActiveTab] = useState("idea");
   const [projectName, setProjectName] = useState("");
@@ -97,6 +109,9 @@ const ProjectDetail = () => {
   const [whenStart, setWhenStart] = useState("");
   const [whenEnd, setWhenEnd] = useState("");
   const [howMuch, setHowMuch] = useState("");
+  
+  // Estado local para tarefas do ActionPlanTaskManager
+  const [localTasks, setLocalTasks] = useState<TaskInput[]>([]);
 
   const isIdea = project?.initiative_type === 'idea';
   const isActionPlan = project?.initiative_type === 'action_plan';
@@ -207,6 +222,88 @@ const ProjectDetail = () => {
       loadSituations();
     }
   }, [projectId, project]);
+
+  // Sincronizar tarefas do banco com estado local (para ActionPlanTaskManager)
+  useEffect(() => {
+    if (projectTasks && isActionPlan) {
+      setLocalTasks(projectTasks.map(task => ({
+        id: task.id,
+        title: task.title,
+        assigned_to: task.assigned_to || '',
+        start_date: task.start_date || '',
+        due_date: task.due_date || '',
+        description: task.description || '',
+        link_url: task.link_url || '',
+        status: task.status
+      })));
+    }
+  }, [projectTasks, isActionPlan]);
+
+  // Handler para mudanças nas tarefas do ActionPlanTaskManager
+  const handleTasksChange = useCallback(async (newTasks: TaskInput[]) => {
+    if (!projectId || !user) return;
+
+    const currentTaskIds = new Set(localTasks.map(t => t.id));
+    const newTaskIds = new Set(newTasks.map(t => t.id));
+    
+    // Identificar tarefas adicionadas
+    const addedTasks = newTasks.filter(t => !currentTaskIds.has(t.id));
+    
+    // Identificar tarefas removidas
+    const removedTaskIds = localTasks.filter(t => !newTaskIds.has(t.id)).map(t => t.id);
+    
+    // Identificar tarefas atualizadas
+    const updatedTasks = newTasks.filter(t => {
+      const oldTask = localTasks.find(lt => lt.id === t.id);
+      if (!oldTask) return false;
+      return (
+        oldTask.title !== t.title ||
+        oldTask.assigned_to !== t.assigned_to ||
+        oldTask.start_date !== t.start_date ||
+        oldTask.due_date !== t.due_date ||
+        oldTask.description !== t.description ||
+        oldTask.link_url !== t.link_url ||
+        oldTask.status !== t.status
+      );
+    });
+
+    // Atualizar estado local imediatamente
+    setLocalTasks(newTasks);
+
+    // Processar adições
+    for (const task of addedTasks) {
+      await createTaskMutation.mutateAsync({
+        projectId,
+        title: task.title,
+        description: task.description,
+        assignedTo: task.assigned_to || undefined,
+        dueDate: task.due_date || undefined,
+        startDate: task.start_date || undefined,
+        linkUrl: task.link_url || undefined,
+        status: task.status
+      });
+    }
+
+    // Processar remoções
+    for (const taskId of removedTaskIds) {
+      await deleteTaskMutation.mutateAsync({ taskId, projectId });
+    }
+
+    // Processar atualizações
+    for (const task of updatedTasks) {
+      await updateTaskMutation.mutateAsync({
+        taskId: task.id,
+        projectId,
+        title: task.title,
+        description: task.description,
+        assignedTo: task.assigned_to || null,
+        dueDate: task.due_date || null,
+        startDate: task.start_date || null,
+        linkUrl: task.link_url || null,
+        status: task.status as any
+      });
+    }
+  }, [projectId, user, localTasks, createTaskMutation, updateTaskMutation, deleteTaskMutation]);
 
   const addIndicator = () => {
     setIndicators([...indicators, {
@@ -806,24 +903,18 @@ const ProjectDetail = () => {
                         </div>
                       </Card>
 
-                      {/* Como (How) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label htmlFor="how" className="text-base font-semibold">
-                            Como? (How)
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Descreva como a ação será executada.
-                          </p>
-                          <Textarea
-                            id="how"
-                            value={how}
-                            onChange={(e) => setHow(e.target.value)}
-                            placeholder="Descreva como será executado..."
-                            className="min-h-[100px]"
-                          />
-                        </div>
-                      </Card>
+                      {/* Como (How) - Ações do Plano */}
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">Como? (How) - Ações do Plano</Label>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Adicione as ações necessárias para executar o plano.
+                        </p>
+                        <ActionPlanTaskManager
+                          tasks={localTasks}
+                          onTasksChange={handleTasksChange}
+                          members={teamMembers}
+                        />
+                      </div>
 
                       {/* Quem (Who) */}
                       <Card className="p-6">
@@ -1395,16 +1486,76 @@ const ProjectDetail = () => {
                         </div>
                       </Card>
 
-                      {(project as any).how && (
-                        <Card className="p-6">
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-sm text-muted-foreground">Como? (How)</Label>
-                              <p className="text-sm mt-2 whitespace-pre-wrap">{(project as any).how}</p>
+                      {/* Como (How) - Ações do Plano (modo visualização) */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label className="text-sm text-muted-foreground">Como? (How) - Ações do Plano</Label>
+                          {projectTasks.length > 0 ? (
+                            <div className="space-y-2 mt-2">
+                              {projectTasks.map(task => {
+                                const statusConfigs: Record<string, { label: string; className: string }> = {
+                                  not_started: { label: 'Aberta', className: 'bg-muted text-muted-foreground' },
+                                  in_progress: { label: 'Em andamento', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+                                  completed: { label: 'Concluída', className: 'bg-green-500/10 text-green-500 border-green-500/20' },
+                                  blocked: { label: 'Bloqueada', className: 'bg-red-500/10 text-red-500 border-red-500/20' },
+                                };
+                                const statusConfig = statusConfigs[task.status] || statusConfigs.not_started;
+                                const assigneeName = task.assignee?.full_name || 'Não atribuído';
+                                
+                                return (
+                                  <div key={task.id} className="p-3 rounded-lg border bg-card">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 space-y-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium text-sm">{task.title}</span>
+                                          <Badge variant="outline" className={statusConfig.className}>
+                                            {statusConfig.label}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                          <span className="flex items-center gap-1">
+                                            <UserCircle className="h-3 w-3" />
+                                            {assigneeName}
+                                          </span>
+                                          {task.start_date && task.due_date && (
+                                            <span className="flex items-center gap-1">
+                                              <Calendar className="h-3 w-3" />
+                                              {format(new Date(task.start_date), "dd/MM/yy", { locale: ptBR })}
+                                              <ArrowRight className="h-3 w-3" />
+                                              {format(new Date(task.due_date), "dd/MM/yy", { locale: ptBR })}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {task.description && (
+                                          <div className="flex items-start gap-1 text-xs text-muted-foreground">
+                                            <FileText className="h-3 w-3 mt-0.5" />
+                                            <span>{task.description}</span>
+                                          </div>
+                                        )}
+                                        {task.link_url && (
+                                          <div className="flex items-center gap-1 text-xs">
+                                            <Link2 className="h-3 w-3" />
+                                            <a 
+                                              href={task.link_url} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="text-primary hover:underline truncate max-w-[200px]"
+                                            >
+                                              {task.link_url}
+                                            </a>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          </div>
-                        </Card>
-                      )}
+                          ) : (
+                            <p className="text-sm text-muted-foreground mt-2">Nenhuma ação cadastrada</p>
+                          )}
+                        </div>
+                      </Card>
 
                       {(project as any).who && (
                         <Card className="p-6">
