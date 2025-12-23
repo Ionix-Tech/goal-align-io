@@ -23,6 +23,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useProjectTransitions } from "@/hooks/useProjectTransitions";
 import { ProjectComments } from "./ProjectComments";
+import { getInitiativeLabels } from "@/config/initiativeLabels";
 
 interface Indicator {
   id: string;
@@ -349,34 +350,44 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
   const handleSave = async (targetStatus: 'draft' | 'review') => {
     if (!project || !projectId) return;
 
+    const isActionPlan = project.initiative_type === 'action_plan';
+    const labels = getInitiativeLabels(project.initiative_type);
+
     // Validações básicas
     if (!projectName.trim()) {
-      toast.error("Nome do projeto é obrigatório");
+      toast.error(`Nome ${labels.article === 'o' ? 'do' : 'da'} ${labels.singular.toLowerCase()} é obrigatório`);
       return;
     }
 
-    if (!context.trim()) {
+    // Validações para Projeto
+    if (!isActionPlan && !context.trim()) {
       toast.error("Contexto é obrigatório");
       return;
     }
 
     // Validações para envio para aprovação
     if (targetStatus === 'review') {
-      if (!strategicPillar) {
-        toast.error("Objetivo estratégico é obrigatório");
-        return;
-      }
-      if (!objective.trim()) {
-        toast.error("Objetivo é obrigatório");
-        return;
-      }
-      if (indicators.length === 0) {
-        toast.error("Adicione pelo menos 1 indicador");
-        return;
-      }
-      if (milestones.length === 0) {
-        toast.error("Adicione pelo menos 1 milestone");
-        return;
+      if (isActionPlan) {
+        // Validações para Plano de Ação - campos 5W2H básicos
+        // O plano pode ser aprovado com menos requisitos
+      } else {
+        // Validações para Projeto
+        if (!strategicPillar) {
+          toast.error("Objetivo estratégico é obrigatório");
+          return;
+        }
+        if (!objective.trim()) {
+          toast.error("Objetivo é obrigatório");
+          return;
+        }
+        if (indicators.length === 0) {
+          toast.error("Adicione pelo menos 1 indicador");
+          return;
+        }
+        if (milestones.length === 0) {
+          toast.error("Adicione pelo menos 1 milestone");
+          return;
+        }
       }
     }
 
@@ -488,10 +499,11 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project-details'] });
 
+      const labels = getInitiativeLabels(project.initiative_type);
       if (targetStatus === 'draft') {
         toast.success("Alterações salvas");
       } else {
-        toast.success("Projeto enviado para aprovação");
+        toast.success(labels.submitted);
       }
 
       onSuccess?.();
@@ -585,20 +597,26 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
     return null;
   }
 
+  const isActionPlan = project.initiative_type === 'action_plan';
+  const labels = getInitiativeLabels(project.initiative_type);
+
   const isEditMode = project.status === 'draft';
   const isReviewMode = project.status === 'review';
   const canEdit = isEditMode && (user?.id === project.created_by || role === 'ceo');
   const canApprove = isReviewMode && role === 'ceo';
   const canComment = role === 'ceo' || user?.id === project.created_by;
 
-  // Validações de requisitos
+  // Validações de requisitos - diferentes por tipo
   const hasIndicators = indicators.length > 0;
   const hasMilestones = milestones.length > 0;
   const hasObjective = objective.trim().length > 0;
   const hasContext = context.trim().length > 0;
   const hasPillar = !!strategicPillar;
 
-  const allRequirementsMet = hasIndicators && hasMilestones && hasObjective && hasContext && hasPillar;
+  // Para Plano de Ação, requisitos são menores
+  const allRequirementsMet = isActionPlan 
+    ? projectName.trim().length > 0
+    : hasIndicators && hasMilestones && hasObjective && hasContext && hasPillar;
 
   return (
     <>
@@ -608,14 +626,19 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <SheetTitle>
-                  {isEditMode ? 'Editar Projeto' : isReviewMode ? 'Revisar Projeto' : 'Detalhes do Projeto'}
+                  {isEditMode ? labels.edit : isReviewMode ? labels.review : labels.details}
                 </SheetTitle>
-                <Badge variant={project.status === 'review' ? 'default' : 'secondary'}>
-                  {project.status === 'draft' && '📝 Detalhamento'}
-                  {project.status === 'review' && '⏳ Em Análise'}
-                  {project.status === 'approved' && '✅ Aprovado'}
-                  {project.status === 'archived' && '📦 Arquivado'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={isActionPlan ? "secondary" : "default"}>
+                    {isActionPlan ? "Plano de Ação" : "Projeto"}
+                  </Badge>
+                  <Badge variant={project.status === 'review' ? 'default' : 'outline'}>
+                    {project.status === 'draft' && '📝 Detalhamento'}
+                    {project.status === 'review' && '⏳ Em Análise'}
+                    {project.status === 'approved' && '✅ Aprovado'}
+                    {project.status === 'archived' && '📦 Arquivado'}
+                  </Badge>
+                </div>
               </div>
             </div>
           </SheetHeader>
@@ -624,8 +647,8 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
             <div className="space-y-6 py-6">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'idea' | 'detail')} className="space-y-4">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="idea">💡 Ideia Original</TabsTrigger>
-                  <TabsTrigger value="detail">📝 Detalhamento</TabsTrigger>
+                  <TabsTrigger value="idea">{labels.ideaTab}</TabsTrigger>
+                  <TabsTrigger value="detail">{labels.detailTab}</TabsTrigger>
                 </TabsList>
 
                 {/* Aba: Ideia Original */}
@@ -657,7 +680,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="projectName" className="text-base font-semibold">
-                      Nome do Projeto *
+                      {labels.nameLabel} *
                     </Label>
                     <Input
                       id="projectName"
@@ -666,63 +689,68 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="context" className="text-base font-semibold">
-                      Contexto *
-                    </Label>
-                    <Textarea
-                      id="context"
-                      value={context}
-                      onChange={(e) => setContext(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                  </div>
+                  {/* Campos de Projeto (não mostrar para Plano de Ação) */}
+                  {!isActionPlan && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="context" className="text-base font-semibold">
+                          Contexto *
+                        </Label>
+                        <Textarea
+                          id="context"
+                          value={context}
+                          onChange={(e) => setContext(e.target.value)}
+                          className="min-h-[100px]"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="pillar" className="text-base font-semibold">
-                      Objetivo Estratégico *
-                    </Label>
-                    <Select value={strategicPillar} onValueChange={setStrategicPillar}>
-                      <SelectTrigger id="pillar">
-                        <SelectValue placeholder="Selecione o pilar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {strategicPillars.map(pillar => (
-                          <SelectItem key={pillar.value} value={pillar.value}>
-                            <span className="flex items-center gap-2">
-                              <span>{pillar.icon}</span>
-                              <span>{pillar.label}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pillar" className="text-base font-semibold">
+                          Objetivo Estratégico *
+                        </Label>
+                        <Select value={strategicPillar} onValueChange={setStrategicPillar}>
+                          <SelectTrigger id="pillar">
+                            <SelectValue placeholder="Selecione o pilar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {strategicPillars.map(pillar => (
+                              <SelectItem key={pillar.value} value={pillar.value}>
+                                <span className="flex items-center gap-2">
+                                  <span>{pillar.icon}</span>
+                                  <span>{pillar.label}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="objective" className="text-base font-semibold">
-                      Objetivo *
-                    </Label>
-                    <Textarea
-                      id="objective"
-                      value={objective}
-                      onChange={(e) => setObjective(e.target.value)}
-                      className="min-h-[80px]"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="objective" className="text-base font-semibold">
+                          Objetivo *
+                        </Label>
+                        <Textarea
+                          id="objective"
+                          value={objective}
+                          onChange={(e) => setObjective(e.target.value)}
+                          className="min-h-[80px]"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="requirements" className="text-base font-semibold">
-                      Requisitos
-                    </Label>
-                    <Textarea
-                      id="requirements"
-                      value={requirements}
-                      onChange={(e) => setRequirements(e.target.value)}
-                      placeholder="Descreva os requisitos estratégicos que guiam o projeto"
-                      className="min-h-[100px]"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="requirements" className="text-base font-semibold">
+                          Requisitos
+                        </Label>
+                        <Textarea
+                          id="requirements"
+                          value={requirements}
+                          onChange={(e) => setRequirements(e.target.value)}
+                          placeholder="Descreva os requisitos estratégicos que guiam o projeto"
+                          className="min-h-[100px]"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Situações (Metodologia A3) */}
                   <Card className="p-4">
@@ -1091,95 +1119,160 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                 <>
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-sm text-muted-foreground">Nome do Projeto</Label>
+                      <Label className="text-sm text-muted-foreground">{labels.nameLabel}</Label>
                       <p className="text-base font-medium mt-1">{project.name}</p>
                     </div>
 
-                    <Separator />
-
-                    <div>
-                      <Label className="text-sm text-muted-foreground">Contexto</Label>
-                      <p className="text-sm mt-1 whitespace-pre-wrap">{project.context}</p>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
-                      <p className="text-base mt-1">
-                        {strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
-                        {strategicPillars.find(p => p.value === project.strategic_pillar)?.label}
-                      </p>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <Label className="text-sm text-muted-foreground">Objetivo</Label>
-                      <p className="text-sm mt-1 whitespace-pre-wrap">{project.objective}</p>
-                    </div>
-
-                    <Separator />
-
-                    {/* Validação de Requisitos */}
-                    <Card className="p-4 bg-muted/50">
-                      <h3 className="text-sm font-semibold mb-3">Requisitos para Aprovação</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          {hasIndicators ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="text-sm">
-                            Indicadores ({project.indicators.length})
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {hasMilestones ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="text-sm">
-                            Milestones ({project.milestones.length})
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {hasObjective ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="text-sm">Objetivo detalhado</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {hasContext ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="text-sm">Contexto completo</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {hasPillar ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="text-sm">Objetivo estratégico definido</span>
-                        </div>
-                      </div>
-
-                      {!allRequirementsMet && (
-                        <div className="mt-3 flex items-start gap-2 text-orange-600">
-                          <AlertCircle className="h-4 w-4 mt-0.5" />
-                          <p className="text-xs">
-                            Alguns requisitos não foram atendidos. Considere reprovar para ajustes.
+                    {/* Campos de Plano de Ação (5W2H) */}
+                    {isActionPlan ? (
+                      <>
+                        <Separator />
+                        {project.what && (
+                          <div>
+                            <Label className="text-sm text-muted-foreground">O quê? (What)</Label>
+                            <p className="text-sm mt-1 whitespace-pre-wrap">{project.what}</p>
+                          </div>
+                        )}
+                        <Separator />
+                        {project.why && (
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Por quê? (Why)</Label>
+                            <p className="text-sm mt-1 whitespace-pre-wrap">{project.why}</p>
+                          </div>
+                        )}
+                        <Separator />
+                        {project.who && (
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Quem? (Who)</Label>
+                            <p className="text-sm mt-1 whitespace-pre-wrap">{project.who}</p>
+                          </div>
+                        )}
+                        <Separator />
+                        <div>
+                          <Label className="text-sm text-muted-foreground">Quando? (When)</Label>
+                          <p className="text-sm mt-1">
+                            {project.when_start && `Início: ${new Date(project.when_start).toLocaleDateString('pt-BR')}`}
+                            {project.when_start && project.when_end && ' • '}
+                            {project.when_end && `Término: ${new Date(project.when_end).toLocaleDateString('pt-BR')}`}
                           </p>
                         </div>
-                      )}
-                    </Card>
+                        {project.where_location && (
+                          <>
+                            <Separator />
+                            <div>
+                              <Label className="text-sm text-muted-foreground">Onde? (Where)</Label>
+                              <p className="text-sm mt-1 whitespace-pre-wrap">{project.where_location}</p>
+                            </div>
+                          </>
+                        )}
+                        {project.how && (
+                          <>
+                            <Separator />
+                            <div>
+                              <Label className="text-sm text-muted-foreground">Como? (How)</Label>
+                              <p className="text-sm mt-1 whitespace-pre-wrap">{project.how}</p>
+                            </div>
+                          </>
+                        )}
+                        {project.how_much && (
+                          <>
+                            <Separator />
+                            <div>
+                              <Label className="text-sm text-muted-foreground">Quanto? (How Much)</Label>
+                              <p className="text-sm mt-1 whitespace-pre-wrap">{project.how_much}</p>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* Campos de Projeto */}
+                        <Separator />
+                        <div>
+                          <Label className="text-sm text-muted-foreground">Contexto</Label>
+                          <p className="text-sm mt-1 whitespace-pre-wrap">{project.context}</p>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
+                          <p className="text-base mt-1">
+                            {strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
+                            {strategicPillars.find(p => p.value === project.strategic_pillar)?.label}
+                          </p>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <Label className="text-sm text-muted-foreground">Objetivo</Label>
+                          <p className="text-sm mt-1 whitespace-pre-wrap">{project.objective}</p>
+                        </div>
+
+                        <Separator />
+
+                        {/* Validação de Requisitos - Apenas para Projeto */}
+                        <Card className="p-4 bg-muted/50">
+                          <h3 className="text-sm font-semibold mb-3">Requisitos para Aprovação</h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              {hasIndicators ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className="text-sm">
+                                Indicadores ({project.indicators.length})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {hasMilestones ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className="text-sm">
+                                Milestones ({project.milestones.length})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {hasObjective ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className="text-sm">Objetivo detalhado</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {hasContext ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className="text-sm">Contexto completo</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {hasPillar ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className="text-sm">Objetivo estratégico definido</span>
+                            </div>
+                          </div>
+
+                          {!allRequirementsMet && (
+                            <div className="mt-3 flex items-start gap-2 text-orange-600">
+                              <AlertCircle className="h-4 w-4 mt-0.5" />
+                              <p className="text-xs">
+                                Alguns requisitos não foram atendidos. Considere reprovar para ajustes.
+                              </p>
+                            </div>
+                          )}
+                        </Card>
+                      </>
+                    )}
 
                     <Separator />
 
@@ -1304,7 +1397,7 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
                   className="w-full"
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Aprovar Projeto
+                  {labels.approve}
                 </Button>
               </div>
             )}
@@ -1316,9 +1409,9 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Aprovar Projeto?</AlertDialogTitle>
+            <AlertDialogTitle>{labels.approveTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Você está prestes a aprovar "{project?.name}". Esta ação irá notificar o criador e membros do projeto.
+              {labels.approveDescription(project?.name || '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -1343,9 +1436,9 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Solicitar Ajustes?</AlertDialogTitle>
+            <AlertDialogTitle>{labels.rejectTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto será devolvido para "Detalhamento" e o criador será notificado sobre os ajustes necessários.
+              {labels.rejectDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -1373,9 +1466,9 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
       <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Arquivar Projeto?</AlertDialogTitle>
+            <AlertDialogTitle>{labels.archiveTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto será movido para "Arquivados" e o criador será notificado. Esta ação indica que o projeto não será desenvolvido.
+              {labels.archiveDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
