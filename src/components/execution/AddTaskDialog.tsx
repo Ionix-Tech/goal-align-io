@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateTask, useUpdateTask, ProjectTask, TaskStatus } from '@/hooks/useProjectTasks';
+import { toast } from 'sonner';
 
 interface AddTaskDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface AddTaskDialogProps {
   indicators: Array<{ id: string; name: string }>;
   members: Array<{ user_id: string; user: { full_name: string } }>;
   editTask?: ProjectTask | null;
+  projectEndDate?: string;
 }
 
 export function AddTaskDialog({ 
@@ -24,7 +26,8 @@ export function AddTaskDialog({
   milestones, 
   indicators, 
   members,
-  editTask 
+  editTask,
+  projectEndDate
 }: AddTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -74,6 +77,17 @@ export function AddTaskDialog({
     e.preventDefault();
     
     if (!title.trim()) return;
+    
+    // Validação: data fim < data início
+    if (startDate && dueDate && new Date(startDate) > new Date(dueDate)) {
+      toast.error("Data de início não pode ser posterior à data de término");
+      return;
+    }
+    
+    // Aviso se a tarefa ultrapassa o prazo do projeto (não bloqueia)
+    if (projectEndDate && dueDate && dueDate > projectEndDate) {
+      toast.warning("⚠️ Esta tarefa termina DEPOIS do prazo final do projeto/plano");
+    }
 
     if (editTask) {
       await updateTask.mutateAsync({

@@ -29,6 +29,7 @@ interface ActionPlanTaskManagerProps {
   tasks: TaskInput[];
   onTasksChange: (tasks: TaskInput[]) => void;
   members: Array<{ id: string; full_name: string }>;
+  planEndDate?: string;
 }
 
 const statusOptions = [
@@ -48,7 +49,7 @@ const getStatusConfig = (status: string) => {
   return configs[status] || configs.not_started;
 };
 
-export function ActionPlanTaskManager({ tasks, onTasksChange, members }: ActionPlanTaskManagerProps) {
+export function ActionPlanTaskManager({ tasks, onTasksChange, members, planEndDate }: ActionPlanTaskManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [currentTask, setCurrentTask] = useState<Omit<TaskInput, 'id'>>({
@@ -82,6 +83,12 @@ export function ActionPlanTaskManager({ tasks, onTasksChange, members }: ActionP
       toast.error("Data de início não pode ser posterior à data de término");
       return false;
     }
+    
+    // Aviso se a ação ultrapassa o prazo do plano (não bloqueia)
+    if (planEndDate && currentTask.due_date > planEndDate) {
+      toast.warning("⚠️ Esta ação termina DEPOIS do prazo final do plano");
+    }
+    
     return true;
   };
 
