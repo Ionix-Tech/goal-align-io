@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Briefcase, ClipboardList, UserCircle, Calendar, Link2, ArrowRight } from "lucide-react";
+import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Briefcase, ClipboardList, UserCircle, Calendar, Link2, ArrowRight, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useProjectTransitions } from "@/hooks/useProjectTransitions";
 import { useProjectTasks, useCreateTask, useDeleteTask, useUpdateTask } from "@/hooks/useProjectTasks";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useTheses } from "@/hooks/useTheses";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
 import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionPlanTaskManager";
@@ -80,6 +81,9 @@ const ProjectDetail = () => {
   const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
+  
+  // Hook para teses estratégicas
+  const { data: theses = [] } = useTheses();
 
   const [activeTab, setActiveTab] = useState("idea");
   const [projectName, setProjectName] = useState("");
@@ -109,6 +113,7 @@ const ProjectDetail = () => {
   const [whenStart, setWhenStart] = useState("");
   const [whenEnd, setWhenEnd] = useState("");
   const [howMuch, setHowMuch] = useState("");
+  const [thesisId, setThesisId] = useState("");
   
   // Estado local para tarefas do ActionPlanTaskManager
   const [localTasks, setLocalTasks] = useState<TaskInput[]>([]);
@@ -163,6 +168,7 @@ const ProjectDetail = () => {
       setWhenStart((project as any).when_start || '');
       setWhenEnd((project as any).when_end || '');
       setHowMuch((project as any).how_much || '');
+      setThesisId(project.thesis_id || '');
 
       setIndicators(project.indicators.map(ind => ({
         id: ind.id,
@@ -535,6 +541,7 @@ const ProjectDetail = () => {
           when_start: whenStart || null,
           when_end: whenEnd,
           how_much: howMuch || null,
+          thesis_id: thesisId || null,
         };
       } else {
         updateData = {
@@ -999,6 +1006,32 @@ const ProjectDetail = () => {
                             onChange={(e) => setHowMuch(e.target.value)}
                             placeholder="Custo ou investimento estimado..."
                           />
+                        </div>
+                      </Card>
+
+                      {/* Tese Estratégica */}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Label htmlFor="thesis" className="text-base font-semibold flex items-center gap-2">
+                            <Target className="h-4 w-4" />
+                            Tese Estratégica
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Vincule este plano a uma tese estratégica (opcional).
+                          </p>
+                          <Select value={thesisId} onValueChange={setThesisId}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma tese estratégica" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Nenhuma</SelectItem>
+                              {theses.map((thesis) => (
+                                <SelectItem key={thesis.id} value={thesis.id}>
+                                  {thesis.name} ({thesis.year})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </Card>
                     </>
@@ -1611,6 +1644,27 @@ const ProjectDetail = () => {
                             <div>
                               <Label className="text-sm text-muted-foreground">Quanto? (How Much)</Label>
                               <p className="text-sm mt-2">{(project as any).how_much}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      {project.thesis_id && (
+                        <Card className="p-6">
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Target className="h-4 w-4" />
+                                Tese Estratégica
+                              </Label>
+                              <p className="text-sm mt-2 font-medium">
+                                {theses.find(t => t.id === project.thesis_id)?.name || 'Não encontrada'}
+                                {theses.find(t => t.id === project.thesis_id)?.year && (
+                                  <span className="text-muted-foreground ml-2">
+                                    ({theses.find(t => t.id === project.thesis_id)?.year})
+                                  </span>
+                                )}
+                              </p>
                             </div>
                           </div>
                         </Card>

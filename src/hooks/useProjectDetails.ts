@@ -17,6 +17,7 @@ export interface ProjectDetails {
   when_end: string | null;
   how: string | null;
   how_much: string | null;
+  thesis_id: string | null;
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
   status: 'idea' | 'draft' | 'review' | 'approved' | 'archived';
   created_at: string;
