@@ -779,7 +779,13 @@ const ProjectDetail = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate(-1)}
+                onClick={() => {
+                  if (project.initiative_type === 'action_plan') {
+                    navigate('/management');
+                  } else {
+                    navigate('/prioritization');
+                  }
+                }}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
