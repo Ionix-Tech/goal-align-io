@@ -88,7 +88,19 @@ const ProjectDetail = () => {
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Estados para campos 5W2H (Plano de Ação)
+  const [what, setWhat] = useState("");
+  const [why, setWhy] = useState("");
+  const [how, setHow] = useState("");
+  const [who, setWho] = useState("");
+  const [whereLocation, setWhereLocation] = useState("");
+  const [whenStart, setWhenStart] = useState("");
+  const [whenEnd, setWhenEnd] = useState("");
+  const [howMuch, setHowMuch] = useState("");
+
   const isIdea = project?.initiative_type === 'idea';
+  const isActionPlan = project?.initiative_type === 'action_plan';
+  const labels = project ? getInitiativeLabels(project.initiative_type) : getInitiativeLabels('project');
 
   const strategicPillars = [
     { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -126,6 +138,16 @@ const ProjectDetail = () => {
       setStrategicPillar(project.strategic_pillar || '');
       setObjective(project.objective || '');
       setRequirements(project.requirements || '');
+
+      // Campos 5W2H para Planos de Ação
+      setWhat((project as any).what || '');
+      setWhy((project as any).why || '');
+      setHow((project as any).how || '');
+      setWho((project as any).who || '');
+      setWhereLocation((project as any).where_location || '');
+      setWhenStart((project as any).when_start || '');
+      setWhenEnd((project as any).when_end || '');
+      setHowMuch((project as any).how_much || '');
 
       setIndicators(project.indicators.map(ind => ({
         id: ind.id,
@@ -346,16 +368,29 @@ const ProjectDetail = () => {
   const handleSave = async (targetStatus: 'draft' | 'review') => {
     if (!project || !projectId) return;
 
-    const isActionPlan = project.initiative_type === 'action_plan';
-    const labels = getInitiativeLabels(project.initiative_type);
-
     if (!projectName.trim()) {
       toast.error(`Nome ${labels.article === 'o' ? 'do' : 'da'} ${labels.singular.toLowerCase()} é obrigatório`);
       return;
     }
 
-    // Validações apenas para Projeto
-    if (!isActionPlan) {
+    // Validações para Plano de Ação
+    if (isActionPlan) {
+      if (targetStatus === 'review') {
+        if (!what.trim()) {
+          toast.error("Campo 'O quê' é obrigatório");
+          return;
+        }
+        if (!why.trim()) {
+          toast.error("Campo 'Por quê' é obrigatório");
+          return;
+        }
+        if (!whenEnd) {
+          toast.error("Data de término é obrigatória");
+          return;
+        }
+      }
+    } else {
+      // Validações para Projeto
       if (!context.trim()) {
         toast.error("Contexto é obrigatório");
         return;
@@ -384,17 +419,39 @@ const ProjectDetail = () => {
     setSaving(true);
 
     try {
-      const { error: updateError } = await supabase
-        .from('projects')
-        .update({
-          name: projectName,
+      // Preparar dados base
+      let updateData: any = {
+        name: projectName,
+        status: targetStatus,
+        submitted_for_review_at: targetStatus === 'review' ? new Date().toISOString() : project.submitted_for_review_at
+      };
+
+      // Adicionar campos específicos do tipo
+      if (isActionPlan) {
+        updateData = {
+          ...updateData,
+          what,
+          why,
+          how: how || null,
+          who: who || null,
+          where_location: whereLocation || null,
+          when_start: whenStart || null,
+          when_end: whenEnd,
+          how_much: howMuch || null,
+        };
+      } else {
+        updateData = {
+          ...updateData,
           context: context,
           requirements: requirements || null,
           strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
           objective: objective || null,
-          status: targetStatus,
-          submitted_for_review_at: targetStatus === 'review' ? new Date().toISOString() : project.submitted_for_review_at
-        })
+        };
+      }
+
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update(updateData)
         .eq('id', projectId);
 
       if (updateError) throw updateError;
@@ -662,8 +719,8 @@ const ProjectDetail = () => {
       <div className="max-w-6xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="idea">💡 Ideia Original</TabsTrigger>
-            <TabsTrigger value="detail">📝 Detalhamento</TabsTrigger>
+            <TabsTrigger value="idea">{labels.ideaTab}</TabsTrigger>
+            <TabsTrigger value="detail">{labels.detailTab}</TabsTrigger>
           </TabsList>
 
           {/* Aba: Ideia Original */}
