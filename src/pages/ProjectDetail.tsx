@@ -1019,12 +1019,12 @@ const ProjectDetail = () => {
                           <p className="text-sm text-muted-foreground">
                             Vincule este plano a uma tese estratégica (opcional).
                           </p>
-                          <Select value={thesisId} onValueChange={setThesisId}>
+                          <Select value={thesisId || "__none__"} onValueChange={(val) => setThesisId(val === "__none__" ? "" : val)}>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione uma tese estratégica" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Nenhuma</SelectItem>
+                              <SelectItem value="__none__">Nenhuma</SelectItem>
                               {theses.map((thesis) => (
                                 <SelectItem key={thesis.id} value={thesis.id}>
                                   {thesis.name} ({thesis.year})
