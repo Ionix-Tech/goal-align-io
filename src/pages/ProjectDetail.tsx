@@ -103,6 +103,9 @@ const ProjectDetail = () => {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Flag para evitar sobrescrita de dados locais pelo useEffect
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
   // Estados para campos 5W2H (Plano de Ação)
   const [what, setWhat] = useState("");
@@ -150,9 +153,9 @@ const ProjectDetail = () => {
     fetchMembers();
   }, []);
 
-  // Carregar dados do projeto
+  // Carregar dados do projeto (apenas se não houver mudanças locais)
   useEffect(() => {
-    if (project) {
+    if (project && !hasLocalChanges) {
       setProjectName(project.name);
       setContext(project.context || '');
       setStrategicPillar(project.strategic_pillar || '');
@@ -184,7 +187,7 @@ const ProjectDetail = () => {
 
       setSelectedMembers(project.members.map(m => m.user.id));
     }
-  }, [project]);
+  }, [project, hasLocalChanges]);
 
   // Carregar situações do projeto
   useEffect(() => {
@@ -679,8 +682,10 @@ const ProjectDetail = () => {
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['project-details'] });
+      // Reset flag de mudanças locais e invalidar queries
+      setHasLocalChanges(false);
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['project-details', projectId] });
 
       const labels = getInitiativeLabels(project.initiative_type);
       if (targetStatus === 'draft') {
@@ -870,7 +875,7 @@ const ProjectDetail = () => {
                       <Input
                         id="projectName"
                         value={projectName}
-                        onChange={(e) => setProjectName(e.target.value)}
+                        onChange={(e) => { setProjectName(e.target.value); setHasLocalChanges(true); }}
                       />
                     </div>
                   </Card>
@@ -890,7 +895,7 @@ const ProjectDetail = () => {
                           <Textarea
                             id="what"
                             value={what}
-                            onChange={(e) => setWhat(e.target.value)}
+                            onChange={(e) => { setWhat(e.target.value); setHasLocalChanges(true); }}
                             placeholder="Descreva o que será feito..."
                             className="min-h-[100px]"
                           />
@@ -909,7 +914,7 @@ const ProjectDetail = () => {
                           <Textarea
                             id="why"
                             value={why}
-                            onChange={(e) => setWhy(e.target.value)}
+                            onChange={(e) => { setWhy(e.target.value); setHasLocalChanges(true); }}
                             placeholder="Justifique por que esta ação é necessária..."
                             className="min-h-[100px]"
                           />
@@ -941,7 +946,7 @@ const ProjectDetail = () => {
                           <Input
                             id="who"
                             value={who}
-                            onChange={(e) => setWho(e.target.value)}
+                            onChange={(e) => { setWho(e.target.value); setHasLocalChanges(true); }}
                             placeholder="Responsáveis pela execução..."
                           />
                         </div>
@@ -959,7 +964,7 @@ const ProjectDetail = () => {
                           <Input
                             id="where"
                             value={whereLocation}
-                            onChange={(e) => setWhereLocation(e.target.value)}
+                            onChange={(e) => { setWhereLocation(e.target.value); setHasLocalChanges(true); }}
                             placeholder="Local ou área de execução..."
                           />
                         </div>
@@ -981,7 +986,7 @@ const ProjectDetail = () => {
                                 id="whenStart"
                                 type="date"
                                 value={whenStart}
-                                onChange={(e) => setWhenStart(e.target.value)}
+                                onChange={(e) => { setWhenStart(e.target.value); setHasLocalChanges(true); }}
                               />
                             </div>
                             <div className="space-y-2">
@@ -990,7 +995,7 @@ const ProjectDetail = () => {
                                 id="whenEnd"
                                 type="date"
                                 value={whenEnd}
-                                onChange={(e) => setWhenEnd(e.target.value)}
+                                onChange={(e) => { setWhenEnd(e.target.value); setHasLocalChanges(true); }}
                               />
                             </div>
                           </div>
@@ -1009,7 +1014,7 @@ const ProjectDetail = () => {
                           <Input
                             id="howMuch"
                             value={howMuch}
-                            onChange={(e) => setHowMuch(e.target.value)}
+                            onChange={(e) => { setHowMuch(e.target.value); setHasLocalChanges(true); }}
                             placeholder="Custo ou investimento estimado..."
                           />
                         </div>
@@ -1025,7 +1030,7 @@ const ProjectDetail = () => {
                           <p className="text-sm text-muted-foreground">
                             Vincule este plano a uma tese estratégica (opcional).
                           </p>
-                          <Select value={thesisId || "__none__"} onValueChange={(val) => setThesisId(val === "__none__" ? "" : val)}>
+                          <Select value={thesisId || "__none__"} onValueChange={(val) => { setThesisId(val === "__none__" ? "" : val); setHasLocalChanges(true); }}>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione uma tese estratégica" />
                             </SelectTrigger>
@@ -1055,7 +1060,7 @@ const ProjectDetail = () => {
                       <Textarea
                         id="context"
                         value={context}
-                        onChange={(e) => setContext(e.target.value)}
+                        onChange={(e) => { setContext(e.target.value); setHasLocalChanges(true); }}
                         className="min-h-[150px]"
                         placeholder="Descreva o contexto detalhado do projeto..."
                       />
@@ -1067,7 +1072,7 @@ const ProjectDetail = () => {
                       <Label htmlFor="pillar" className="text-base font-semibold">
                         Objetivo Estratégico *
                       </Label>
-                      <Select value={strategicPillar} onValueChange={setStrategicPillar}>
+                      <Select value={strategicPillar} onValueChange={(val) => { setStrategicPillar(val); setHasLocalChanges(true); }}>
                         <SelectTrigger id="pillar">
                           <SelectValue placeholder="Selecione o pilar" />
                         </SelectTrigger>
@@ -1093,7 +1098,7 @@ const ProjectDetail = () => {
                       <Textarea
                         id="objective"
                         value={objective}
-                        onChange={(e) => setObjective(e.target.value)}
+                        onChange={(e) => { setObjective(e.target.value); setHasLocalChanges(true); }}
                         className="min-h-[100px]"
                         placeholder="Defina o objetivo do projeto..."
                       />
@@ -1113,7 +1118,7 @@ const ProjectDetail = () => {
                         id="requirements"
                         placeholder="Liste os requisitos principais do projeto (recursos, aprovações, pré-condições, etc.)..."
                         value={requirements}
-                        onChange={(e) => setRequirements(e.target.value)}
+                        onChange={(e) => { setRequirements(e.target.value); setHasLocalChanges(true); }}
                         className="min-h-[100px]"
                       />
                     </div>
