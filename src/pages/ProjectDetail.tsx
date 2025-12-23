@@ -27,6 +27,8 @@ import { useTheses } from "@/hooks/useTheses";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
 import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionPlanTaskManager";
+import { WhyLinksManager, WhyLink } from "@/components/execution/WhyLinksManager";
+import { useWhyLinks, useSaveWhyLinks } from "@/hooks/useWhyLinks";
 import { getInitiativeLabels } from "@/config/initiativeLabels";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -120,6 +122,11 @@ const ProjectDetail = () => {
   
   // Estado local para tarefas do ActionPlanTaskManager
   const [localTasks, setLocalTasks] = useState<TaskInput[]>([]);
+  
+  // Estado local para links de referência do "Por quê"
+  const [whyLinks, setWhyLinks] = useState<WhyLink[]>([]);
+  const { data: dbWhyLinks = [] } = useWhyLinks(projectId || null);
+  const saveWhyLinksMutation = useSaveWhyLinks();
 
   const isIdea = project?.initiative_type === 'idea';
   const isActionPlan = project?.initiative_type === 'action_plan';
@@ -247,6 +254,17 @@ const ProjectDetail = () => {
       })));
     }
   }, [projectTasks, isActionPlan]);
+
+  // Sincronizar links de referência do banco com estado local
+  useEffect(() => {
+    if (dbWhyLinks && isActionPlan && !hasLocalChanges) {
+      setWhyLinks(dbWhyLinks.map(link => ({
+        id: link.id,
+        url: link.url,
+        label: link.label || undefined
+      })));
+    }
+  }, [dbWhyLinks, isActionPlan, hasLocalChanges]);
 
   // Handler para mudanças nas tarefas do ActionPlanTaskManager
   const handleTasksChange = useCallback(async (newTasks: TaskInput[]) => {
@@ -682,10 +700,19 @@ const ProjectDetail = () => {
         }
       }
 
+      // Salvar links de referência do "Por quê" (para Planos de Ação)
+      if (isActionPlan) {
+        await saveWhyLinksMutation.mutateAsync({
+          projectId,
+          links: whyLinks.map(link => ({ url: link.url, label: link.label }))
+        });
+      }
+
       // Reset flag de mudanças locais e invalidar queries
       setHasLocalChanges(false);
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       await queryClient.invalidateQueries({ queryKey: ['project-details', projectId] });
+      await queryClient.invalidateQueries({ queryKey: ['why-links', projectId] });
 
       const labels = getInitiativeLabels(project.initiative_type);
       if (targetStatus === 'draft') {
@@ -918,6 +945,13 @@ const ProjectDetail = () => {
                             placeholder="Justifique por que esta ação é necessária..."
                             className="min-h-[100px]"
                           />
+                          <div className="pt-2">
+                            <Label className="text-xs text-muted-foreground">Links de Referência</Label>
+                            <WhyLinksManager
+                              links={whyLinks}
+                              onLinksChange={(links) => { setWhyLinks(links); setHasLocalChanges(true); }}
+                            />
+                          </div>
                         </div>
                       </Card>
 
@@ -1526,6 +1560,20 @@ const ProjectDetail = () => {
                           <div>
                             <Label className="text-sm text-muted-foreground">Por quê? (Why)</Label>
                             <p className="text-sm mt-2 whitespace-pre-wrap">{(project as any).why || 'Não informado'}</p>
+                            {dbWhyLinks.length > 0 && (
+                              <div className="pt-3">
+                                <Label className="text-xs text-muted-foreground">Links de Referência</Label>
+                                <WhyLinksManager
+                                  links={dbWhyLinks.map(link => ({
+                                    id: link.id,
+                                    url: link.url,
+                                    label: link.label || undefined
+                                  }))}
+                                  onLinksChange={() => {}}
+                                  readonly
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       </Card>

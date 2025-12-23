@@ -735,6 +735,38 @@ export type Database = {
           },
         ]
       }
+      project_why_links: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          project_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          project_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          project_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_why_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           approved_at: string | null

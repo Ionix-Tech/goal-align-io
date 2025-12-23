@@ -18,6 +18,7 @@ import { useTheses } from "@/hooks/useTheses";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionPlanTaskManager";
+import { WhyLinksManager, WhyLink } from "@/components/execution/WhyLinksManager";
 import { PROJECT_CATEGORIES } from "@/config/categories";
 
 const actionPlanSchema = z.object({
@@ -43,6 +44,7 @@ const CreateActionPlan = () => {
   const { data: teamMembers } = useTeamMembers();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tasks, setTasks] = useState<TaskInput[]>([]);
+  const [whyLinks, setWhyLinks] = useState<WhyLink[]>([]);
 
   const form = useForm<ActionPlanFormData>({
     resolver: zodResolver(actionPlanSchema),
@@ -107,6 +109,21 @@ const CreateActionPlan = () => {
           .insert(taskInserts);
 
         if (tasksError) throw tasksError;
+      }
+
+      // Criar os links de referência do "Por quê"
+      if (whyLinks.length > 0) {
+        const linkInserts = whyLinks.map(link => ({
+          project_id: plan.id,
+          url: link.url,
+          label: link.label || null
+        }));
+
+        const { error: linksError } = await supabase
+          .from('project_why_links')
+          .insert(linkInserts);
+
+        if (linksError) throw linksError;
       }
 
       return plan;
@@ -275,6 +292,13 @@ const CreateActionPlan = () => {
                           rows={3}
                         />
                       </FormControl>
+                      <div className="mt-2">
+                        <Label className="text-xs text-muted-foreground">Links de Referência</Label>
+                        <WhyLinksManager
+                          links={whyLinks}
+                          onLinksChange={setWhyLinks}
+                        />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
