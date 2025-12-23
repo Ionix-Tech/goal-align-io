@@ -23,6 +23,7 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useProjectTransitions } from "@/hooks/useProjectTransitions";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
+import { getInitiativeLabels } from "@/config/initiativeLabels";
 
 interface Indicator {
   id: string;
@@ -345,32 +346,38 @@ const ProjectDetail = () => {
   const handleSave = async (targetStatus: 'draft' | 'review') => {
     if (!project || !projectId) return;
 
+    const isActionPlan = project.initiative_type === 'action_plan';
+    const labels = getInitiativeLabels(project.initiative_type);
+
     if (!projectName.trim()) {
-      toast.error("Nome do projeto é obrigatório");
+      toast.error(`Nome ${labels.article === 'o' ? 'do' : 'da'} ${labels.singular.toLowerCase()} é obrigatório`);
       return;
     }
 
-    if (!context.trim()) {
-      toast.error("Contexto é obrigatório");
-      return;
-    }
+    // Validações apenas para Projeto
+    if (!isActionPlan) {
+      if (!context.trim()) {
+        toast.error("Contexto é obrigatório");
+        return;
+      }
 
-    if (targetStatus === 'review') {
-      if (!strategicPillar) {
-        toast.error("Objetivo estratégico é obrigatório");
-        return;
-      }
-      if (!objective.trim()) {
-        toast.error("Objetivo é obrigatório");
-        return;
-      }
-      if (indicators.length === 0) {
-        toast.error("Adicione pelo menos 1 indicador");
-        return;
-      }
-      if (milestones.length === 0) {
-        toast.error("Adicione pelo menos 1 milestone");
-        return;
+      if (targetStatus === 'review') {
+        if (!strategicPillar) {
+          toast.error("Objetivo estratégico é obrigatório");
+          return;
+        }
+        if (!objective.trim()) {
+          toast.error("Objetivo é obrigatório");
+          return;
+        }
+        if (indicators.length === 0) {
+          toast.error("Adicione pelo menos 1 indicador");
+          return;
+        }
+        if (milestones.length === 0) {
+          toast.error("Adicione pelo menos 1 milestone");
+          return;
+        }
       }
     }
 
@@ -514,10 +521,11 @@ const ProjectDetail = () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project-details'] });
 
+      const labels = getInitiativeLabels(project.initiative_type);
       if (targetStatus === 'draft') {
         toast.success("Alterações salvas");
       } else {
-        toast.success("Projeto enviado para aprovação");
+        toast.success(labels.submitted);
         navigate('/prioritization');
       }
     } catch (error) {
@@ -1316,7 +1324,7 @@ const ProjectDetail = () => {
                   disabled={isTransitioning}
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Aprovar Projeto
+                  {getInitiativeLabels(project?.initiative_type).approve}
                 </Button>
               </div>
             </div>
@@ -1328,9 +1336,9 @@ const ProjectDetail = () => {
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Aprovar Projeto?</AlertDialogTitle>
+            <AlertDialogTitle>{getInitiativeLabels(project?.initiative_type).approveTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Você está prestes a aprovar "{project?.name}". Esta ação irá notificar o criador e membros do projeto.
+              {getInitiativeLabels(project?.initiative_type).approveDescription(project?.name || '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -1354,9 +1362,9 @@ const ProjectDetail = () => {
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Solicitar Ajustes?</AlertDialogTitle>
+            <AlertDialogTitle>{getInitiativeLabels(project?.initiative_type).rejectTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto será devolvido para "Detalhamento" e o criador será notificado sobre os ajustes necessários.
+              {getInitiativeLabels(project?.initiative_type).rejectDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -1383,9 +1391,9 @@ const ProjectDetail = () => {
       <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Arquivar Projeto?</AlertDialogTitle>
+            <AlertDialogTitle>{getInitiativeLabels(project?.initiative_type).archiveTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto será movido para "Arquivados" e o criador será notificado. Esta ação indica que o projeto não será desenvolvido.
+              {getInitiativeLabels(project?.initiative_type).archiveDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
