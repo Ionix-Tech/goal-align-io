@@ -75,15 +75,17 @@ const Management = () => {
             </div>
           </div>
           
-          <Button
-            onClick={handleGenerateTestData}
-            disabled={isGeneratingTestData}
-            variant="outline"
-            size="sm"
-          >
-            <DatabaseIcon className="h-4 w-4 mr-2" />
-            {isGeneratingTestData ? 'Gerando...' : 'Gerar Projeto A3 de Teste'}
-          </Button>
+          {import.meta.env.DEV && (
+            <Button
+              onClick={handleGenerateTestData}
+              disabled={isGeneratingTestData}
+              variant="outline"
+              size="sm"
+            >
+              <DatabaseIcon className="h-4 w-4 mr-2" />
+              {isGeneratingTestData ? 'Gerando...' : 'Gerar Projeto A3 de Teste'}
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
