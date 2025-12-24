@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { PROJECT_CATEGORIES, ProjectCategory } from "@/config/categories";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
+import { LabelWithHelp } from "@/components/ui/help-tooltip";
 
 interface Indicator {
   id: string;
@@ -67,6 +70,25 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
   const [availableMembers, setAvailableMembers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [membersPopoverOpen, setMembersPopoverOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(true);
+
+  // Track form changes for unsaved changes warning
+  const hasFormContent = useMemo(() => {
+    return projectName.trim() !== '' || 
+           context.trim() !== '' || 
+           objective.trim() !== '' ||
+           indicators.length > 0 ||
+           milestones.length > 0 ||
+           situations.length > 0;
+  }, [projectName, context, objective, indicators, milestones, situations]);
+
+  const hasUnsavedChanges = hasFormContent && !isSaved;
+
+  const {
+    isBlocked,
+    proceedNavigation,
+    cancelNavigation,
+  } = useUnsavedChanges(hasUnsavedChanges);
 
   const strategicPillars = [
     { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -495,6 +517,9 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
         }
       }
 
+      // Mark as saved on success
+      setIsSaved(true);
+
       // Feedback de sucesso
       if (targetStatus === 'draft') {
         toast.success("Salvo em Detalhamento", {
@@ -508,7 +533,9 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
       }
     } catch (error) {
       console.error('Error saving project:', error);
-      toast.error("Erro ao salvar projeto");
+      toast.error("Erro ao salvar projeto", {
+        description: "Verifique sua conexão e tente novamente."
+      });
     } finally {
       setLoading(false);
     }
@@ -565,12 +592,12 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Categoria */}
           <Card className="p-6">
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-base font-semibold">
-                Categoria *
-              </Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                Classifique o projeto de acordo com o pilar da empresa.
-              </p>
+              <LabelWithHelp
+                label="Categoria"
+                htmlFor="category"
+                helpKey="category"
+                required
+              />
               <Select value={category} onValueChange={(val) => setCategory(val as ProjectCategory)}>
                 <SelectTrigger id="category" className="text-base">
                   <SelectValue placeholder="Selecione a categoria" />
@@ -595,12 +622,12 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Contexto */}
           <Card className="p-6">
             <div className="space-y-2">
-              <Label htmlFor="context" className="text-base font-semibold">
-                Contexto *
-              </Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                Qual é o problema ou oportunidade que este projeto aborda?
-              </p>
+              <LabelWithHelp
+                label="Contexto"
+                htmlFor="context"
+                helpKey="context"
+                required
+              />
               <Textarea
                 id="context"
                 placeholder="Descreva o contexto, problema atual ou oportunidade..."
@@ -614,12 +641,12 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Objetivo Estratégico */}
           <Card className="p-6">
             <div className="space-y-2">
-              <Label htmlFor="pillar" className="text-base font-semibold">
-                Objetivo Estratégico *
-              </Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                A qual objetivo estratégico da empresa este projeto está alinhado?
-              </p>
+              <LabelWithHelp
+                label="Objetivo Estratégico"
+                htmlFor="pillar"
+                helpKey="strategicPillar"
+                required
+              />
               <Select value={strategicPillar} onValueChange={setStrategicPillar}>
                 <SelectTrigger id="pillar" className="text-base">
                   <SelectValue placeholder="Selecione o objetivo estratégico" />
@@ -641,12 +668,12 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Objetivo */}
           <Card className="p-6">
             <div className="space-y-2">
-              <Label htmlFor="objective" className="text-base font-semibold">
-                Objetivo *
-              </Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                O que você pretende alcançar com este projeto?
-              </p>
+              <LabelWithHelp
+                label="Objetivo"
+                htmlFor="objective"
+                helpKey="objective"
+                required
+              />
               <Textarea
                 id="objective"
                 placeholder="Descreva o objetivo de forma clara e mensurável..."
@@ -660,12 +687,11 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Requisitos do Projeto */}
           <Card className="p-6">
             <div className="space-y-2">
-              <Label htmlFor="requirements" className="text-base font-semibold">
-                Requisitos do Projeto
-              </Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                Quais são os requisitos essenciais para o sucesso deste projeto?
-              </p>
+              <LabelWithHelp
+                label="Requisitos do Projeto"
+                htmlFor="requirements"
+                helpKey="requirements"
+              />
               <Textarea
                 id="requirements"
                 placeholder="Liste os requisitos principais do projeto (recursos, aprovações, pré-condições, etc.)..."
@@ -706,7 +732,10 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                     {/* Descrições */}
                     <div className="grid gap-3 md:grid-cols-2">
                       <div className="space-y-1">
-                        <Label className="text-sm">Situação Atual / Problema</Label>
+                        <LabelWithHelp
+                          label="Situação Atual / Problema"
+                          helpKey="situationCurrent"
+                        />
                         <Textarea
                           placeholder="Ex: Alto índice de retrabalho nos processos"
                           value={situation.currentProblem}
@@ -716,7 +745,10 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm">Situação Alvo / Meta</Label>
+                        <LabelWithHelp
+                          label="Situação Alvo / Meta"
+                          helpKey="situationTarget"
+                        />
                         <Textarea
                           placeholder="Ex: Processo padronizado e com baixo retrabalho"
                           value={situation.targetGoal}
@@ -872,12 +904,11 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Indicadores */}
           <Card className="p-6">
             <div className="space-y-4">
-              <div>
-                <h3 className="text-base font-semibold mb-1">Indicadores</h3>
-                <p className="text-sm text-muted-foreground">
-                  Como você vai medir o sucesso? Defina como está hoje e onde quer chegar.
-                </p>
-              </div>
+              <LabelWithHelp
+                label="Indicadores"
+                helpKey="indicator"
+                className="text-base font-semibold"
+              />
 
               <div className="space-y-3">
                 {indicators.map((indicator, index) => (
@@ -939,12 +970,11 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Milestones */}
           <Card className="p-6">
             <div className="space-y-4">
-              <div>
-                <h3 className="text-base font-semibold mb-1">Milestones Relevantes</h3>
-                <p className="text-sm text-muted-foreground">
-                  Marcos importantes do projeto e suas datas estimadas.
-                </p>
-              </div>
+              <LabelWithHelp
+                label="Milestones Relevantes"
+                helpKey="milestone"
+                className="text-base font-semibold"
+              />
 
               <div className="space-y-3">
                 {milestones.map((milestone, index) => (
@@ -1025,6 +1055,13 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
             </Button>
           </div>
         </div>
+
+        {/* Unsaved Changes Dialog */}
+        <UnsavedChangesDialog
+          open={isBlocked}
+          onConfirm={proceedNavigation}
+          onCancel={cancelNavigation}
+        />
       </div>
   );
 };
