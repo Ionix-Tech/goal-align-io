@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Plus, Lightbulb } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Lightbulb, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +25,7 @@ import { useA3ReportData } from "@/hooks/useA3ReportData";
 import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
 import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachmentsCard";
 import { LinkedIdeasCard } from "@/components/execution/LinkedIdeasCard";
+import { GanttChart } from "@/components/execution/GanttChart";
 import { Target, FileCheck, AlertCircle } from "lucide-react";
 
 const strategicPillars = [
@@ -133,12 +134,16 @@ const ProjectExecution = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${project.initiative_type === 'action_plan' ? 'grid-cols-4' : 'grid-cols-5'}`}>
+          <TabsList className={`grid w-full ${project.initiative_type === 'action_plan' ? 'grid-cols-5' : 'grid-cols-6'}`}>
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
             {project.initiative_type !== 'action_plan' && (
               <TabsTrigger value="thesis">📄 Objetivo do Projeto</TabsTrigger>
             )}
             <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
+            <TabsTrigger value="gantt">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              Gantt
+            </TabsTrigger>
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atualizações</TabsTrigger>
           </TabsList>
@@ -522,6 +527,17 @@ const ProjectExecution = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Aba: Gantt */}
+          <TabsContent value="gantt" className="space-y-6">
+            <GanttChart 
+              projectId={project.id}
+              onTaskClick={(taskId) => {
+                // Navega para a aba de atualizações onde as tarefas são gerenciadas
+                setActiveTab('updates');
+              }}
+            />
           </TabsContent>
 
           {/* Aba: Milestones */}
