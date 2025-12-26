@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, ClipboardList, Heart, Brain, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { useThesisProjects } from "@/hooks/useThesisProjects";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ThesisInitiativeList } from "@/components/theses/ThesisInitiativeList";
 import { EditThesisDialog } from "@/components/theses/EditThesisDialog";
+import { LinkInitiativeToThesisDialog } from "@/components/theses/LinkInitiativeToThesisDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -37,13 +41,40 @@ const THESIS_VISUAL_CONFIG: Record<string, { icon: React.ReactNode; color: strin
 export default function ThesisDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { role } = useUserRole();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkDialogType, setLinkDialogType] = useState<'idea' | 'project' | 'action_plan'>('idea');
   
   const { data: thesis, isLoading: thesisLoading } = useThesisDetails(id);
   const { data: initiatives, isLoading: initiativesLoading } = useThesisProjects(id);
 
   const canManage = role === "ceo" || role === "pmo_manager";
+
+  // Mutation para desvincular iniciativa
+  const unlinkMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ thesis_id: null })
+        .eq("id", projectId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["thesis-projects", id] });
+      queryClient.invalidateQueries({ queryKey: ["unlinked-projects"] });
+      toast.success("Iniciativa desvinculada");
+    },
+    onError: () => {
+      toast.error("Erro ao desvincular");
+    },
+  });
+
+  const handleLinkClick = (type: 'idea' | 'project' | 'action_plan') => {
+    setLinkDialogType(type);
+    setLinkDialogOpen(true);
+  };
   
   // Configuração visual baseada no nome
   const config = thesis 
@@ -202,6 +233,9 @@ export default function ThesisDetail() {
             initiatives={initiatives?.ideas || []} 
             type="idea"
             emptyMessage="Nenhuma ideia vinculada a este objetivo"
+            canManage={canManage}
+            onLinkClick={() => handleLinkClick('idea')}
+            onUnlink={(projectId) => unlinkMutation.mutate(projectId)}
           />
         </TabsContent>
 
@@ -210,6 +244,9 @@ export default function ThesisDetail() {
             initiatives={initiatives?.projects || []} 
             type="project"
             emptyMessage="Nenhum projeto vinculado a este objetivo"
+            canManage={canManage}
+            onLinkClick={() => handleLinkClick('project')}
+            onUnlink={(projectId) => unlinkMutation.mutate(projectId)}
           />
         </TabsContent>
 
@@ -218,6 +255,9 @@ export default function ThesisDetail() {
             initiatives={initiatives?.actionPlans || []} 
             type="action_plan"
             emptyMessage="Nenhum plano de ação vinculado a este objetivo"
+            canManage={canManage}
+            onLinkClick={() => handleLinkClick('action_plan')}
+            onUnlink={(projectId) => unlinkMutation.mutate(projectId)}
           />
         </TabsContent>
       </Tabs>
@@ -228,6 +268,17 @@ export default function ThesisDetail() {
         onOpenChange={setEditDialogOpen} 
         thesis={thesis}
       />
+
+      {/* Link Initiative Dialog */}
+      {thesis && (
+        <LinkInitiativeToThesisDialog
+          open={linkDialogOpen}
+          onOpenChange={setLinkDialogOpen}
+          thesisId={thesis.id}
+          thesisName={thesis.name}
+          defaultTab={linkDialogType}
+        />
+      )}
     </div>
   );
 }
