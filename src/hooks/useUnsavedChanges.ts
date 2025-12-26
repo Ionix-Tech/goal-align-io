@@ -1,5 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
-import { useBlocker } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 interface UseUnsavedChangesOptions {
   enabled?: boolean;
@@ -8,10 +7,11 @@ interface UseUnsavedChangesOptions {
 
 /**
  * Hook to detect unsaved changes and warn user before leaving the page
+ * Uses browser's beforeunload event for refresh/close tab protection
  * 
  * @param hasChanges - Whether there are unsaved changes
  * @param options - Configuration options
- * @returns Object with blocker state and reset function
+ * @returns Object with state (for compatibility)
  */
 export function useUnsavedChanges(
   hasChanges: boolean,
@@ -23,9 +23,6 @@ export function useUnsavedChanges(
   } = options;
 
   const shouldBlock = enabled && hasChanges;
-
-  // Block navigation using react-router
-  const blocker = useBlocker(shouldBlock);
 
   // Handle browser unload event (refresh, close tab)
   useEffect(() => {
@@ -41,22 +38,12 @@ export function useUnsavedChanges(
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [shouldBlock, message]);
 
-  const proceedNavigation = useCallback(() => {
-    if (blocker.state === "blocked") {
-      blocker.proceed();
-    }
-  }, [blocker]);
-
-  const cancelNavigation = useCallback(() => {
-    if (blocker.state === "blocked") {
-      blocker.reset();
-    }
-  }, [blocker]);
-
+  // Return stub values for compatibility with existing code
+  // The dialog won't show for in-app navigation anymore
   return {
-    isBlocked: blocker.state === "blocked",
-    proceedNavigation,
-    cancelNavigation,
+    isBlocked: false,
+    proceedNavigation: () => {},
+    cancelNavigation: () => {},
     message,
   };
 }
