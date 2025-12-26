@@ -178,7 +178,7 @@ export function PrintableA3Report({
 
         {/* Últimas Atualizações */}
         <div className="print-section">
-          <h2 className="print-section-title">📈 ÚLTIMAS ATUALIZAÇÕES</h2>
+          <h2 className="print-section-title">📈 ÚLTIMAS ATIVIDADES</h2>
           
           {/* Milestones */}
           {reportData?.milestoneUpdates && reportData.milestoneUpdates.length > 0 && (
