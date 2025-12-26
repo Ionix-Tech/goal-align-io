@@ -14,13 +14,15 @@ interface EditThesisDialogProps {
 }
 
 export function EditThesisDialog({ open, onOpenChange, thesis }: EditThesisDialogProps) {
+  // Default to next year for new objectives
+  const nextYear = new Date().getFullYear() + 1;
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     objective: "",
-    year: new Date().getFullYear(),
-    period_start: "",
-    period_end: "",
+    year: nextYear,
+    period_start: `${nextYear}-01-01`,
+    period_end: `${nextYear}-12-31`,
   });
 
   const updateThesis = useUpdateThesis();

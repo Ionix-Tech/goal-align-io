@@ -15,7 +15,9 @@ export default function Theses() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedThesis, setSelectedThesis] = useState<Thesis | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  // Default to next year since product focus is future planning
+  const nextYear = new Date().getFullYear() + 1;
+  const [selectedYear, setSelectedYear] = useState<number>(nextYear);
   const { role, loading: roleLoading } = useUserRole();
 
   const { data: theses, isLoading } = useTheses({ 
@@ -24,7 +26,9 @@ export default function Theses() {
 
   const canManageTheses = role === "ceo" || role === "pmo_manager";
 
-  const years = [2024, 2025, 2026];
+  // Dynamic year list: current year -1, current, +1, +2
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
 
   const handleEdit = (thesis: Thesis) => {
     setSelectedThesis(thesis);
