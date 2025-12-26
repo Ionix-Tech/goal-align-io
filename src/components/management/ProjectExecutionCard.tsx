@@ -5,13 +5,31 @@ import { Progress } from "@/components/ui/progress";
 import { HealthStatusBadge } from "./HealthStatusBadge";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock } from "lucide-react";
+import { Clock, FileText, ClipboardList } from "lucide-react";
 import type { ApprovedProject } from "@/hooks/useApprovedProjects";
 
 const PILLAR_CONFIG = {
   operational_efficiency: { label: 'Eficiência', color: 'bg-blue-100 text-blue-800', icon: '⚙️' },
   sales_expansion: { label: 'Vendas', color: 'bg-green-100 text-green-800', icon: '📈' },
   new_business: { label: 'Novos Negócios', color: 'bg-purple-100 text-purple-800', icon: '🚀' }
+};
+
+const INITIATIVE_TYPE_CONFIG = {
+  project: { 
+    label: 'Projeto', 
+    className: 'bg-blue-500/10 text-blue-700 border-blue-200',
+    icon: FileText
+  },
+  action_plan: { 
+    label: 'Plano de Ação', 
+    className: 'bg-violet-500/10 text-violet-700 border-violet-200',
+    icon: ClipboardList
+  },
+  idea: { 
+    label: 'Ideia', 
+    className: 'bg-amber-500/10 text-amber-700 border-amber-200',
+    icon: FileText
+  }
 };
 
 interface ProjectExecutionCardProps {
@@ -21,6 +39,8 @@ interface ProjectExecutionCardProps {
 
 export function ProjectExecutionCard({ project, onClick }: ProjectExecutionCardProps) {
   const pillarConfig = project.strategic_pillar ? PILLAR_CONFIG[project.strategic_pillar] : null;
+  const initiativeConfig = INITIATIVE_TYPE_CONFIG[project.initiative_type] || INITIATIVE_TYPE_CONFIG.project;
+  const InitiativeIcon = initiativeConfig.icon;
   const progressPercentage = project.milestones_total > 0
     ? Math.round((project.milestones_completed / project.milestones_total) * 100)
     : 0;
@@ -31,20 +51,26 @@ export function ProjectExecutionCard({ project, onClick }: ProjectExecutionCardP
       onClick={onClick}
     >
       <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base line-clamp-2 mb-2">
-              {project.name}
-            </h3>
-            {pillarConfig && (
-              <Badge variant="outline" className={pillarConfig.color}>
-                <span className="mr-1">{pillarConfig.icon}</span>
-                {pillarConfig.label}
-              </Badge>
-            )}
-          </div>
+        {/* Initiative Type Badge */}
+        <div className="flex items-center justify-between">
+          <Badge variant="outline" className={initiativeConfig.className}>
+            <InitiativeIcon className="h-3 w-3 mr-1" />
+            {initiativeConfig.label}
+          </Badge>
           <HealthStatusBadge status={project.current_health} size="md" />
+        </div>
+
+        {/* Header */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-base line-clamp-2 mb-2">
+            {project.name}
+          </h3>
+          {pillarConfig && (
+            <Badge variant="outline" className={pillarConfig.color}>
+              <span className="mr-1">{pillarConfig.icon}</span>
+              {pillarConfig.label}
+            </Badge>
+          )}
         </div>
 
         {/* Progress */}
