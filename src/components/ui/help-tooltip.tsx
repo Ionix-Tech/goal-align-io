@@ -3,7 +3,6 @@ import { HelpCircle } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -24,30 +23,28 @@ export function HelpTooltip({
   iconClassName,
 }: HelpTooltipProps) {
   return (
-    <TooltipProvider>
-      <Tooltip delayDuration={300}>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              "inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-              className
-            )}
-            aria-label="Ajuda"
-          >
-            <HelpCircle className={cn("h-4 w-4", iconClassName)} />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent
-          side={side}
-          className="max-w-xs text-sm"
-          sideOffset={5}
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+            className
+          )}
+          aria-label="Ajuda"
         >
-          {title && <p className="font-semibold mb-1">{title}</p>}
-          <p className="text-muted-foreground">{content}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+          <HelpCircle className={cn("h-4 w-4", iconClassName)} />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent
+        side={side}
+        className="max-w-xs text-sm"
+        sideOffset={5}
+      >
+        {title && <p className="font-semibold mb-1">{title}</p>}
+        <p className="text-muted-foreground">{content}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
