@@ -32,7 +32,9 @@ export function ProjectFilters({
   selectedCategory,
   onCategoryChange
 }: ProjectFiltersProps) {
-  const { data: theses } = useTheses({ year: new Date().getFullYear() });
+  // Fetch theses for next year since product focus is future planning
+  const nextYear = new Date().getFullYear() + 1;
+  const { data: theses } = useTheses({ year: nextYear });
 
   const getThesisIcon = (thesisType: keyof typeof THESIS_TEMPLATES) => {
     return THESIS_TEMPLATES[thesisType]?.icon || '📋';

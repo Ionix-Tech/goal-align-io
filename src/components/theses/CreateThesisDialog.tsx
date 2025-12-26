@@ -33,16 +33,19 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
     thesis_type: "operational_efficiency" | "sales_expansion" | "new_business" | "custom";
     is_active: boolean;
     is_archived: boolean;
-  }>({
-    name: "",
-    description: "",
-    objective: "",
-    year: new Date().getFullYear(),
-    period_start: "",
-    period_end: "",
-    thesis_type: "operational_efficiency",
-    is_active: true,
-    is_archived: false
+  }>(() => {
+    const nextYear = new Date().getFullYear() + 1;
+    return {
+      name: "",
+      description: "",
+      objective: "",
+      year: nextYear,
+      period_start: `${nextYear}-01-01`,
+      period_end: `${nextYear}-12-31`,
+      thesis_type: "operational_efficiency",
+      is_active: true,
+      is_archived: false
+    };
   });
   const [kpis, setKpis] = useState<KPIFormData[]>([]);
 
@@ -79,13 +82,14 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
       }
 
       // Reset e fechar
+      const nextYear = new Date().getFullYear() + 1;
       setFormData({
         name: "",
         description: "",
         objective: "",
-        year: new Date().getFullYear(),
-        period_start: "",
-        period_end: "",
+        year: nextYear,
+        period_start: `${nextYear}-01-01`,
+        period_end: `${nextYear}-12-31`,
         thesis_type: "operational_efficiency",
         is_active: true,
         is_archived: false
@@ -137,7 +141,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Eficiência Operacional 2025"
+                  placeholder="Ex: Eficiência Operacional 2026"
                 />
               </div>
 
