@@ -148,65 +148,69 @@ export function LinkInitiativeToThesisDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Link2 className="h-5 w-5" />
-            Vincular a {thesisName}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="w-[min(95vw,42rem)] max-h-[80vh] p-0 overflow-hidden">
+        <div className="p-6 w-full min-w-0 flex flex-col max-h-[80vh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5" />
+              Vincular a {thesisName}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou descrição..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-            {searchTerm && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                onClick={() => setSearchTerm("")}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+          <div className="flex-1 min-h-0 mt-4 flex flex-col gap-4">
+            {/* Search */}
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou descrição..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
+              <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+                <TabsTrigger value="idea" className="gap-1 text-xs sm:text-sm sm:gap-2">
+                  <Lightbulb className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ideias</span> ({unlinkedData?.ideas.length || 0})
+                </TabsTrigger>
+                <TabsTrigger value="project" className="gap-1 text-xs sm:text-sm sm:gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  <span className="hidden sm:inline">Projetos</span> ({unlinkedData?.projects.length || 0})
+                </TabsTrigger>
+                <TabsTrigger value="action_plan" className="gap-1 text-xs sm:text-sm sm:gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  <span className="hidden sm:inline">Planos</span> ({unlinkedData?.actionPlans.length || 0})
+                </TabsTrigger>
+              </TabsList>
+
+              <ScrollArea className="flex-1 min-h-0 mt-4">
+                <div className="pr-4">
+                  <TabsContent value="idea" className="mt-0 w-full">
+                    {renderInitiativeList('idea')}
+                  </TabsContent>
+                  <TabsContent value="project" className="mt-0 w-full">
+                    {renderInitiativeList('project')}
+                  </TabsContent>
+                  <TabsContent value="action_plan" className="mt-0 w-full">
+                    {renderInitiativeList('action_plan')}
+                  </TabsContent>
+                </div>
+              </ScrollArea>
+            </Tabs>
           </div>
-
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="idea" className="gap-2">
-                <Lightbulb className="h-4 w-4" />
-                Ideias ({unlinkedData?.ideas.length || 0})
-              </TabsTrigger>
-              <TabsTrigger value="project" className="gap-2">
-                <Briefcase className="h-4 w-4" />
-                Projetos ({unlinkedData?.projects.length || 0})
-              </TabsTrigger>
-              <TabsTrigger value="action_plan" className="gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Planos ({unlinkedData?.actionPlans.length || 0})
-              </TabsTrigger>
-            </TabsList>
-
-            <ScrollArea className="h-[400px] mt-4">
-              <TabsContent value="idea" className="mt-0">
-                {renderInitiativeList('idea')}
-              </TabsContent>
-              <TabsContent value="project" className="mt-0">
-                {renderInitiativeList('project')}
-              </TabsContent>
-              <TabsContent value="action_plan" className="mt-0">
-                {renderInitiativeList('action_plan')}
-              </TabsContent>
-            </ScrollArea>
-          </Tabs>
         </div>
       </DialogContent>
     </Dialog>
@@ -230,45 +234,47 @@ function InitiativeItem({
   const statusConfig = statusLabels[item.status] || statusLabels.draft;
 
   return (
-    <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-      {/* Icon */}
-      <Icon className={`h-5 w-5 flex-shrink-0 mt-0.5 ${config.color}`} />
-      
-      {/* Content - takes remaining space */}
-      <div className="flex-1 min-w-0 overflow-hidden">
-        <p className="font-medium truncate">{item.name}</p>
-        {item.description && (
-          <p className="text-sm text-muted-foreground truncate">
-            {item.description}
-          </p>
-        )}
-      </div>
+    <div className="w-full min-w-0 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+        {/* Left side: Icon + Content */}
+        <div className="flex items-start gap-2 flex-1 min-w-0">
+          <Icon className={`h-4 w-4 flex-shrink-0 mt-0.5 ${config.color}`} />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm truncate">{item.name}</p>
+            {item.description && (
+              <p className="text-xs text-muted-foreground truncate">
+                {item.description}
+              </p>
+            )}
+          </div>
+        </div>
 
-      {/* Actions - fixed width, never shrinks */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <Badge variant={statusConfig.variant} className="whitespace-nowrap text-xs">
-          {statusConfig.label}
-        </Badge>
+        {/* Right side: Badge + Avatar + Button */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-6 sm:ml-0">
+          <Badge variant={statusConfig.variant} className="text-xs">
+            {statusConfig.label}
+          </Badge>
 
-        {item.assigned_to_profile && (
-          <Avatar className="h-6 w-6 flex-shrink-0">
-            <AvatarImage src={item.assigned_to_profile.avatar_url || undefined} />
-            <AvatarFallback className="text-xs">
-              {item.assigned_to_profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-            </AvatarFallback>
-          </Avatar>
-        )}
+          {item.assigned_to_profile && (
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={item.assigned_to_profile.avatar_url || undefined} />
+              <AvatarFallback className="text-[10px]">
+                {item.assigned_to_profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+          )}
 
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onLink}
-          disabled={isLinking}
-          className="gap-1 flex-shrink-0"
-        >
-          <Link2 className="h-3 w-3" />
-          Vincular
-        </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onLink}
+            disabled={isLinking}
+            className="h-7 text-xs gap-1"
+          >
+            <Link2 className="h-3 w-3" />
+            Vincular
+          </Button>
+        </div>
       </div>
     </div>
   );
