@@ -1,21 +1,34 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, ClipboardList, Heart, Brain, Zap } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, ClipboardList, Heart, Brain, Zap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useThesisDetails } from "@/hooks/useThesisDetails";
+import { useThesisDetails, type ThesisKPI } from "@/hooks/useThesisDetails";
 import { useThesisProjects } from "@/hooks/useThesisProjects";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useDeleteThesisKPI } from "@/hooks/useThesisKPIs";
 import { ThesisInitiativeList } from "@/components/theses/ThesisInitiativeList";
 import { EditThesisDialog } from "@/components/theses/EditThesisDialog";
 import { LinkInitiativeToThesisDialog } from "@/components/theses/LinkInitiativeToThesisDialog";
+import { AddThesisKPIDialog } from "@/components/theses/AddThesisKPIDialog";
+import { EditThesisKPIDialog } from "@/components/theses/EditThesisKPIDialog";
+import { ThesisKPICard } from "@/components/theses/ThesisKPICard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -47,6 +60,15 @@ export default function ThesisDetail() {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkDialogType, setLinkDialogType] = useState<'idea' | 'project' | 'action_plan'>('idea');
   
+  // KPI management states
+  const [addKPIDialogOpen, setAddKPIDialogOpen] = useState(false);
+  const [editKPIDialogOpen, setEditKPIDialogOpen] = useState(false);
+  const [selectedKPI, setSelectedKPI] = useState<ThesisKPI | null>(null);
+  const [deleteKPIDialogOpen, setDeleteKPIDialogOpen] = useState(false);
+  const [kpiToDelete, setKpiToDelete] = useState<ThesisKPI | null>(null);
+  
+  const deleteKPI = useDeleteThesisKPI();
+  
   const { data: thesis, isLoading: thesisLoading } = useThesisDetails(id);
   const { data: initiatives, isLoading: initiativesLoading } = useThesisProjects(id);
 
@@ -74,6 +96,23 @@ export default function ThesisDetail() {
   const handleLinkClick = (type: 'idea' | 'project' | 'action_plan') => {
     setLinkDialogType(type);
     setLinkDialogOpen(true);
+  };
+
+  const handleEditKPI = (kpi: ThesisKPI) => {
+    setSelectedKPI(kpi);
+    setEditKPIDialogOpen(true);
+  };
+
+  const handleDeleteKPIClick = (kpi: ThesisKPI) => {
+    setKpiToDelete(kpi);
+    setDeleteKPIDialogOpen(true);
+  };
+
+  const confirmDeleteKPI = async () => {
+    if (!kpiToDelete) return;
+    await deleteKPI.mutateAsync({ id: kpiToDelete.id, thesis_id: kpiToDelete.thesis_id });
+    setDeleteKPIDialogOpen(false);
+    setKpiToDelete(null);
   };
   
   // Configuração visual baseada no nome
@@ -169,47 +208,46 @@ export default function ThesisDetail() {
       </Card>
 
       {/* KPIs Section */}
-      {thesis.kpis && thesis.kpis.length > 0 && (
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
               KPIs Estratégicos
             </CardTitle>
-          </CardHeader>
-          <CardContent>
+            {canManage && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setAddKPIDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar KPI
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {thesis.kpis && thesis.kpis.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {thesis.kpis.map((kpi) => {
-                const progress = kpi.target_value > 0 
-                  ? Math.min(100, ((kpi.current_value || 0) / kpi.target_value) * 100)
-                  : 0;
-                
-                return (
-                  <Card key={kpi.id} className="bg-muted/50">
-                    <CardContent className="p-4">
-                      <p className="font-medium mb-1">{kpi.name}</p>
-                      {kpi.description && (
-                        <p className="text-xs text-muted-foreground mb-2">{kpi.description}</p>
-                      )}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-semibold">
-                            {kpi.current_value ?? 0}{kpi.unit ? ` ${kpi.unit}` : ''}
-                          </span>
-                          <span className="text-muted-foreground">
-                            / {kpi.target_value}{kpi.unit ? ` ${kpi.unit}` : ''}
-                          </span>
-                        </div>
-                        <Progress value={progress} className="h-2" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {thesis.kpis.map((kpi) => (
+                <ThesisKPICard
+                  key={kpi.id}
+                  kpi={kpi}
+                  canManage={canManage}
+                  onEdit={handleEditKPI}
+                  onDelete={handleDeleteKPIClick}
+                />
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Nenhum KPI definido para este objetivo
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Initiatives Tabs */}
       <Tabs defaultValue="ideas" className="space-y-4">
@@ -278,6 +316,38 @@ export default function ThesisDetail() {
           thesisName={thesis.name}
           defaultTab={linkDialogType}
         />
+      )}
+
+      {/* KPI Dialogs */}
+      {thesis && (
+        <>
+          <AddThesisKPIDialog
+            open={addKPIDialogOpen}
+            onOpenChange={setAddKPIDialogOpen}
+            thesisId={thesis.id}
+          />
+          <EditThesisKPIDialog
+            open={editKPIDialogOpen}
+            onOpenChange={setEditKPIDialogOpen}
+            kpi={selectedKPI}
+          />
+          <AlertDialog open={deleteKPIDialogOpen} onOpenChange={setDeleteKPIDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir KPI</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir o KPI "{kpiToDelete?.name}"? Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDeleteKPI}>
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
       )}
     </div>
   );
