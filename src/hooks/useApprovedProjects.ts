@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ApprovedProject {
   id: string;
   name: string;
+  initiative_type: 'project' | 'action_plan' | 'idea';
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
   assigned_to: string | null;
   approved_at: string | null;
@@ -29,6 +30,7 @@ export function useApprovedProjects(pillar?: string | null) {
         .select(`
           id,
           name,
+          initiative_type,
           strategic_pillar,
           assigned_to,
           approved_at,
