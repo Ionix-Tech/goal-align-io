@@ -1,11 +1,29 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, TrendingUp, Briefcase, Edit, Archive } from "lucide-react";
+import { Calendar, TrendingUp, Briefcase, Edit, Archive, Heart, Brain, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Thesis } from "@/hooks/useTheses";
-import { THESIS_TEMPLATES } from "@/config/thesisTemplates";
+
+// Configuração visual baseada no nome do objetivo
+const THESIS_VISUAL_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  ALMA: { 
+    icon: <Heart className="h-6 w-6" />, 
+    color: "#e11d48", // rose-600
+    label: "Engajamento" 
+  },
+  MENTE: { 
+    icon: <Brain className="h-6 w-6" />, 
+    color: "#7c3aed", // violet-600
+    label: "Experiência" 
+  },
+  CORPO: { 
+    icon: <Zap className="h-6 w-6" />, 
+    color: "#16a34a", // green-600
+    label: "Resultado" 
+  },
+};
 
 interface ThesisCardProps {
   thesis: Thesis & { project_count?: number; kpi_count?: number };
@@ -15,7 +33,11 @@ interface ThesisCardProps {
 }
 
 export function ThesisCard({ thesis, onEdit, onArchive, onClick }: ThesisCardProps) {
-  const template = THESIS_TEMPLATES[thesis.thesis_type] || THESIS_TEMPLATES.custom;
+  const config = THESIS_VISUAL_CONFIG[thesis.name.toUpperCase()] || { 
+    icon: <Zap className="h-6 w-6" />, 
+    color: "#6b7280", 
+    label: "Objetivo" 
+  };
 
   return (
     <Card 
@@ -26,15 +48,15 @@ export function ThesisCard({ thesis, onEdit, onArchive, onClick }: ThesisCardPro
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{template.icon}</span>
+              <span style={{ color: config.color }}>{config.icon}</span>
               <Badge 
                 variant="outline" 
                 style={{ 
-                  borderColor: template.color,
-                  color: template.color
+                  borderColor: config.color,
+                  color: config.color
                 }}
               >
-                {template.name}
+                {config.label}
               </Badge>
               {thesis.is_archived && (
                 <Badge variant="secondary">Arquivada</Badge>
