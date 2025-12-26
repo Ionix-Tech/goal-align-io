@@ -230,26 +230,28 @@ function InitiativeItem({
   const statusConfig = statusLabels[item.status] || statusLabels.draft;
 
   return (
-    <div className="flex items-center justify-between gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <Icon className={`h-5 w-5 flex-shrink-0 ${config.color}`} />
-        <div className="min-w-0 flex-1">
-          <p className="font-medium truncate">{item.name}</p>
-          {item.description && (
-            <p className="text-sm text-muted-foreground truncate">
-              {item.description}
-            </p>
-          )}
-        </div>
+    <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+      {/* Icon */}
+      <Icon className={`h-5 w-5 flex-shrink-0 mt-0.5 ${config.color}`} />
+      
+      {/* Content - takes remaining space */}
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <p className="font-medium truncate">{item.name}</p>
+        {item.description && (
+          <p className="text-sm text-muted-foreground truncate">
+            {item.description}
+          </p>
+        )}
       </div>
 
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <Badge variant={statusConfig.variant}>
+      {/* Actions - fixed width, never shrinks */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Badge variant={statusConfig.variant} className="whitespace-nowrap text-xs">
           {statusConfig.label}
         </Badge>
 
         {item.assigned_to_profile && (
-          <Avatar className="h-7 w-7">
+          <Avatar className="h-6 w-6 flex-shrink-0">
             <AvatarImage src={item.assigned_to_profile.avatar_url || undefined} />
             <AvatarFallback className="text-xs">
               {item.assigned_to_profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
@@ -262,7 +264,7 @@ function InitiativeItem({
           variant="outline"
           onClick={onLink}
           disabled={isLinking}
-          className="gap-1"
+          className="gap-1 flex-shrink-0"
         >
           <Link2 className="h-3 w-3" />
           Vincular
