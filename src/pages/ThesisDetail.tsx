@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, ClipboardList } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, ClipboardList, Heart, Brain, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,20 +11,48 @@ import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { useThesisProjects } from "@/hooks/useThesisProjects";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ThesisInitiativeList } from "@/components/theses/ThesisInitiativeList";
-import { THESIS_TEMPLATES } from "@/config/thesisTemplates";
+import { EditThesisDialog } from "@/components/theses/EditThesisDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+// Configuração visual baseada no nome do objetivo
+const THESIS_VISUAL_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  ALMA: { 
+    icon: <Heart className="h-8 w-8" />, 
+    color: "#e11d48", // rose-600
+    label: "Engajamento" 
+  },
+  MENTE: { 
+    icon: <Brain className="h-8 w-8" />, 
+    color: "#7c3aed", // violet-600
+    label: "Experiência" 
+  },
+  CORPO: { 
+    icon: <Zap className="h-8 w-8" />, 
+    color: "#16a34a", // green-600
+    label: "Resultado" 
+  },
+};
 
 export default function ThesisDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { role } = useUserRole();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   
   const { data: thesis, isLoading: thesisLoading } = useThesisDetails(id);
   const { data: initiatives, isLoading: initiativesLoading } = useThesisProjects(id);
 
   const canManage = role === "ceo" || role === "pmo_manager";
-  const template = thesis ? THESIS_TEMPLATES[thesis.thesis_type] || THESIS_TEMPLATES.custom : null;
+  
+  // Configuração visual baseada no nome
+  const config = thesis 
+    ? THESIS_VISUAL_CONFIG[thesis.name.toUpperCase()] || { 
+        icon: <Zap className="h-8 w-8" />, 
+        color: "#6b7280", 
+        label: "Objetivo" 
+      }
+    : null;
 
   if (thesisLoading || initiativesLoading) {
     return (
@@ -66,7 +95,7 @@ export default function ThesisDetail() {
         </Button>
         
         {canManage && (
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setEditDialogOpen(true)}>
             <Edit className="h-4 w-4" />
             Editar
           </Button>
@@ -77,17 +106,17 @@ export default function ThesisDetail() {
       <Card>
         <CardHeader>
           <div className="flex items-start gap-4">
-            <span className="text-4xl">{template?.icon}</span>
+            <span style={{ color: config?.color }}>{config?.icon}</span>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <Badge 
                   variant="outline" 
                   style={{ 
-                    borderColor: template?.color,
-                    color: template?.color
+                    borderColor: config?.color,
+                    color: config?.color
                   }}
                 >
-                  {template?.name}
+                  {config?.label}
                 </Badge>
                 {thesis.is_archived && (
                   <Badge variant="secondary">Arquivada</Badge>
@@ -192,6 +221,13 @@ export default function ThesisDetail() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <EditThesisDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
+        thesis={thesis}
+      />
     </div>
   );
 }

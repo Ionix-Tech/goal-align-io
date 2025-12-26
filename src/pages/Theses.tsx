@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useTheses } from "@/hooks/useTheses";
+import { useTheses, type Thesis } from "@/hooks/useTheses";
 import { ThesisCard } from "@/components/theses/ThesisCard";
 import { CreateThesisDialog } from "@/components/theses/CreateThesisDialog";
+import { EditThesisDialog } from "@/components/theses/EditThesisDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Theses() {
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedThesis, setSelectedThesis] = useState<Thesis | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const { role, loading: roleLoading } = useUserRole();
 
@@ -22,6 +25,11 @@ export default function Theses() {
   const canManageTheses = role === "ceo" || role === "pmo_manager";
 
   const years = [2024, 2025, 2026];
+
+  const handleEdit = (thesis: Thesis) => {
+    setSelectedThesis(thesis);
+    setEditDialogOpen(true);
+  };
 
   if (isLoading || roleLoading) {
     return (
@@ -93,7 +101,7 @@ export default function Theses() {
               key={thesis.id}
               thesis={thesis}
               onClick={(t) => navigate(`/theses/${t.id}`)}
-              onEdit={canManageTheses ? () => {} : undefined}
+              onEdit={canManageTheses ? () => handleEdit(thesis) : undefined}
               onArchive={canManageTheses ? () => {} : undefined}
             />
           ))}
@@ -103,6 +111,12 @@ export default function Theses() {
       <CreateThesisDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
+      />
+
+      <EditThesisDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        thesis={selectedThesis}
       />
     </div>
   );
