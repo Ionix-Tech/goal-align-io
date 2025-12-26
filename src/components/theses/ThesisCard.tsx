@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, TrendingUp, Briefcase, Edit, Archive, Heart, Brain, Zap } from "lucide-react";
+import { Calendar, TrendingUp, Briefcase, Edit, Archive, Trash2, Heart, Brain, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Thesis } from "@/hooks/useTheses";
@@ -29,10 +29,12 @@ interface ThesisCardProps {
   thesis: Thesis & { project_count?: number; kpi_count?: number };
   onEdit?: (thesis: Thesis) => void;
   onArchive?: (thesis: Thesis) => void;
+  onDelete?: (thesis: Thesis) => void;
   onClick?: (thesis: Thesis) => void;
 }
 
-export function ThesisCard({ thesis, onEdit, onArchive, onClick }: ThesisCardProps) {
+export function ThesisCard({ thesis, onEdit, onArchive, onDelete, onClick }: ThesisCardProps) {
+  const canDelete = (thesis.project_count || 0) === 0;
   const config = THESIS_VISUAL_CONFIG[thesis.name.toUpperCase()] || { 
     icon: <Zap className="h-6 w-6" />, 
     color: "#6b7280", 
@@ -81,8 +83,20 @@ export function ThesisCard({ thesis, onEdit, onArchive, onClick }: ThesisCardPro
                 variant="ghost"
                 size="icon"
                 onClick={() => onArchive(thesis)}
+                title="Arquivar objetivo"
               >
                 <Archive className="h-4 w-4" />
+              </Button>
+            )}
+            {onDelete && canDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(thesis)}
+                className="text-destructive hover:text-destructive"
+                title="Excluir objetivo"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
