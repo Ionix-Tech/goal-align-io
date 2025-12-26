@@ -197,7 +197,7 @@ export function LinkInitiativeToThesisDialog({
               </TabsList>
 
               <ScrollArea className="flex-1 min-h-0 mt-4">
-                <div className="pr-4">
+                <div className="pr-4 pb-4">
                   <TabsContent value="idea" className="mt-0 w-full">
                     {renderInitiativeList('idea')}
                   </TabsContent>
@@ -235,46 +235,50 @@ function InitiativeItem({
 
   return (
     <div className="w-full min-w-0 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-        {/* Left side: Icon + Content */}
-        <div className="flex items-start gap-2 flex-1 min-w-0">
-          <Icon className={`h-4 w-4 flex-shrink-0 mt-0.5 ${config.color}`} />
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm truncate">{item.name}</p>
-            {item.description && (
-              <p className="text-xs text-muted-foreground truncate">
-                {item.description}
-              </p>
-            )}
-          </div>
+      {/* Top row: Icon + text */}
+      <div className="flex items-start gap-2 min-w-0">
+        <Icon className={`h-4 w-4 flex-shrink-0 mt-0.5 ${config.color}`} />
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{item.name}</p>
+          {item.description && (
+            <p className="text-xs text-muted-foreground truncate">
+              {item.description}
+            </p>
+          )}
         </div>
+      </div>
 
-        {/* Right side: Badge + Avatar + Button */}
-        <div className="flex items-center gap-2 flex-shrink-0 ml-6 sm:ml-0">
-          <Badge variant={statusConfig.variant} className="text-xs">
+      {/* Bottom row: meta + action (always visible) */}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Badge variant={statusConfig.variant} className="text-xs whitespace-nowrap">
             {statusConfig.label}
           </Badge>
 
           {item.assigned_to_profile && (
-            <Avatar className="h-5 w-5">
+            <Avatar className="h-5 w-5 flex-shrink-0">
               <AvatarImage src={item.assigned_to_profile.avatar_url || undefined} />
               <AvatarFallback className="text-[10px]">
-                {item.assigned_to_profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                {item.assigned_to_profile.full_name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .slice(0, 2)}
               </AvatarFallback>
             </Avatar>
           )}
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onLink}
-            disabled={isLinking}
-            className="h-7 text-xs gap-1"
-          >
-            <Link2 className="h-3 w-3" />
-            Vincular
-          </Button>
         </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onLink}
+          disabled={isLinking}
+          className="h-7 text-xs gap-1 flex-shrink-0"
+        >
+          <Link2 className="h-3 w-3" />
+          Vincular
+        </Button>
       </div>
     </div>
   );
