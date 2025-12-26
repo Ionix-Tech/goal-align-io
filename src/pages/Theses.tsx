@@ -2,18 +2,31 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useTheses, type Thesis } from "@/hooks/useTheses";
+import { useTheses, useUpdateThesis, useDeleteThesis, type Thesis } from "@/hooks/useTheses";
 import { ThesisCard } from "@/components/theses/ThesisCard";
 import { CreateThesisDialog } from "@/components/theses/CreateThesisDialog";
 import { EditThesisDialog } from "@/components/theses/EditThesisDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Theses() {
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedThesis, setSelectedThesis] = useState<Thesis | null>(null);
   // Default to next year since product focus is future planning
   const nextYear = new Date().getFullYear() + 1;
@@ -23,6 +36,8 @@ export default function Theses() {
   const { data: theses, isLoading } = useTheses({ 
     year: selectedYear
   });
+  const updateThesis = useUpdateThesis();
+  const deleteThesis = useDeleteThesis();
 
   const canManageTheses = role === "ceo" || role === "pmo_manager";
 
@@ -33,6 +48,43 @@ export default function Theses() {
   const handleEdit = (thesis: Thesis) => {
     setSelectedThesis(thesis);
     setEditDialogOpen(true);
+  };
+
+  const handleArchiveClick = (thesis: Thesis) => {
+    setSelectedThesis(thesis);
+    setArchiveDialogOpen(true);
+  };
+
+  const handleDeleteClick = (thesis: Thesis) => {
+    setSelectedThesis(thesis);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmArchive = async () => {
+    if (!selectedThesis) return;
+    try {
+      await updateThesis.mutateAsync({ 
+        id: selectedThesis.id, 
+        is_archived: true 
+      });
+      toast.success("Objetivo arquivado com sucesso");
+    } catch (error) {
+      toast.error("Erro ao arquivar objetivo");
+    }
+    setArchiveDialogOpen(false);
+    setSelectedThesis(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedThesis) return;
+    try {
+      await deleteThesis.mutateAsync(selectedThesis.id);
+      toast.success("Objetivo excluído com sucesso");
+    } catch (error) {
+      toast.error("Erro ao excluir objetivo. Verifique se não há projetos vinculados.");
+    }
+    setDeleteDialogOpen(false);
+    setSelectedThesis(null);
   };
 
   if (isLoading || roleLoading) {
@@ -106,7 +158,8 @@ export default function Theses() {
               thesis={thesis}
               onClick={(t) => navigate(`/theses/${t.id}`)}
               onEdit={canManageTheses ? () => handleEdit(thesis) : undefined}
-              onArchive={canManageTheses ? () => {} : undefined}
+              onArchive={canManageTheses ? () => handleArchiveClick(thesis) : undefined}
+              onDelete={canManageTheses ? () => handleDeleteClick(thesis) : undefined}
             />
           ))}
         </div>
@@ -122,6 +175,47 @@ export default function Theses() {
         onOpenChange={setEditDialogOpen}
         thesis={selectedThesis}
       />
+
+      {/* Dialog de confirmação de arquivamento */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Arquivar objetivo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja arquivar o objetivo "{selectedThesis?.name}"? 
+              Objetivos arquivados não aparecem na lista principal, mas podem ser restaurados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmArchive}>
+              Arquivar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir objetivo permanentemente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o objetivo "{selectedThesis?.name}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
