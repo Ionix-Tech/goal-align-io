@@ -1166,6 +1166,51 @@ export type Database = {
           },
         ]
       }
+      thesis_kpi_measurements: {
+        Row: {
+          created_at: string
+          id: string
+          kpi_id: string
+          measured_by: string
+          measured_value: number
+          measurement_date: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kpi_id: string
+          measured_by: string
+          measured_value: number
+          measurement_date: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kpi_id?: string
+          measured_by?: string
+          measured_value?: number
+          measurement_date?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thesis_kpi_measurements_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "thesis_kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thesis_kpi_measurements_measured_by_fkey"
+            columns: ["measured_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       thesis_kpis: {
         Row: {
           created_at: string | null

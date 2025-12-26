@@ -1,7 +1,13 @@
-import { Edit, Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Edit, Trash2, TrendingUp, TrendingDown, Minus, PlusCircle, History } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { ThesisKPI } from "@/hooks/useThesisDetails";
 
 interface ThesisKPICardProps {
@@ -9,9 +15,18 @@ interface ThesisKPICardProps {
   canManage: boolean;
   onEdit: (kpi: ThesisKPI) => void;
   onDelete: (kpi: ThesisKPI) => void;
+  onAddMeasurement: (kpi: ThesisKPI) => void;
+  onViewHistory: (kpi: ThesisKPI) => void;
 }
 
-export function ThesisKPICard({ kpi, canManage, onEdit, onDelete }: ThesisKPICardProps) {
+export function ThesisKPICard({ 
+  kpi, 
+  canManage, 
+  onEdit, 
+  onDelete,
+  onAddMeasurement,
+  onViewHistory 
+}: ThesisKPICardProps) {
   const currentValue = kpi.current_value ?? 0;
   const progress = kpi.target_value > 0 
     ? Math.min(100, (currentValue / kpi.target_value) * 100)
@@ -56,22 +71,66 @@ export function ThesisKPICard({ kpi, canManage, onEdit, onDelete }: ThesisKPICar
           
           {canManage && (
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onEdit(kpi)}
-              >
-                <Edit className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive"
-                onClick={() => onDelete(kpi)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => onAddMeasurement(kpi)}
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Nova medição</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => onViewHistory(kpi)}
+                    >
+                      <History className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Ver histórico</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => onEdit(kpi)}
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Editar</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => onDelete(kpi)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Excluir</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           )}
         </div>
