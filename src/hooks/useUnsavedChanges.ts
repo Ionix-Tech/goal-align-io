@@ -22,17 +22,14 @@ export function useUnsavedChanges(
     message = "Você tem alterações não salvas. Deseja realmente sair?",
   } = options;
 
+  const shouldBlock = enabled && hasChanges;
+
   // Block navigation using react-router
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      enabled &&
-      hasChanges &&
-      currentLocation.pathname !== nextLocation.pathname
-  );
+  const blocker = useBlocker(shouldBlock);
 
   // Handle browser unload event (refresh, close tab)
   useEffect(() => {
-    if (!enabled || !hasChanges) return;
+    if (!shouldBlock) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -42,7 +39,7 @@ export function useUnsavedChanges(
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [enabled, hasChanges, message]);
+  }, [shouldBlock, message]);
 
   const proceedNavigation = useCallback(() => {
     if (blocker.state === "blocked") {
