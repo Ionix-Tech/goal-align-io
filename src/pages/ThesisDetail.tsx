@@ -19,6 +19,8 @@ import { LinkInitiativeToThesisDialog } from "@/components/theses/LinkInitiative
 import { AddThesisKPIDialog } from "@/components/theses/AddThesisKPIDialog";
 import { EditThesisKPIDialog } from "@/components/theses/EditThesisKPIDialog";
 import { ThesisKPICard } from "@/components/theses/ThesisKPICard";
+import { AddKPIMeasurementDialog } from "@/components/theses/AddKPIMeasurementDialog";
+import { KPIMeasurementHistoryDialog } from "@/components/theses/KPIMeasurementHistoryDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +69,11 @@ export default function ThesisDetail() {
   const [deleteKPIDialogOpen, setDeleteKPIDialogOpen] = useState(false);
   const [kpiToDelete, setKpiToDelete] = useState<ThesisKPI | null>(null);
   
+  // KPI Measurement states
+  const [addMeasurementDialogOpen, setAddMeasurementDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [measurementKPI, setMeasurementKPI] = useState<ThesisKPI | null>(null);
+  
   const deleteKPI = useDeleteThesisKPI();
   
   const { data: thesis, isLoading: thesisLoading } = useThesisDetails(id);
@@ -113,6 +120,16 @@ export default function ThesisDetail() {
     await deleteKPI.mutateAsync({ id: kpiToDelete.id, thesis_id: kpiToDelete.thesis_id });
     setDeleteKPIDialogOpen(false);
     setKpiToDelete(null);
+  };
+
+  const handleAddMeasurement = (kpi: ThesisKPI) => {
+    setMeasurementKPI(kpi);
+    setAddMeasurementDialogOpen(true);
+  };
+
+  const handleViewHistory = (kpi: ThesisKPI) => {
+    setMeasurementKPI(kpi);
+    setHistoryDialogOpen(true);
   };
   
   // Configuração visual baseada no nome
@@ -238,6 +255,8 @@ export default function ThesisDetail() {
                   canManage={canManage}
                   onEdit={handleEditKPI}
                   onDelete={handleDeleteKPIClick}
+                  onAddMeasurement={handleAddMeasurement}
+                  onViewHistory={handleViewHistory}
                 />
               ))}
             </div>
@@ -347,6 +366,18 @@ export default function ThesisDetail() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          
+          {/* KPI Measurement Dialogs */}
+          <AddKPIMeasurementDialog
+            open={addMeasurementDialogOpen}
+            onOpenChange={setAddMeasurementDialogOpen}
+            kpi={measurementKPI}
+          />
+          <KPIMeasurementHistoryDialog
+            open={historyDialogOpen}
+            onOpenChange={setHistoryDialogOpen}
+            kpi={measurementKPI}
+          />
         </>
       )}
     </div>
