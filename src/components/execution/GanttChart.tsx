@@ -113,7 +113,7 @@ export function GanttChart({ projectId, onTaskClick }: GanttChartProps) {
         <CardContent className="py-12 text-center text-muted-foreground">
           <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p>Nenhuma tarefa cadastrada neste projeto.</p>
-          <p className="text-sm mt-1">Adicione tarefas na aba "Atualizações" para visualizar o cronograma.</p>
+          <p className="text-sm mt-1">Adicione tarefas na aba "Atividades" para visualizar o cronograma.</p>
         </CardContent>
       </Card>
     );

@@ -145,7 +145,7 @@ const ProjectExecution = () => {
               Gantt
             </TabsTrigger>
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
-            <TabsTrigger value="updates">🔄 Atualizações</TabsTrigger>
+            <TabsTrigger value="updates">🔄 Atividades</TabsTrigger>
           </TabsList>
 
           {/* Aba: Capa */}
