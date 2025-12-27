@@ -1,4 +1,6 @@
-export type InitiativeType = 'project' | 'action_plan' | 'idea';
+// Tipos de iniciativa suportados
+// Nota: 'action_plan' é mantido para compatibilidade com dados legados, mas tratado como 'project'
+export type InitiativeType = 'project' | 'idea';
 
 export interface InitiativeLabels {
   singular: string;
@@ -48,29 +50,6 @@ export const INITIATIVE_LABELS: Record<InitiativeType, InitiativeLabels> = {
     ideaTab: '💡 Ideia Original',
     detailTab: '📝 Detalhamento',
   },
-  action_plan: {
-    singular: 'Plano de Ação',
-    plural: 'Planos de Ação',
-    article: 'o',
-    approve: 'Aprovar Plano',
-    approveTitle: 'Aprovar Plano de Ação?',
-    approveDescription: (name: string) => `Você está prestes a aprovar o plano de ação "${name}". Esta ação irá notificar o criador e membros.`,
-    reject: 'Solicitar Ajustes',
-    rejectTitle: 'Solicitar Ajustes?',
-    rejectDescription: 'O plano será devolvido para "Detalhamento" e o criador será notificado sobre os ajustes necessários.',
-    archive: 'Arquivar Plano',
-    archiveTitle: 'Arquivar Plano de Ação?',
-    archiveDescription: 'O plano será movido para "Arquivados" e o criador será notificado. Esta ação indica que o plano não será executado.',
-    edit: 'Editar Plano de Ação',
-    review: 'Revisar Plano de Ação',
-    details: 'Detalhes do Plano de Ação',
-    create: 'Criar Plano de Ação',
-    submitted: 'Plano enviado para aprovação',
-    approved: 'Plano de ação aprovado',
-    nameLabel: 'Nome do Plano',
-    ideaTab: '💡 Ideia Original',
-    detailTab: '📝 5W2H',
-  },
   idea: {
     singular: 'Ideia',
     plural: 'Ideias',
@@ -96,9 +75,13 @@ export const INITIATIVE_LABELS: Record<InitiativeType, InitiativeLabels> = {
   },
 };
 
+/**
+ * Retorna os labels para um tipo de iniciativa.
+ * action_plan é tratado como project para compatibilidade com dados legados.
+ */
 export function getInitiativeLabels(type: InitiativeType | string | undefined): InitiativeLabels {
-  if (type === 'action_plan') return INITIATIVE_LABELS.action_plan;
   if (type === 'idea') return INITIATIVE_LABELS.idea;
+  // action_plan e project são tratados da mesma forma
   return INITIATIVE_LABELS.project;
 }
 
@@ -108,18 +91,18 @@ export const REQUIRED_FIELDS = {
     forDraft: ['name', 'context'],
     forReview: ['name', 'context', 'strategic_pillar', 'objective', 'indicators', 'milestones'],
   },
-  action_plan: {
-    forDraft: ['name'],
-    forReview: ['name', 'what', 'why', 'when_end'],
-  },
   idea: {
     forDraft: ['name'],
     forReview: ['name', 'description'],
   },
 };
 
+/**
+ * Retorna os campos obrigatórios para um tipo de iniciativa.
+ * action_plan é tratado como project para compatibilidade com dados legados.
+ */
 export function getRequiredFields(type: InitiativeType | string | undefined) {
-  if (type === 'action_plan') return REQUIRED_FIELDS.action_plan;
   if (type === 'idea') return REQUIRED_FIELDS.idea;
+  // action_plan e project são tratados da mesma forma
   return REQUIRED_FIELDS.project;
 }

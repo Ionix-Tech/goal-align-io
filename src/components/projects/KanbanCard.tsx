@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Zap, FileText, Lightbulb } from "lucide-react";
+import { FileText, Lightbulb } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { THESIS_TYPE_COLORS } from "@/config/thesisTemplates";
 import { getCategoryConfig } from "@/config/categories";
@@ -55,12 +55,10 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
 
   const getInitiativeTypeInfo = () => {
     switch (project.initiative_type) {
-      case 'action_plan':
-        return { icon: Zap, label: 'Plano', variant: 'secondary' as const, className: 'text-green-600 bg-green-500/10' };
-      case 'project':
-        return { icon: FileText, label: 'Projeto', variant: 'default' as const, className: 'text-blue-600 bg-blue-500/10' };
       case 'idea':
         return { icon: Lightbulb, label: 'Ideia', variant: 'outline' as const, className: 'text-yellow-600 bg-yellow-500/10' };
+      case 'project':
+      case 'action_plan': // Legado: tratado como projeto
       default:
         return { icon: FileText, label: 'Projeto', variant: 'default' as const, className: 'text-blue-600 bg-blue-500/10' };
     }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, ClipboardList, Heart, Brain, Zap, Plus } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, Heart, Brain, Zap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +60,7 @@ export default function ThesisDetail() {
   const { role } = useUserRole();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-  const [linkDialogType, setLinkDialogType] = useState<'idea' | 'project' | 'action_plan'>('idea');
+  const [linkDialogType, setLinkDialogType] = useState<'idea' | 'project'>('idea');
   
   // KPI management states
   const [addKPIDialogOpen, setAddKPIDialogOpen] = useState(false);
@@ -100,7 +100,7 @@ export default function ThesisDetail() {
     },
   });
 
-  const handleLinkClick = (type: 'idea' | 'project' | 'action_plan') => {
+  const handleLinkClick = (type: 'idea' | 'project') => {
     setLinkDialogType(type);
     setLinkDialogOpen(true);
   };
@@ -170,7 +170,6 @@ export default function ThesisDetail() {
 
   const ideasCount = initiatives?.ideas.length || 0;
   const projectsCount = initiatives?.projects.length || 0;
-  const actionPlansCount = initiatives?.actionPlans.length || 0;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -270,7 +269,7 @@ export default function ThesisDetail() {
 
       {/* Initiatives Tabs */}
       <Tabs defaultValue="ideas" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="ideas" className="gap-2">
             <Lightbulb className="h-4 w-4" />
             Ideias ({ideasCount})
@@ -279,15 +278,11 @@ export default function ThesisDetail() {
             <Briefcase className="h-4 w-4" />
             Projetos ({projectsCount})
           </TabsTrigger>
-          <TabsTrigger value="action_plans" className="gap-2">
-            <ClipboardList className="h-4 w-4" />
-            Planos de Ação ({actionPlansCount})
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="ideas">
-          <ThesisInitiativeList 
-            initiatives={initiatives?.ideas || []} 
+          <ThesisInitiativeList
+            initiatives={initiatives?.ideas || []}
             type="idea"
             emptyMessage="Nenhuma ideia vinculada a este objetivo"
             canManage={canManage}
@@ -297,23 +292,12 @@ export default function ThesisDetail() {
         </TabsContent>
 
         <TabsContent value="projects">
-          <ThesisInitiativeList 
-            initiatives={initiatives?.projects || []} 
+          <ThesisInitiativeList
+            initiatives={initiatives?.projects || []}
             type="project"
             emptyMessage="Nenhum projeto vinculado a este objetivo"
             canManage={canManage}
             onLinkClick={() => handleLinkClick('project')}
-            onUnlink={(projectId) => unlinkMutation.mutate(projectId)}
-          />
-        </TabsContent>
-
-        <TabsContent value="action_plans">
-          <ThesisInitiativeList 
-            initiatives={initiatives?.actionPlans || []} 
-            type="action_plan"
-            emptyMessage="Nenhum plano de ação vinculado a este objetivo"
-            canManage={canManage}
-            onLinkClick={() => handleLinkClick('action_plan')}
             onUnlink={(projectId) => unlinkMutation.mutate(projectId)}
           />
         </TabsContent>
