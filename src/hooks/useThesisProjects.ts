@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type Project = Database['public']['Tables']['projects']['Row'];
-type InitiativeType = Database['public']['Enums']['initiative_type'];
 
 export interface ThesisProject extends Project {
   assigned_to_profile?: {
@@ -15,7 +14,6 @@ export interface ThesisProject extends Project {
 export interface ThesisProjectsGrouped {
   ideas: ThesisProject[];
   projects: ThesisProject[];
-  actionPlans: ThesisProject[];
 }
 
 export function useThesisProjects(thesisId: string | undefined) {
@@ -23,7 +21,7 @@ export function useThesisProjects(thesisId: string | undefined) {
     queryKey: ['thesis-projects', thesisId],
     queryFn: async (): Promise<ThesisProjectsGrouped> => {
       if (!thesisId) {
-        return { ideas: [], projects: [], actionPlans: [] };
+        return { ideas: [], projects: [] };
       }
 
       const { data, error } = await supabase
@@ -41,8 +39,8 @@ export function useThesisProjects(thesisId: string | undefined) {
 
       return {
         ideas: all.filter(p => p.initiative_type === 'idea'),
-        projects: all.filter(p => p.initiative_type === 'project'),
-        actionPlans: all.filter(p => p.initiative_type === 'action_plan'),
+        // action_plan legados são agrupados junto com projetos
+        projects: all.filter(p => p.initiative_type === 'project' || p.initiative_type === 'action_plan'),
       };
     },
     enabled: !!thesisId,

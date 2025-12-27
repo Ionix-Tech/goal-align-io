@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Lightbulb, Briefcase, ClipboardList, Link2, X } from "lucide-react";
+import { Search, Lightbulb, Briefcase, Link2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ interface LinkInitiativeToThesisDialogProps {
   onOpenChange: (open: boolean) => void;
   thesisId: string;
   thesisName: string;
-  defaultTab?: 'idea' | 'project' | 'action_plan';
+  defaultTab?: 'idea' | 'project';
 }
 
 const typeConfig = {
@@ -37,12 +37,6 @@ const typeConfig = {
     label: 'Projetos',
     singularLabel: 'projeto',
     color: 'text-blue-500',
-  },
-  action_plan: {
-    icon: ClipboardList,
-    label: 'Planos de Ação',
-    singularLabel: 'plano de ação',
-    color: 'text-purple-500',
   },
 };
 
@@ -87,24 +81,20 @@ export function LinkInitiativeToThesisDialog({
     },
   });
 
-  const getFilteredItems = (type: 'idea' | 'project' | 'action_plan') => {
+  const getFilteredItems = (type: 'idea' | 'project') => {
     if (!unlinkedData) return [];
-    
-    const items = type === 'idea' 
-      ? unlinkedData.ideas 
-      : type === 'project' 
-        ? unlinkedData.projects 
-        : unlinkedData.actionPlans;
+
+    const items = type === 'idea' ? unlinkedData.ideas : unlinkedData.projects;
 
     if (!searchTerm) return items;
-    
-    return items.filter(item => 
+
+    return items.filter(item =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
-  const renderInitiativeList = (type: 'idea' | 'project' | 'action_plan') => {
+  const renderInitiativeList = (type: 'idea' | 'project') => {
     const items = getFilteredItems(type);
     const config = typeConfig[type];
     const Icon = config.icon;
@@ -181,7 +171,7 @@ export function LinkInitiativeToThesisDialog({
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
-              <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+              <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="idea" className="gap-1 text-xs sm:text-sm sm:gap-2">
                   <Lightbulb className="h-4 w-4" />
                   <span className="hidden sm:inline">Ideias</span> ({unlinkedData?.ideas.length || 0})
@@ -189,10 +179,6 @@ export function LinkInitiativeToThesisDialog({
                 <TabsTrigger value="project" className="gap-1 text-xs sm:text-sm sm:gap-2">
                   <Briefcase className="h-4 w-4" />
                   <span className="hidden sm:inline">Projetos</span> ({unlinkedData?.projects.length || 0})
-                </TabsTrigger>
-                <TabsTrigger value="action_plan" className="gap-1 text-xs sm:text-sm sm:gap-2">
-                  <ClipboardList className="h-4 w-4" />
-                  <span className="hidden sm:inline">Planos</span> ({unlinkedData?.actionPlans.length || 0})
                 </TabsTrigger>
               </TabsList>
 
@@ -203,9 +189,6 @@ export function LinkInitiativeToThesisDialog({
                   </TabsContent>
                   <TabsContent value="project" className="mt-0 w-full">
                     {renderInitiativeList('project')}
-                  </TabsContent>
-                  <TabsContent value="action_plan" className="mt-0 w-full">
-                    {renderInitiativeList('action_plan')}
                   </TabsContent>
                 </div>
               </ScrollArea>
@@ -225,7 +208,7 @@ function InitiativeItem({
   isLinking,
 }: {
   item: UnlinkedProject;
-  type: 'idea' | 'project' | 'action_plan';
+  type: 'idea' | 'project';
   onLink: () => void;
   isLinking: boolean;
 }) {

@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, FileText, Zap } from "lucide-react";
+import { Lightbulb, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface InitiativeTypeSelectorProps {
@@ -11,9 +11,9 @@ interface InitiativeTypeSelectorProps {
 export function InitiativeTypeSelector({ open, onClose }: InitiativeTypeSelectorProps) {
   const navigate = useNavigate();
 
-  const handleSelect = (type: 'idea' | 'project' | 'action_plan') => {
+  const handleSelect = (type: 'idea' | 'project') => {
     onClose();
-    
+
     switch (type) {
       case 'idea':
         navigate('/quick-idea');
@@ -21,15 +21,12 @@ export function InitiativeTypeSelector({ open, onClose }: InitiativeTypeSelector
       case 'project':
         navigate('/create-project');
         break;
-      case 'action_plan':
-        navigate('/create-action-plan');
-        break;
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>O que você quer criar?</DialogTitle>
           <DialogDescription>
@@ -37,8 +34,8 @@ export function InitiativeTypeSelector({ open, onClose }: InitiativeTypeSelector
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <Card 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <Card
             className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary"
             onClick={() => handleSelect('idea')}
           >
@@ -52,12 +49,12 @@ export function InitiativeTypeSelector({ open, onClose }: InitiativeTypeSelector
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Registre rapidamente uma ideia para análise futura. Apenas nome e descrição.
+                Registre rapidamente uma ideia para análise futura. Backlog de captura rápida com título, descrição e categoria.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card 
+          <Card
             className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary"
             onClick={() => handleSelect('project')}
           >
@@ -66,31 +63,12 @@ export function InitiativeTypeSelector({ open, onClose }: InitiativeTypeSelector
                 <div className="p-2 bg-blue-500/10 rounded-lg">
                   <FileText className="h-6 w-6 text-blue-600" />
                 </div>
-                <CardTitle className="text-lg">📋 Projeto</CardTitle>
+                <CardTitle className="text-lg">📋 Projeto (A3)</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Iniciativa estruturada com sponsor, indicadores, requisitos e governança completa.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary"
-            onClick={() => handleSelect('action_plan')}
-          >
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Zap className="h-6 w-6 text-green-600" />
-                </div>
-                <CardTitle className="text-lg">⚡ Plano de Ação</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Plano enxuto (2 semanas a 1,5 mês) com 5W2H. Menos burocracia, mais agilidade.
+                Formato oficial para iniciativas com execução estruturada. Inclui sponsor, indicadores, requisitos, milestones e governança completa.
               </CardDescription>
             </CardContent>
           </Card>

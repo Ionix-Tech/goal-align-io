@@ -37,13 +37,13 @@ export function useUnlinkedProjects() {
 
       if (error) throw error;
 
-      const projects = (data || []) as UnlinkedProject[];
+      const all = (data || []) as UnlinkedProject[];
 
       return {
-        all: projects,
-        ideas: projects.filter(p => p.initiative_type === "idea"),
-        projects: projects.filter(p => p.initiative_type === "project"),
-        actionPlans: projects.filter(p => p.initiative_type === "action_plan"),
+        all,
+        ideas: all.filter(p => p.initiative_type === "idea"),
+        // action_plan legados são incluídos junto com projetos
+        projects: all.filter(p => p.initiative_type === "project" || p.initiative_type === "action_plan"),
       };
     },
   });

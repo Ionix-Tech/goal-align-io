@@ -2,13 +2,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Briefcase, ClipboardList, Plus, X } from "lucide-react";
+import { Lightbulb, Briefcase, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { ThesisProject } from "@/hooks/useThesisProjects";
 
 interface ThesisInitiativeListProps {
   initiatives: ThesisProject[];
-  type: 'idea' | 'project' | 'action_plan';
+  type: 'idea' | 'project';
   emptyMessage?: string;
   canManage?: boolean;
   onLinkClick?: () => void;
@@ -25,11 +25,6 @@ const typeConfig = {
     icon: Briefcase,
     label: 'Projeto',
     color: 'text-blue-500',
-  },
-  action_plan: {
-    icon: ClipboardList,
-    label: 'Plano de Ação',
-    color: 'text-purple-500',
   },
 };
 

@@ -163,7 +163,6 @@ export function ProjectFilters({
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="idea">💡 Ideias</SelectItem>
                 <SelectItem value="project">📋 Projetos</SelectItem>
-                <SelectItem value="action_plan">⚡ Planos de Ação</SelectItem>
               </SelectContent>
             </Select>
           </div>
