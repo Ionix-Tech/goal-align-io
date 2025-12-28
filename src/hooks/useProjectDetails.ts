@@ -5,7 +5,7 @@ export interface ProjectDetails {
   id: string;
   name: string;
   description: string | null;
-  initiative_type: 'idea' | 'project' | 'action_plan';
+  initiative_type: 'idea' | 'project';
   context: string | null;
   objective: string | null;
   requirements: string | null;
@@ -199,9 +199,13 @@ export function useProjectDetails(projectId: string | null) {
         }
       });
 
+      // Normalize initiative_type (action_plan -> project)
+      const normalizedType = projectData.initiative_type === 'action_plan' ? 'project' : projectData.initiative_type;
+
       // Montar o objeto final
       const data = {
         ...projectData,
+        initiative_type: normalizedType,
         source_idea: sourceIdea || null,
         indicators: (indicators || []).map((ind: any) => ({
           ...ind,

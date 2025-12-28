@@ -18,7 +18,7 @@ interface Project {
   assigned_to: string | null;
   indicators: Array<{ id: string }>;
   milestones: Array<{ id: string }>;
-  initiative_type: 'idea' | 'project' | 'action_plan';
+  initiative_type: 'idea' | 'project';
 }
 
 const ALLOWED_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
@@ -42,19 +42,7 @@ export function useProjectTransitions() {
       return { allowed: false, reason: 'Transição não permitida no fluxo' };
     }
 
-    // NOVA LÓGICA: Planos de ação podem ir direto para "Em Andamento"
-    if (from === 'draft' && to === 'approved' && project.initiative_type === 'action_plan') {
-      // Validação mínima para planos de ação
-      if (!project.name || project.name.trim().length === 0) {
-        return { 
-          allowed: false, 
-          reason: 'Plano de ação precisa ter um nome' 
-        };
-      }
-      return { allowed: true };
-    }
-
-    // Validação específica: submeter para análise (apenas para projetos completos)
+    // Validação específica: submeter para análise
     if (from === 'draft' && to === 'review') {
       const validation = validateProjectForSubmission(project);
       if (!validation.valid) {
@@ -62,7 +50,7 @@ export function useProjectTransitions() {
       }
     }
 
-    // Validação: apenas CEO pode aprovar PROJETOS vindos de 'review'
+    // Validação: apenas CEO pode aprovar projetos vindos de 'review'
     if (to === 'approved' && from === 'review' && role !== 'ceo') {
       return { allowed: false, reason: 'Apenas CEO pode aprovar projetos' };
     }
@@ -276,7 +264,7 @@ export function validateProjectForSubmission(project: Project) {
     errors.push('Nome do projeto');
   }
 
-  // NOVA LÓGICA: Apenas projetos completos precisam de validação rigorosa
+  // Validação rigorosa para projetos
   if (project.initiative_type === 'project') {
     if (!project.context || project.context.trim().length < 50) {
       errors.push('Contexto detalhado (mínimo 50 caracteres)');
@@ -294,8 +282,6 @@ export function validateProjectForSubmission(project: Project) {
       errors.push('Pelo menos 1 marco');
     }
   }
-  
-  // Planos de ação não precisam dessas validações rigorosas
 
   if (errors.length > 0) {
     return {

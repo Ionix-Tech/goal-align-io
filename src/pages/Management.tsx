@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings2, Filter, Database as DatabaseIcon, FileText, ClipboardList } from "lucide-react";
+import { Settings2, Filter, Database as DatabaseIcon, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,13 +12,11 @@ import type { Database } from "@/integrations/supabase/types";
 
 type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
 type HealthStatus = 'green' | 'yellow' | 'red';
-type InitiativeType = 'project' | 'action_plan';
 
 const Management = () => {
   const navigate = useNavigate();
   const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
   const [selectedHealth, setSelectedHealth] = useState<HealthStatus | 'all'>('all');
-  const [selectedType, setSelectedType] = useState<InitiativeType | 'all'>('all');
   const [isGeneratingTestData, setIsGeneratingTestData] = useState(false);
 
   const { data: projects, isLoading } = useApprovedProjects(selectedPillar);
@@ -46,18 +44,16 @@ const Management = () => {
     }
   };
 
-  // Filter by health status and initiative type
+  // Filter by health status
   const filteredProjects = (projects || []).filter(p => {
     const healthMatch = selectedHealth === 'all' || p.current_health === selectedHealth;
-    const typeMatch = selectedType === 'all' || p.initiative_type === selectedType;
-    return healthMatch && typeMatch;
+    return healthMatch;
   });
 
   // Calculate stats
   const stats = {
     total: projects?.length || 0,
     projects: projects?.filter(p => p.initiative_type === 'project').length || 0,
-    actionPlans: projects?.filter(p => p.initiative_type === 'action_plan').length || 0,
     green: projects?.filter(p => p.current_health === 'green').length || 0,
     yellow: projects?.filter(p => p.current_health === 'yellow').length || 0,
     red: projects?.filter(p => p.current_health === 'red').length || 0,
@@ -76,7 +72,7 @@ const Management = () => {
             <div>
               <h1 className="text-3xl font-bold">Gestão e Execução</h1>
               <p className="text-muted-foreground">
-                Acompanhe e gerencie projetos e planos de ação em andamento
+                Acompanhe e gerencie projetos em andamento
               </p>
             </div>
           </div>
@@ -95,7 +91,7 @@ const Management = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -116,18 +112,6 @@ const Management = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-700">{stats.projects}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="ring-2 ring-violet-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <ClipboardList className="h-3 w-3 text-violet-600" />
-                Planos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-violet-700">{stats.actionPlans}</div>
             </CardContent>
           </Card>
 
@@ -201,30 +185,6 @@ const Management = () => {
               </Select>
 
               <Select
-                value={selectedType}
-                onValueChange={(value) => setSelectedType(value as InitiativeType | 'all')}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Todos os tipos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  <SelectItem value="project">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-3 w-3 text-blue-600" />
-                      Projetos
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="action_plan">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-3 w-3 text-violet-600" />
-                      Planos de Ação
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
                 value={selectedHealth}
                 onValueChange={(value) => setSelectedHealth(value as HealthStatus | 'all')}
               >
@@ -254,14 +214,13 @@ const Management = () => {
                 </SelectContent>
               </Select>
 
-              {(selectedPillar || selectedHealth !== 'all' || selectedType !== 'all') && (
+              {(selectedPillar || selectedHealth !== 'all') && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     setSelectedPillar(null);
                     setSelectedHealth('all');
-                    setSelectedType('all');
                   }}
                 >
                   Limpar filtros
@@ -280,11 +239,11 @@ const Management = () => {
           <Card>
             <CardContent className="py-12">
               <div className="text-center text-muted-foreground">
-                <p className="text-lg font-medium">Nenhuma iniciativa aprovada encontrada</p>
+                <p className="text-lg font-medium">Nenhum projeto aprovado encontrado</p>
                 <p className="text-sm mt-2">
-                  {selectedPillar || selectedHealth !== 'all' || selectedType !== 'all'
+                  {selectedPillar || selectedHealth !== 'all'
                     ? 'Tente ajustar os filtros'
-                    : 'Aprove projetos ou planos de ação na tela de Priorização para vê-los aqui'}
+                    : 'Aprove projetos na tela de Priorização para vê-los aqui'}
                 </p>
               </div>
             </CardContent>

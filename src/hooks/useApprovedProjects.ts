@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ApprovedProject {
   id: string;
   name: string;
-  initiative_type: 'project' | 'action_plan' | 'idea';
+  initiative_type: 'project' | 'idea';
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
   assigned_to: string | null;
   approved_at: string | null;
@@ -82,8 +82,12 @@ export function useApprovedProjects(pillar?: string | null) {
               .single()
           ]);
 
+          // Normalize initiative_type (action_plan -> project)
+          const normalizedType = project.initiative_type === 'action_plan' ? 'project' : project.initiative_type;
+
           return {
             ...project,
+            initiative_type: normalizedType as 'project' | 'idea',
             indicators_count: indicators?.length || 0,
             milestones_total: milestones?.length || 0,
             milestones_completed: milestones?.filter(m => m.completed).length || 0,

@@ -92,6 +92,7 @@ export function useProjects(filters?: UseProjectsFilters) {
       if (error) throw error;
 
       // Filter out ideas that are already linked to projects (consumed ideas)
+      // Also filter out action_plan (legacy data) - treat as project
       const filteredData = (data || []).filter(project => {
         // If it's an idea and it's linked to a project, exclude it from the list
         if (project.initiative_type === 'idea' && linkedIdeaIds.includes(project.id)) {
@@ -106,7 +107,7 @@ export function useProjects(filters?: UseProjectsFilters) {
         if (project.initiative_type === 'idea') {
           acc.idea.push(project as any);
         } else {
-          // Projects and action_plans use their actual status
+          // Projects use their actual status (action_plan treated as project)
           const status = project.status;
           if (!acc[status]) {
             acc[status] = [];
@@ -125,8 +126,7 @@ export function useProjects(filters?: UseProjectsFilters) {
 
       // Group by type
       const projectsByType = {
-        projects: filteredData.filter(p => p.initiative_type === 'project'),
-        action_plans: filteredData.filter(p => p.initiative_type === 'action_plan'),
+        projects: filteredData.filter(p => p.initiative_type === 'project' || p.initiative_type === 'action_plan'),
         ideas: filteredData.filter(p => p.initiative_type === 'idea')
       };
 
