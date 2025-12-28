@@ -457,6 +457,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          milestone_type: Database["public"]["Enums"]["milestone_type"] | null
           project_id: string
           target_date: string
           title: string
@@ -467,6 +468,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          milestone_type?: Database["public"]["Enums"]["milestone_type"] | null
           project_id: string
           target_date: string
           title: string
@@ -477,6 +479,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          milestone_type?: Database["public"]["Enums"]["milestone_type"] | null
           project_id?: string
           target_date?: string
           title?: string
@@ -484,6 +487,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_requirements: {
+        Row: {
+          code: string
+          created_at: string
+          current_value: number | null
+          description: string
+          display_order: number
+          id: string
+          indicator_name: string
+          project_id: string
+          target_value: number | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_value?: number | null
+          description: string
+          display_order?: number
+          id?: string
+          indicator_name: string
+          project_id: string
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_value?: number | null
+          description?: string
+          display_order?: number
+          id?: string
+          indicator_name?: string
+          project_id?: string
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_requirements_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -776,6 +829,8 @@ export type Database = {
           context: string | null
           created_at: string | null
           created_by: string
+          current_situation_description: string | null
+          current_step: number | null
           description: string | null
           how: string | null
           how_much: string | null
@@ -786,10 +841,12 @@ export type Database = {
           requirements: string | null
           source_idea_id: string | null
           status: Database["public"]["Enums"]["project_status"]
+          strategic_indicator: string | null
           strategic_pillar:
             | Database["public"]["Enums"]["strategic_pillar"]
             | null
           submitted_for_review_at: string | null
+          target_situation_description: string | null
           thesis_id: string | null
           updated_at: string | null
           what: string | null
@@ -807,6 +864,8 @@ export type Database = {
           context?: string | null
           created_at?: string | null
           created_by: string
+          current_situation_description?: string | null
+          current_step?: number | null
           description?: string | null
           how?: string | null
           how_much?: string | null
@@ -817,10 +876,12 @@ export type Database = {
           requirements?: string | null
           source_idea_id?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          strategic_indicator?: string | null
           strategic_pillar?:
             | Database["public"]["Enums"]["strategic_pillar"]
             | null
           submitted_for_review_at?: string | null
+          target_situation_description?: string | null
           thesis_id?: string | null
           updated_at?: string | null
           what?: string | null
@@ -838,6 +899,8 @@ export type Database = {
           context?: string | null
           created_at?: string | null
           created_by?: string
+          current_situation_description?: string | null
+          current_step?: number | null
           description?: string | null
           how?: string | null
           how_much?: string | null
@@ -848,10 +911,12 @@ export type Database = {
           requirements?: string | null
           source_idea_id?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          strategic_indicator?: string | null
           strategic_pillar?:
             | Database["public"]["Enums"]["strategic_pillar"]
             | null
           submitted_for_review_at?: string | null
+          target_situation_description?: string | null
           thesis_id?: string | null
           updated_at?: string | null
           what?: string | null
@@ -888,6 +953,42 @@ export type Database = {
             columns: ["thesis_id"]
             isOneToOne: false
             referencedRelation: "strategic_theses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requirement_task_links: {
+        Row: {
+          created_at: string
+          id: string
+          requirement_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requirement_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requirement_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_task_links_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "project_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_task_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -1343,6 +1444,7 @@ export type Database = {
     Enums: {
       app_role: "ceo" | "pmo_manager" | "project_member"
       initiative_type: "idea" | "project" | "action_plan"
+      milestone_type: "decolagem" | "voo" | "escala"
       project_category:
         | "productivity"
         | "safety"
@@ -1494,6 +1596,7 @@ export const Constants = {
     Enums: {
       app_role: ["ceo", "pmo_manager", "project_member"],
       initiative_type: ["idea", "project", "action_plan"],
+      milestone_type: ["decolagem", "voo", "escala"],
       project_category: [
         "productivity",
         "safety",
