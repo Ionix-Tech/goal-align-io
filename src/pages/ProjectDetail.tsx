@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, X, Users, Save, Send, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Briefcase, ClipboardList, UserCircle, Calendar, Link2, ArrowRight, Target } from "lucide-react";
+import { ArrowLeft, Plus, X, Users, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Save, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,17 +21,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useProjectTransitions } from "@/hooks/useProjectTransitions";
-import { useProjectTasks, useCreateTask, useDeleteTask, useUpdateTask } from "@/hooks/useProjectTasks";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { useTheses } from "@/hooks/useTheses";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
-
-import { WhyLinksManager, WhyLink } from "@/components/execution/WhyLinksManager";
-import { useWhyLinks, useSaveWhyLinks } from "@/hooks/useWhyLinks";
 import { getInitiativeLabels } from "@/config/initiativeLabels";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
 
 interface Indicator {
   id: string;
@@ -77,15 +71,7 @@ const ProjectDetail = () => {
   const { data: project, isLoading } = useProjectDetails(projectId || null);
   const { transition, isTransitioning } = useProjectTransitions();
   
-  // Hooks para tarefas do plano de ação
-  const { data: projectTasks = [] } = useProjectTasks(projectId || null);
   const { data: teamMembers = [] } = useTeamMembers();
-  const createTaskMutation = useCreateTask();
-  const updateTaskMutation = useUpdateTask();
-  const deleteTaskMutation = useDeleteTask();
-  
-  // Hook para teses estratégicas
-  const { data: theses = [] } = useTheses();
 
   const [activeTab, setActiveTab] = useState("idea");
   const [projectName, setProjectName] = useState("");
@@ -108,11 +94,6 @@ const ProjectDetail = () => {
   
   // Flag para evitar sobrescrita de dados locais pelo useEffect
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
-
-  // Estado local para links de referência
-  const [whyLinks, setWhyLinks] = useState<WhyLink[]>([]);
-  const { data: dbWhyLinks = [] } = useWhyLinks(projectId || null);
-  const saveWhyLinksMutation = useSaveWhyLinks();
 
   const isIdea = project?.initiative_type === 'idea';
   const labels = project ? getInitiativeLabels(project.initiative_type) : getInitiativeLabels('project');
@@ -543,14 +524,6 @@ const ProjectDetail = () => {
         }
       }
 
-      // Salvar links de referência do "Por quê" (para Planos de Ação)
-      if (isActionPlan) {
-        await saveWhyLinksMutation.mutateAsync({
-          projectId,
-          links: whyLinks.map(link => ({ url: link.url, label: link.label }))
-        });
-      }
-
       // Reset flag de mudanças locais e invalidar queries
       setHasLocalChanges(false);
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -744,184 +717,7 @@ const ProjectDetail = () => {
                     </div>
                   </Card>
 
-                  {/* CAMPOS 5W2H - APENAS PARA PLANO DE AÇÃO */}
-                  {isActionPlan && (
-                    <>
-                      {/* O quê (What) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label htmlFor="what" className="text-base font-semibold">
-                            O quê? (What) *
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Descreva claramente o que será realizado neste plano de ação.
-                          </p>
-                          <Textarea
-                            id="what"
-                            value={what}
-                            onChange={(e) => { setWhat(e.target.value); setHasLocalChanges(true); }}
-                            placeholder="Descreva o que será feito..."
-                            className="min-h-[100px]"
-                          />
-                        </div>
-                      </Card>
-
-                      {/* Por quê (Why) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label htmlFor="why" className="text-base font-semibold">
-                            Por quê? (Why) *
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Justifique a importância e necessidade desta ação.
-                          </p>
-                          <Textarea
-                            id="why"
-                            value={why}
-                            onChange={(e) => { setWhy(e.target.value); setHasLocalChanges(true); }}
-                            placeholder="Justifique por que esta ação é necessária..."
-                            className="min-h-[100px]"
-                          />
-                          <div className="pt-2">
-                            <Label className="text-xs text-muted-foreground">Links de Referência</Label>
-                            <WhyLinksManager
-                              links={whyLinks}
-                              onLinksChange={(links) => { setWhyLinks(links); setHasLocalChanges(true); }}
-                            />
-                          </div>
-                        </div>
-                      </Card>
-
-                      {/* Como (How) - Ações do Plano */}
-                      <div className="space-y-2">
-                        <Label className="text-base font-semibold">Como? (How) - Ações do Plano</Label>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Adicione as ações necessárias para executar o plano.
-                        </p>
-                        <ActionPlanTaskManager
-                          tasks={localTasks}
-                          onTasksChange={handleTasksChange}
-                          members={teamMembers}
-                        />
-                      </div>
-
-                      {/* Quem (Who) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label htmlFor="who" className="text-base font-semibold">
-                            Quem? (Who)
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Quem são os responsáveis pela execução?
-                          </p>
-                          <Input
-                            id="who"
-                            value={who}
-                            onChange={(e) => { setWho(e.target.value); setHasLocalChanges(true); }}
-                            placeholder="Responsáveis pela execução..."
-                          />
-                        </div>
-                      </Card>
-
-                      {/* Onde (Where) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label htmlFor="where" className="text-base font-semibold">
-                            Onde? (Where)
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Em qual local ou área será executado?
-                          </p>
-                          <Input
-                            id="where"
-                            value={whereLocation}
-                            onChange={(e) => { setWhereLocation(e.target.value); setHasLocalChanges(true); }}
-                            placeholder="Local ou área de execução..."
-                          />
-                        </div>
-                      </Card>
-
-                      {/* Quando (When) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label className="text-base font-semibold">
-                            Quando? (When) *
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Defina o período de execução do plano.
-                          </p>
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2">
-                              <Label htmlFor="whenStart" className="text-sm">Data de Início</Label>
-                              <Input
-                                id="whenStart"
-                                type="date"
-                                value={whenStart}
-                                onChange={(e) => { setWhenStart(e.target.value); setHasLocalChanges(true); }}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="whenEnd" className="text-sm">Prazo Final *</Label>
-                              <Input
-                                id="whenEnd"
-                                type="date"
-                                value={whenEnd}
-                                onChange={(e) => { setWhenEnd(e.target.value); setHasLocalChanges(true); }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-
-                      {/* Quanto (How Much) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label htmlFor="howMuch" className="text-base font-semibold">
-                            Quanto? (How Much)
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Qual o custo ou investimento estimado?
-                          </p>
-                          <Input
-                            id="howMuch"
-                            value={howMuch}
-                            onChange={(e) => { setHowMuch(e.target.value); setHasLocalChanges(true); }}
-                            placeholder="Custo ou investimento estimado..."
-                          />
-                        </div>
-                      </Card>
-
-                      {/* Tese Estratégica */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label htmlFor="thesis" className="text-base font-semibold flex items-center gap-2">
-                            <Target className="h-4 w-4" />
-                            Tese Estratégica
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Vincule este plano a uma tese estratégica (opcional).
-                          </p>
-                          <Select value={thesisId || "__none__"} onValueChange={(val) => { setThesisId(val === "__none__" ? "" : val); setHasLocalChanges(true); }}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma tese estratégica" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">Nenhuma</SelectItem>
-                              {theses.map((thesis) => (
-                                <SelectItem key={thesis.id} value={thesis.id}>
-                                  {thesis.name} ({thesis.year})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </Card>
-                    </>
-                  )}
-
-                  {/* CAMPOS DE PROJETO - APENAS PARA PROJETOS */}
-                  {!isActionPlan && (
-                    <>
+                  {/* CAMPOS DE PROJETO */}
 
                   <Card className="p-6">
                     <div className="space-y-4">
@@ -1372,280 +1168,86 @@ const ProjectDetail = () => {
                       </Button>
                     </div>
                   </Card>
-                    </>
-                  )}
                 </div>
               </>
             ) : (
               <>
                 {/* Modo Visualização */}
                 <div className="space-y-6">
-                  {/* VISUALIZAÇÃO 5W2H - APENAS PARA PLANO DE AÇÃO */}
-                  {isActionPlan && (
-                    <>
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-sm text-muted-foreground">O quê? (What)</Label>
-                            <p className="text-sm mt-2 whitespace-pre-wrap">{(project as any).what || 'Não informado'}</p>
-                          </div>
-                        </div>
-                      </Card>
+                  {/* VISUALIZAÇÃO DE PROJETO */}
+                  <Card className="p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Contexto</Label>
+                        <p className="text-sm mt-2 whitespace-pre-wrap">{project.context || 'Sem contexto'}</p>
+                      </div>
+                    </div>
+                  </Card>
 
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-sm text-muted-foreground">Por quê? (Why)</Label>
-                            <p className="text-sm mt-2 whitespace-pre-wrap">{(project as any).why || 'Não informado'}</p>
-                            {dbWhyLinks.length > 0 && (
-                              <div className="pt-3">
-                                <Label className="text-xs text-muted-foreground">Links de Referência</Label>
-                                <WhyLinksManager
-                                  links={dbWhyLinks.map(link => ({
-                                    id: link.id,
-                                    url: link.url,
-                                    label: link.label || undefined
-                                  }))}
-                                  onLinksChange={() => {}}
-                                  readonly
-                                />
+                  <Card className="p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
+                        <p className="text-base mt-2">
+                          {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
+                          {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.label}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Objetivo</Label>
+                        <p className="text-sm mt-2 whitespace-pre-wrap">{project.objective || 'Sem objetivo'}</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {project.indicators.length > 0 && (
+                    <Card className="p-6">
+                      <div className="space-y-4">
+                        <h3 className="text-base font-semibold">Indicadores</h3>
+                        <div className="space-y-2">
+                          {project.indicators.map((ind, index) => (
+                            <Card key={ind.id} className="p-3">
+                              <div className="text-xs text-muted-foreground mb-1">
+                                Indicador {index + 1}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-
-                      {/* Como (How) - Ações do Plano (modo visualização) */}
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <Label className="text-sm text-muted-foreground">Como? (How) - Ações do Plano</Label>
-                          {projectTasks.length > 0 ? (
-                            <div className="space-y-2 mt-2">
-                              {projectTasks.map(task => {
-                                const statusConfigs: Record<string, { label: string; className: string }> = {
-                                  not_started: { label: 'Aberta', className: 'bg-muted text-muted-foreground' },
-                                  in_progress: { label: 'Em andamento', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-                                  completed: { label: 'Concluída', className: 'bg-green-500/10 text-green-500 border-green-500/20' },
-                                  blocked: { label: 'Bloqueada', className: 'bg-red-500/10 text-red-500 border-red-500/20' },
-                                };
-                                const statusConfig = statusConfigs[task.status] || statusConfigs.not_started;
-                                const assigneeName = task.assignee?.full_name || 'Não atribuído';
-                                
-                                return (
-                                  <div key={task.id} className="p-3 rounded-lg border bg-card">
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex-1 space-y-2">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium text-sm">{task.title}</span>
-                                          <Badge variant="outline" className={statusConfig.className}>
-                                            {statusConfig.label}
-                                          </Badge>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                                          <span className="flex items-center gap-1">
-                                            <UserCircle className="h-3 w-3" />
-                                            {assigneeName}
-                                          </span>
-                                          {task.start_date && task.due_date && (
-                                            <span className="flex items-center gap-1">
-                                              <Calendar className="h-3 w-3" />
-                                              {format(new Date(task.start_date), "dd/MM/yy", { locale: ptBR })}
-                                              <ArrowRight className="h-3 w-3" />
-                                              {format(new Date(task.due_date), "dd/MM/yy", { locale: ptBR })}
-                                            </span>
-                                          )}
-                                        </div>
-                                        {task.description && (
-                                          <div className="flex items-start gap-1 text-xs text-muted-foreground">
-                                            <FileText className="h-3 w-3 mt-0.5" />
-                                            <span>{task.description}</span>
-                                          </div>
-                                        )}
-                                        {task.link_url && (
-                                          <div className="flex items-center gap-1 text-xs">
-                                            <Link2 className="h-3 w-3" />
-                                            <a 
-                                              href={task.link_url} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer"
-                                              className="text-primary hover:underline truncate max-w-[200px]"
-                                            >
-                                              {task.link_url}
-                                            </a>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground mt-2">Nenhuma ação cadastrada</p>
-                          )}
-                        </div>
-                      </Card>
-
-                      {(project as any).who && (
-                        <Card className="p-6">
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-sm text-muted-foreground">Quem? (Who)</Label>
-                              <p className="text-sm mt-2">{(project as any).who}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-
-                      {(project as any).where_location && (
-                        <Card className="p-6">
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-sm text-muted-foreground">Onde? (Where)</Label>
-                              <p className="text-sm mt-2">{(project as any).where_location}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-sm text-muted-foreground">Quando? (When)</Label>
-                            <div className="grid grid-cols-2 gap-4 mt-2">
-                              <div>
-                                <span className="text-xs text-muted-foreground">Início: </span>
-                                <span className="text-sm">
-                                  {(project as any).when_start 
-                                    ? new Date((project as any).when_start).toLocaleDateString('pt-BR')
-                                    : 'Não definido'}
-                                </span>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Hoje:</span> {ind.current_state}
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Meta:</span> {ind.target_state}
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-xs text-muted-foreground">Prazo: </span>
-                                <span className="text-sm">
-                                  {(project as any).when_end 
-                                    ? new Date((project as any).when_end).toLocaleDateString('pt-BR')
-                                    : 'Não definido'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+                            </Card>
+                          ))}
                         </div>
-                      </Card>
-
-                      {(project as any).how_much && (
-                        <Card className="p-6">
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-sm text-muted-foreground">Quanto? (How Much)</Label>
-                              <p className="text-sm mt-2">{(project as any).how_much}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-
-                      {project.thesis_id && (
-                        <Card className="p-6">
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-sm text-muted-foreground flex items-center gap-2">
-                                <Target className="h-4 w-4" />
-                                Tese Estratégica
-                              </Label>
-                              <p className="text-sm mt-2 font-medium">
-                                {theses.find(t => t.id === project.thesis_id)?.name || 'Não encontrada'}
-                                {theses.find(t => t.id === project.thesis_id)?.year && (
-                                  <span className="text-muted-foreground ml-2">
-                                    ({theses.find(t => t.id === project.thesis_id)?.year})
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-                    </>
+                      </div>
+                    </Card>
                   )}
 
-                  {/* VISUALIZAÇÃO DE PROJETO - APENAS PARA PROJETOS */}
-                  {!isActionPlan && (
-                    <>
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-sm text-muted-foreground">Contexto</Label>
-                            <p className="text-sm mt-2 whitespace-pre-wrap">{project.context || 'Sem contexto'}</p>
-                          </div>
+                  {project.milestones.length > 0 && (
+                    <Card className="p-6">
+                      <div className="space-y-4">
+                        <h3 className="text-base font-semibold">Milestones</h3>
+                        <div className="space-y-2">
+                          {project.milestones.map((ms) => (
+                            <Card key={ms.id} className="p-3">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="font-medium">{ms.title}</span>
+                                <span className="text-muted-foreground">
+                                  {new Date(ms.target_date).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            </Card>
+                          ))}
                         </div>
-                      </Card>
-
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-sm text-muted-foreground">Objetivo Estratégico</Label>
-                            <p className="text-base mt-2">
-                              {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.icon}{' '}
-                              {project.strategic_pillar && strategicPillars.find(p => p.value === project.strategic_pillar)?.label}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-
-                      <Card className="p-6">
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-sm text-muted-foreground">Objetivo</Label>
-                            <p className="text-sm mt-2 whitespace-pre-wrap">{project.objective || 'Sem objetivo'}</p>
-                          </div>
-                        </div>
-                      </Card>
-
-                      {project.indicators.length > 0 && (
-                        <Card className="p-6">
-                          <div className="space-y-4">
-                            <h3 className="text-base font-semibold">Indicadores</h3>
-                            <div className="space-y-2">
-                              {project.indicators.map((ind, index) => (
-                                <Card key={ind.id} className="p-3">
-                                  <div className="text-xs text-muted-foreground mb-1">
-                                    Indicador {index + 1}
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                      <span className="text-muted-foreground">Hoje:</span> {ind.current_state}
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Meta:</span> {ind.target_state}
-                                    </div>
-                                  </div>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-
-                      {project.milestones.length > 0 && (
-                        <Card className="p-6">
-                          <div className="space-y-4">
-                            <h3 className="text-base font-semibold">Milestones</h3>
-                            <div className="space-y-2">
-                              {project.milestones.map((ms) => (
-                                <Card key={ms.id} className="p-3">
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span className="font-medium">{ms.title}</span>
-                                    <span className="text-muted-foreground">
-                                      {new Date(ms.target_date).toLocaleDateString('pt-BR')}
-                                    </span>
-                                  </div>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-                    </>
+                      </div>
+                    </Card>
                   )}
                 </div>
               </>
