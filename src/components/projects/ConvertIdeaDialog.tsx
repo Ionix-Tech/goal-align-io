@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, ClipboardList, Lightbulb, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, Lightbulb, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -34,8 +34,6 @@ interface ConvertIdeaDialogProps {
     category?: string | null;
   } | null;
 }
-
-type ConversionType = 'project' | 'action_plan';
 
 export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProps) {
   const navigate = useNavigate();
@@ -66,16 +64,16 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
   };
 
   const convertMutation = useMutation({
-    mutationFn: async ({ type, category }: { type: ConversionType; category: ProjectCategory }) => {
+    mutationFn: async ({ category }: { category: ProjectCategory }) => {
       if (!idea || !user?.id) throw new Error('Missing data');
 
-      // Create new project/action_plan with source_idea_id
+      // Create new project with source_idea_id
       const { data, error } = await supabase
         .from('projects')
         .insert({
           name: idea.name,
           description: idea.description,
-          initiative_type: type,
+          initiative_type: 'project',
           status: 'draft',
           source_idea_id: idea.id,
           created_by: user.id,
@@ -85,9 +83,9 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
         .single();
 
       if (error) throw error;
-      return { newProject: data, type };
+      return { newProject: data };
     },
-    onSuccess: async ({ newProject, type }) => {
+    onSuccess: async ({ newProject }) => {
       // Link the original idea AND any selected related ideas
       const ideaIdsToLink = [idea!.id, ...selectedRelatedIds];
       
@@ -107,12 +105,11 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['available-ideas'] });
       
-      const typeName = type === 'project' ? 'Projeto' : 'Plano de Ação';
       const extraText = selectedRelatedIds.length > 0 
         ? ` com ${selectedRelatedIds.length + 1} ideias vinculadas` 
         : '';
       
-      toast.success(`${typeName} criado com sucesso!`, {
+      toast.success(`Projeto criado com sucesso!`, {
         description: `A ideia "${idea?.name}" foi convertida${extraText}.`
       });
       
@@ -129,14 +126,14 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
     }
   });
 
-  const handleConvert = async (type: ConversionType) => {
+  const handleConvert = async () => {
     if (!selectedCategory) {
       toast.error('Selecione uma categoria para continuar');
       return;
     }
     setIsConverting(true);
     try {
-      await convertMutation.mutateAsync({ type, category: selectedCategory });
+      await convertMutation.mutateAsync({ category: selectedCategory });
     } finally {
       setIsConverting(false);
     }
@@ -157,10 +154,10 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-yellow-500" />
-            Converter Ideia
+            Converter Ideia em Projeto
           </DialogTitle>
           <DialogDescription>
-            Transforme a ideia "<strong>{idea.name}</strong>" em um projeto ou plano de ação para começar a executá-la.
+            Transforme a ideia "<strong>{idea.name}</strong>" em um projeto para começar a executá-la.
           </DialogDescription>
         </DialogHeader>
 
@@ -267,33 +264,16 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
         <div className="grid gap-4 py-4">
           <Card 
             className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => !isConverting && handleConvert('project')}
+            onClick={() => !isConverting && handleConvert()}
           >
             <CardHeader className="flex flex-row items-center gap-4 p-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <Briefcase className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-base">Projeto</CardTitle>
+                <CardTitle className="text-base">Criar Projeto</CardTitle>
                 <CardDescription className="text-sm">
-                  Iniciativa complexa com sponsor, indicadores e marcos obrigatórios. Requer aprovação do CEO.
-                </CardDescription>
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => !isConverting && handleConvert('action_plan')}
-          >
-            <CardHeader className="flex flex-row items-center gap-4 p-4">
-              <div className="p-3 bg-green-500/10 rounded-lg">
-                <ClipboardList className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-base">Plano de Ação</CardTitle>
-                <CardDescription className="text-sm">
-                  Iniciativa ágil e focada (2 semanas a 1.5 meses). Pode ir direto para execução sem aprovação formal.
+                  Iniciativa com sponsor, indicadores e marcos. Requer aprovação do CEO.
                 </CardDescription>
               </div>
             </CardHeader>

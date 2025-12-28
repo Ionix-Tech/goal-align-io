@@ -1,5 +1,4 @@
 // Tipos de iniciativa suportados
-// Nota: 'action_plan' é mantido para compatibilidade com dados legados, mas tratado como 'project'
 export type InitiativeType = 'project' | 'idea';
 
 export interface InitiativeLabels {
@@ -77,7 +76,7 @@ export const INITIATIVE_LABELS: Record<InitiativeType, InitiativeLabels> = {
 
 /**
  * Retorna os labels para um tipo de iniciativa.
- * action_plan é tratado como project para compatibilidade com dados legados.
+ * action_plan legado é tratado como project para compatibilidade.
  */
 export function getInitiativeLabels(type: InitiativeType | string | undefined): InitiativeLabels {
   if (type === 'idea') return INITIATIVE_LABELS.idea;
@@ -99,7 +98,7 @@ export const REQUIRED_FIELDS = {
 
 /**
  * Retorna os campos obrigatórios para um tipo de iniciativa.
- * action_plan é tratado como project para compatibilidade com dados legados.
+ * action_plan legado é tratado como project para compatibilidade.
  */
 export function getRequiredFields(type: InitiativeType | string | undefined) {
   if (type === 'idea') return REQUIRED_FIELDS.idea;

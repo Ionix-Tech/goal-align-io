@@ -71,7 +71,7 @@ export function KanbanBoard({ projectsByStatus, onProjectClick }: KanbanBoardPro
     if (project.initiative_type === 'idea') {
       toast({
         title: 'Ideias não podem ser movidas',
-        description: 'Use a opção "Converter" para transformar esta ideia em projeto ou plano de ação.',
+        description: 'Use a opção "Converter" para transformar esta ideia em projeto.',
         variant: 'destructive'
       });
       return;
@@ -81,7 +81,7 @@ export function KanbanBoard({ projectsByStatus, onProjectClick }: KanbanBoardPro
     if (newStatus === 'idea') {
       toast({
         title: 'Ação não permitida',
-        description: 'Projetos e planos de ação não podem voltar a ser ideias.',
+        description: 'Projetos não podem voltar a ser ideias.',
         variant: 'destructive'
       });
       return;

@@ -58,7 +58,6 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
       case 'idea':
         return { icon: Lightbulb, label: 'Ideia', variant: 'outline' as const, className: 'text-yellow-600 bg-yellow-500/10' };
       case 'project':
-      case 'action_plan': // Legado: tratado como projeto
       default:
         return { icon: FileText, label: 'Projeto', variant: 'default' as const, className: 'text-blue-600 bg-blue-500/10' };
     }

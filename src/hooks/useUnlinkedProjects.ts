@@ -5,7 +5,7 @@ export interface UnlinkedProject {
   id: string;
   name: string;
   description: string | null;
-  initiative_type: 'idea' | 'project' | 'action_plan';
+  initiative_type: 'idea' | 'project';
   status: string;
   created_at: string;
   assigned_to_profile: {
@@ -37,13 +37,16 @@ export function useUnlinkedProjects() {
 
       if (error) throw error;
 
-      const all = (data || []) as UnlinkedProject[];
+      // Normalize action_plan to project
+      const normalized = (data || []).map(p => ({
+        ...p,
+        initiative_type: p.initiative_type === 'action_plan' ? 'project' : p.initiative_type
+      })) as UnlinkedProject[];
 
       return {
-        all,
-        ideas: all.filter(p => p.initiative_type === "idea"),
-        // action_plan legados são incluídos junto com projetos
-        projects: all.filter(p => p.initiative_type === "project" || p.initiative_type === "action_plan"),
+        all: normalized,
+        ideas: normalized.filter(p => p.initiative_type === "idea"),
+        projects: normalized.filter(p => p.initiative_type === "project"),
       };
     },
   });
