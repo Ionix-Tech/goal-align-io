@@ -26,7 +26,7 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTheses } from "@/hooks/useTheses";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
-import { ActionPlanTaskManager, TaskInput } from "@/components/execution/ActionPlanTaskManager";
+
 import { WhyLinksManager, WhyLink } from "@/components/execution/WhyLinksManager";
 import { useWhyLinks, useSaveWhyLinks } from "@/hooks/useWhyLinks";
 import { getInitiativeLabels } from "@/config/initiativeLabels";
@@ -109,27 +109,12 @@ const ProjectDetail = () => {
   // Flag para evitar sobrescrita de dados locais pelo useEffect
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
-  // Estados para campos 5W2H (Plano de Ação)
-  const [what, setWhat] = useState("");
-  const [why, setWhy] = useState("");
-  const [how, setHow] = useState("");
-  const [who, setWho] = useState("");
-  const [whereLocation, setWhereLocation] = useState("");
-  const [whenStart, setWhenStart] = useState("");
-  const [whenEnd, setWhenEnd] = useState("");
-  const [howMuch, setHowMuch] = useState("");
-  const [thesisId, setThesisId] = useState("");
-  
-  // Estado local para tarefas do ActionPlanTaskManager
-  const [localTasks, setLocalTasks] = useState<TaskInput[]>([]);
-  
-  // Estado local para links de referência do "Por quê"
+  // Estado local para links de referência
   const [whyLinks, setWhyLinks] = useState<WhyLink[]>([]);
   const { data: dbWhyLinks = [] } = useWhyLinks(projectId || null);
   const saveWhyLinksMutation = useSaveWhyLinks();
 
   const isIdea = project?.initiative_type === 'idea';
-  const isActionPlan = project?.initiative_type === 'action_plan';
   const labels = project ? getInitiativeLabels(project.initiative_type) : getInitiativeLabels('project');
 
   const strategicPillars = [
@@ -168,17 +153,6 @@ const ProjectDetail = () => {
       setStrategicPillar(project.strategic_pillar || '');
       setObjective(project.objective || '');
       setRequirements(project.requirements || '');
-
-      // Campos 5W2H para Planos de Ação
-      setWhat((project as any).what || '');
-      setWhy((project as any).why || '');
-      setHow((project as any).how || '');
-      setWho((project as any).who || '');
-      setWhereLocation((project as any).where_location || '');
-      setWhenStart((project as any).when_start || '');
-      setWhenEnd((project as any).when_end || '');
-      setHowMuch((project as any).how_much || '');
-      setThesisId(project.thesis_id || '');
 
       setIndicators(project.indicators.map(ind => ({
         id: ind.id,
@@ -238,99 +212,6 @@ const ProjectDetail = () => {
       loadSituations();
     }
   }, [projectId, project]);
-
-  // Sincronizar tarefas do banco com estado local (para ActionPlanTaskManager)
-  useEffect(() => {
-    if (projectTasks && isActionPlan) {
-      setLocalTasks(projectTasks.map(task => ({
-        id: task.id,
-        title: task.title,
-        assigned_to: task.assigned_to || '',
-        start_date: task.start_date || '',
-        due_date: task.due_date || '',
-        description: task.description || '',
-        link_url: task.link_url || '',
-        status: task.status
-      })));
-    }
-  }, [projectTasks, isActionPlan]);
-
-  // Sincronizar links de referência do banco com estado local
-  useEffect(() => {
-    if (dbWhyLinks && isActionPlan && !hasLocalChanges) {
-      setWhyLinks(dbWhyLinks.map(link => ({
-        id: link.id,
-        url: link.url,
-        label: link.label || undefined
-      })));
-    }
-  }, [dbWhyLinks, isActionPlan, hasLocalChanges]);
-
-  // Handler para mudanças nas tarefas do ActionPlanTaskManager
-  const handleTasksChange = useCallback(async (newTasks: TaskInput[]) => {
-    if (!projectId || !user) return;
-
-    const currentTaskIds = new Set(localTasks.map(t => t.id));
-    const newTaskIds = new Set(newTasks.map(t => t.id));
-    
-    // Identificar tarefas adicionadas
-    const addedTasks = newTasks.filter(t => !currentTaskIds.has(t.id));
-    
-    // Identificar tarefas removidas
-    const removedTaskIds = localTasks.filter(t => !newTaskIds.has(t.id)).map(t => t.id);
-    
-    // Identificar tarefas atualizadas
-    const updatedTasks = newTasks.filter(t => {
-      const oldTask = localTasks.find(lt => lt.id === t.id);
-      if (!oldTask) return false;
-      return (
-        oldTask.title !== t.title ||
-        oldTask.assigned_to !== t.assigned_to ||
-        oldTask.start_date !== t.start_date ||
-        oldTask.due_date !== t.due_date ||
-        oldTask.description !== t.description ||
-        oldTask.link_url !== t.link_url ||
-        oldTask.status !== t.status
-      );
-    });
-
-    // Atualizar estado local imediatamente
-    setLocalTasks(newTasks);
-
-    // Processar adições
-    for (const task of addedTasks) {
-      await createTaskMutation.mutateAsync({
-        projectId,
-        title: task.title,
-        description: task.description,
-        assignedTo: task.assigned_to || undefined,
-        dueDate: task.due_date || undefined,
-        startDate: task.start_date || undefined,
-        linkUrl: task.link_url || undefined,
-        status: task.status
-      });
-    }
-
-    // Processar remoções
-    for (const taskId of removedTaskIds) {
-      await deleteTaskMutation.mutateAsync({ taskId, projectId });
-    }
-
-    // Processar atualizações
-    for (const task of updatedTasks) {
-      await updateTaskMutation.mutateAsync({
-        taskId: task.id,
-        projectId,
-        title: task.title,
-        description: task.description,
-        assignedTo: task.assigned_to || null,
-        dueDate: task.due_date || null,
-        startDate: task.start_date || null,
-        linkUrl: task.link_url || null,
-        status: task.status as any
-      });
-    }
-  }, [projectId, user, localTasks, createTaskMutation, updateTaskMutation, deleteTaskMutation]);
 
   const addIndicator = () => {
     setIndicators([...indicators, {
@@ -497,46 +378,28 @@ const ProjectDetail = () => {
       return;
     }
 
-    // Validações para Plano de Ação
-    if (isActionPlan) {
-      if (targetStatus === 'review') {
-        if (!what.trim()) {
-          toast.error("Campo 'O quê' é obrigatório");
-          return;
-        }
-        if (!why.trim()) {
-          toast.error("Campo 'Por quê' é obrigatório");
-          return;
-        }
-        if (!whenEnd) {
-          toast.error("Data de término é obrigatória");
-          return;
-        }
-      }
-    } else {
-      // Validações para Projeto
-      if (!context.trim()) {
-        toast.error("Contexto é obrigatório");
+    // Validações para Projeto
+    if (!context.trim()) {
+      toast.error("Contexto é obrigatório");
+      return;
+    }
+
+    if (targetStatus === 'review') {
+      if (!strategicPillar) {
+        toast.error("Objetivo estratégico é obrigatório");
         return;
       }
-
-      if (targetStatus === 'review') {
-        if (!strategicPillar) {
-          toast.error("Objetivo estratégico é obrigatório");
-          return;
-        }
-        if (!objective.trim()) {
-          toast.error("Objetivo é obrigatório");
-          return;
-        }
-        if (indicators.length === 0) {
-          toast.error("Adicione pelo menos 1 indicador");
-          return;
-        }
-        if (milestones.length === 0) {
-          toast.error("Adicione pelo menos 1 milestone");
-          return;
-        }
+      if (!objective.trim()) {
+        toast.error("Objetivo é obrigatório");
+        return;
+      }
+      if (indicators.length === 0) {
+        toast.error("Adicione pelo menos 1 indicador");
+        return;
+      }
+      if (milestones.length === 0) {
+        toast.error("Adicione pelo menos 1 milestone");
+        return;
       }
     }
 
@@ -547,32 +410,12 @@ const ProjectDetail = () => {
       let updateData: any = {
         name: projectName,
         status: targetStatus,
-        submitted_for_review_at: targetStatus === 'review' ? new Date().toISOString() : project.submitted_for_review_at
+        submitted_for_review_at: targetStatus === 'review' ? new Date().toISOString() : project.submitted_for_review_at,
+        context: context,
+        requirements: requirements || null,
+        strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
+        objective: objective || null,
       };
-
-      // Adicionar campos específicos do tipo
-      if (isActionPlan) {
-        updateData = {
-          ...updateData,
-          what,
-          why,
-          how: how || null,
-          who: who || null,
-          where_location: whereLocation || null,
-          when_start: whenStart || null,
-          when_end: whenEnd,
-          how_much: howMuch || null,
-          thesis_id: thesisId || null,
-        };
-      } else {
-        updateData = {
-          ...updateData,
-          context: context,
-          requirements: requirements || null,
-          strategic_pillar: (strategicPillar || null) as 'operational_efficiency' | 'sales_expansion' | 'new_business' | null,
-          objective: objective || null,
-        };
-      }
 
       const { error: updateError } = await supabase
         .from('projects')
@@ -811,13 +654,7 @@ const ProjectDetail = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  if (project.initiative_type === 'action_plan') {
-                    navigate('/management');
-                  } else {
-                    navigate('/prioritization');
-                  }
-                }}
+                onClick={() => navigate('/prioritization')}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar

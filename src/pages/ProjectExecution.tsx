@@ -96,9 +96,7 @@ const ProjectExecution = () => {
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold">{project.name}</h1>
-                  <Badge variant={project.initiative_type === 'action_plan' ? "secondary" : "default"}>
-                    {project.initiative_type === 'action_plan' ? "Plano de Ação" : "Projeto"}
-                  </Badge>
+                  <Badge variant="default">Projeto</Badge>
                   {project.source_idea && (
                     <Badge variant="outline" className="text-yellow-600 border-yellow-400 bg-yellow-50">
                       <Lightbulb className="h-3 w-3 mr-1" />
@@ -134,11 +132,9 @@ const ProjectExecution = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${project.initiative_type === 'action_plan' ? 'grid-cols-5' : 'grid-cols-6'}`}>
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
-            {project.initiative_type !== 'action_plan' && (
-              <TabsTrigger value="thesis">📄 Objetivo do Projeto</TabsTrigger>
-            )}
+            <TabsTrigger value="thesis">📄 Objetivo do Projeto</TabsTrigger>
             <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
             <TabsTrigger value="gantt">
               <BarChart3 className="h-4 w-4 mr-1" />
@@ -150,95 +146,6 @@ const ProjectExecution = () => {
 
           {/* Aba: Capa */}
           <TabsContent value="overview" className="space-y-6">
-            {project.initiative_type === 'action_plan' ? (
-              // Visualização 5W2H para Plano de Ação
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="h-5 w-5" />
-                      Plano de Ação - 5W2H
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">O quê? (What)</h4>
-                      <p className="text-sm text-muted-foreground">{project.what || 'Não definido'}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Por quê? (Why)</h4>
-                      <p className="text-sm text-muted-foreground">{project.why || 'Não definido'}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Quem? (Who)</h4>
-                      <p className="text-sm text-muted-foreground">{project.who || 'Não definido'}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Onde? (Where)</h4>
-                      <p className="text-sm text-muted-foreground">{project.where_location || 'Não definido'}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Quando? (When)</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Início: {project.when_start ? new Date(project.when_start).toLocaleDateString('pt-BR') : 'Não definido'}
-                        <br />
-                        Fim: {project.when_end ? new Date(project.when_end).toLocaleDateString('pt-BR') : 'Não definido'}
-                      </p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Como? (How)</h4>
-                      <p className="text-sm text-muted-foreground">{project.how || 'Ver aba Tarefas'}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Quanto? (How Much)</h4>
-                      <p className="text-sm text-muted-foreground">{project.how_much || 'Não definido'}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <ProjectAttachmentsCard projectId={projectId!} />
-
-                {/* Ideias de Origem */}
-                <LinkedIdeasCard projectId={projectId!} />
-
-                {/* Informações Rápidas */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informações Rápidas</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Gestor Responsável</p>
-                      <p className="text-base mt-1">
-                        {project.assignee?.full_name || 'Não atribuído'}
-                      </p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Criado por</p>
-                      <p className="text-base mt-1">{project.creator?.full_name}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Data de Aprovação</p>
-                      <p className="text-base mt-1">
-                        {project.approved_at
-                          ? new Date(project.approved_at).toLocaleDateString('pt-BR')
-                          : 'N/A'}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              // Visualização normal para Projeto
-              <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader className="pb-3">
@@ -393,8 +300,6 @@ const ProjectExecution = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </>
-            )}
           </TabsContent>
 
           {/* Aba: Indicadores */}
