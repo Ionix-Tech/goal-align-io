@@ -245,7 +245,6 @@ export function A3Wizard() {
           <Step3Diagnosis
             data={data}
             updateData={updateData}
-            updateRequirement={updateRequirement}
           />
         );
       case 4:
@@ -253,7 +252,6 @@ export function A3Wizard() {
           <Step4Strategy
             data={data}
             updateData={updateData}
-            updateRequirement={updateRequirement}
           />
         );
       case 5:

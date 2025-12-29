@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { A3WizardData } from "@/hooks/useA3WizardState";
-import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send } from "lucide-react";
+import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3 } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { WizardIndicatorManager, WizardIndicator } from "./WizardIndicatorManager";
 
 interface Step6ControlProps {
   data: A3WizardData;
@@ -19,16 +20,16 @@ interface Step6ControlProps {
 
 const checklistItems = [
   { id: "context", label: "Contexto e objetivo claramente definidos" },
-  { id: "requirements", label: "Todos os requisitos têm indicador e unidade de medida" },
-  { id: "current", label: "Valores atuais preenchidos com base em dados reais" },
+  { id: "requirements", label: "Requisitos do projeto estão descritos" },
+  { id: "indicators", label: "Indicadores definidos e correlacionados aos requisitos" },
+  { id: "diagnosis", label: "Situação atual documentada com evidências" },
   { id: "targets", label: "Metas são desafiadoras mas alcançáveis em 90 dias" },
-  { id: "actions", label: "Todas as ações têm responsável e prazo definidos" },
-  { id: "coverage", label: "Todos os requisitos têm ações vinculadas" },
-  { id: "evidence", label: "Anexos de evidência da situação atual incluídos" },
+  { id: "actions", label: "Ações planejadas com responsáveis e prazos" },
 ];
 
 export function Step6Control({ data, updateData, onSubmit, isSubmitting }: Step6ControlProps) {
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
+  const [indicators, setIndicators] = useState<WizardIndicator[]>([]);
 
   // Auto-calculate M2 and M3 based on M1
   const milestoneDates = useMemo(() => {
@@ -71,8 +72,34 @@ export function Step6Control({ data, updateData, onSubmit, isSubmitting }: Step6
     return format(new Date(dateStr), "dd 'de' MMMM", { locale: ptBR });
   };
 
+  // Map requirements for the indicator manager
+  const requirementOptions = data.requirements.map(r => ({
+    code: r.code,
+    description: r.description
+  }));
+
   return (
     <div className="space-y-6">
+      {/* Como vamos medir? */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            Como vamos medir?
+          </CardTitle>
+          <CardDescription>
+            Defina os indicadores que medirão o sucesso do projeto e correlacione-os aos requisitos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <WizardIndicatorManager
+            indicators={indicators}
+            onIndicatorsChange={setIndicators}
+            requirements={requirementOptions}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -215,8 +242,8 @@ export function Step6Control({ data, updateData, onSubmit, isSubmitting }: Step6
                 <p className="font-medium">{data.requirements.length}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Duração:</span>
-                <p className="font-medium">90 dias</p>
+                <span className="text-muted-foreground">Indicadores:</span>
+                <p className="font-medium">{indicators.length}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">Categoria:</span>

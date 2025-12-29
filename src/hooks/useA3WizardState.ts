@@ -197,12 +197,10 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
       4: () => {
         // Step 3 complete: situation description required
         return data.currentSituationDescription.trim() !== "";
-        // Note: attachment validation would need to be done at component level
       },
       5: () => {
-        // Step 4 complete: target description and all requirements have target_value
-        if (data.targetSituationDescription.trim() === "") return false;
-        return data.requirements.every(r => r.target_value !== null);
+        // Step 4 complete: target description required
+        return data.targetSituationDescription.trim() !== "";
       },
       6: () => {
         // Step 5 complete: handled at component level (tasks with requirement links)
