@@ -2,21 +2,22 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ProjectDetail from "./ProjectDetail";
+import { A3ReviewView } from "@/components/a3-review/A3ReviewView";
 
 /**
  * Entry router for /projects/:id
- * Decides whether to redirect to A3 wizard or show ProjectDetail
+ * Decides whether to redirect to A3 wizard, show A3ReviewView, or show ProjectDetail
  */
 const ProjectEntry = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [showProjectDetail, setShowProjectDetail] = useState(false);
+  const [viewType, setViewType] = useState<'detail' | 'a3-review' | null>(null);
 
   useEffect(() => {
     const checkProjectType = async () => {
       if (!id) {
-        setShowProjectDetail(true);
+        setViewType('detail');
         setLoading(false);
         return;
       }
@@ -30,7 +31,7 @@ const ProjectEntry = () => {
 
         if (error || !project) {
           // If project not found, show ProjectDetail (it will handle the error)
-          setShowProjectDetail(true);
+          setViewType('detail');
           setLoading(false);
           return;
         }
@@ -41,12 +42,19 @@ const ProjectEntry = () => {
           return;
         }
 
-        // Otherwise, show ProjectDetail (ideas, review, approved, etc.)
-        setShowProjectDetail(true);
+        // If it's a project in review or approved status, show A3ReviewView
+        if (project.initiative_type === "project" && (project.status === "review" || project.status === "approved")) {
+          setViewType('a3-review');
+          setLoading(false);
+          return;
+        }
+
+        // Otherwise, show ProjectDetail (ideas, archived, etc.)
+        setViewType('detail');
         setLoading(false);
       } catch (err) {
         console.error("Error checking project type:", err);
-        setShowProjectDetail(true);
+        setViewType('detail');
         setLoading(false);
       }
     };
@@ -62,7 +70,11 @@ const ProjectEntry = () => {
     );
   }
 
-  if (showProjectDetail) {
+  if (viewType === 'a3-review') {
+    return <A3ReviewView />;
+  }
+
+  if (viewType === 'detail') {
     return <ProjectDetail />;
   }
 
