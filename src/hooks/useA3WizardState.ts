@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useAuth } from "./useAuth";
 import { ProjectRequirement } from "./useRequirements";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface A3WizardData {
   // Step 1: Contexto
@@ -48,12 +49,95 @@ const initialData: A3WizardData = {
   m3Date: "",
 };
 
-export function useA3WizardState() {
+interface UseA3WizardStateOptions {
+  initialProjectId?: string | null;
+}
+
+export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<A3WizardData>(initialData);
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(options.initialProjectId || null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!options.initialProjectId);
+
+  // Load existing project data
+  useEffect(() => {
+    async function loadProject() {
+      if (!options.initialProjectId) return;
+      
+      setIsLoading(true);
+      try {
+        // Load project
+        const { data: project, error: projectError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', options.initialProjectId)
+          .single();
+
+        if (projectError) throw projectError;
+
+        // Load requirements
+        const { data: requirements, error: reqError } = await supabase
+          .from('project_requirements')
+          .select('*')
+          .eq('project_id', options.initialProjectId)
+          .order('display_order');
+
+        if (reqError) throw reqError;
+
+        // Load milestones
+        const { data: milestones, error: msError } = await supabase
+          .from('project_milestones')
+          .select('*')
+          .eq('project_id', options.initialProjectId);
+
+        if (msError) throw msError;
+
+        // Map milestones to dates
+        const m1 = milestones?.find(m => m.milestone_type === 'decolagem');
+        const m2 = milestones?.find(m => m.milestone_type === 'voo');
+        const m3 = milestones?.find(m => m.milestone_type === 'escala');
+
+        setData({
+          name: project.name || "",
+          objective: project.objective || "",
+          strategicIndicator: project.strategic_indicator || "",
+          category: project.category || "",
+          assignedTo: project.assigned_to || "",
+          members: [],
+          thesisId: project.thesis_id || "",
+          requirements: (requirements || []).map(r => ({
+            code: r.code,
+            description: r.description,
+            indicator_name: r.indicator_name,
+            unit: r.unit,
+            current_value: r.current_value,
+            target_value: r.target_value,
+            display_order: r.display_order
+          })),
+          currentSituationDescription: project.current_situation_description || "",
+          targetSituationDescription: project.target_situation_description || "",
+          m1Date: m1?.target_date || "",
+          m2Date: m2?.target_date || "",
+          m3Date: m3?.target_date || "",
+        });
+
+        setProjectId(options.initialProjectId);
+        
+        // Set to the step the project was on
+        if (project.current_step && project.current_step >= 1 && project.current_step <= 6) {
+          setCurrentStep(project.current_step);
+        }
+      } catch (error) {
+        console.error('Error loading project:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProject();
+  }, [options.initialProjectId]);
 
   const updateData = useCallback((updates: Partial<A3WizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -170,6 +254,7 @@ export function useA3WizardState() {
     data,
     projectId,
     isSaving,
+    isLoading,
     setIsSaving,
     setProjectId,
     updateData,

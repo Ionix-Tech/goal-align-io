@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useA3WizardState } from "@/hooks/useA3WizardState";
@@ -15,11 +15,14 @@ import { Step6Control } from "./steps/Step6Control";
 
 export function A3Wizard() {
   const navigate = useNavigate();
+  const { id: urlProjectId } = useParams<{ id: string }>();
+  
   const {
     currentStep,
     data,
     projectId,
     isSaving,
+    isLoading,
     setIsSaving,
     setProjectId,
     updateData,
@@ -31,7 +34,7 @@ export function A3Wizard() {
     nextStep,
     prevStep,
     userId
-  } = useA3WizardState();
+  } = useA3WizardState({ initialProjectId: urlProjectId });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,25 +60,66 @@ export function A3Wizard() {
 
     setIsSaving(true);
     try {
-      if (projectId) {
+      const currentProjectId = projectId || urlProjectId;
+      
+      if (currentProjectId) {
         // Update existing project
         const { error } = await supabase
           .from('projects')
           .update({
-          name: data.name,
-          objective: data.objective,
-          strategic_indicator: data.strategicIndicator,
-          category: (data.category || null) as any,
-          assigned_to: data.assignedTo || null,
-          thesis_id: data.thesisId || null,
+            name: data.name,
+            objective: data.objective,
+            strategic_indicator: data.strategicIndicator,
+            category: (data.category || null) as any,
+            assigned_to: data.assignedTo || null,
+            thesis_id: data.thesisId || null,
             current_situation_description: data.currentSituationDescription,
             target_situation_description: data.targetSituationDescription,
             current_step: currentStep,
             updated_at: new Date().toISOString()
           })
-          .eq('id', projectId);
+          .eq('id', currentProjectId);
 
         if (error) throw error;
+        
+        // Update or create requirements
+        for (const req of data.requirements) {
+          // Check if requirement exists (by code for this project)
+          const { data: existingReq } = await supabase
+            .from('project_requirements')
+            .select('id')
+            .eq('project_id', currentProjectId)
+            .eq('code', req.code)
+            .single();
+
+          if (existingReq) {
+            await supabase
+              .from('project_requirements')
+              .update({
+                description: req.description,
+                indicator_name: req.indicator_name,
+                unit: req.unit,
+                current_value: req.current_value,
+                target_value: req.target_value,
+                display_order: req.display_order
+              })
+              .eq('id', existingReq.id);
+          } else {
+            await supabase
+              .from('project_requirements')
+              .insert({
+                project_id: currentProjectId,
+                code: req.code,
+                description: req.description,
+                indicator_name: req.indicator_name,
+                unit: req.unit,
+                current_value: req.current_value,
+                target_value: req.target_value,
+                display_order: req.display_order
+              });
+          }
+        }
+        
         toast.success("Progresso salvo");
       } else {
         // Create new project
@@ -120,28 +164,18 @@ export function A3Wizard() {
       // First save all data
       await saveProgress();
 
-      if (!projectId) {
+      const currentProjectId = projectId || urlProjectId;
+      if (!currentProjectId) {
         toast.error("Projeto não encontrado");
         return;
       }
 
-      // Save requirements
-      for (const req of data.requirements) {
-        await supabase
-          .from('project_requirements')
-          .insert({
-            project_id: projectId,
-            code: req.code,
-            description: req.description,
-            indicator_name: req.indicator_name,
-            unit: req.unit,
-            current_value: req.current_value,
-            target_value: req.target_value,
-            display_order: req.display_order
-          });
-      }
+      // Create milestones if they don't exist
+      const { data: existingMilestones } = await supabase
+        .from('project_milestones')
+        .select('id, milestone_type')
+        .eq('project_id', currentProjectId);
 
-      // Create milestones
       const milestones = [
         { title: "M1 - Decolagem", target_date: data.m1Date, milestone_type: 'decolagem' as const },
         { title: "M2 - Voo", target_date: data.m2Date, milestone_type: 'voo' as const },
@@ -149,12 +183,21 @@ export function A3Wizard() {
       ];
 
       for (const milestone of milestones) {
-        await supabase
-          .from('project_milestones')
-          .insert({
-            project_id: projectId,
-            ...milestone
-          });
+        const existing = existingMilestones?.find(m => m.milestone_type === milestone.milestone_type);
+        
+        if (existing) {
+          await supabase
+            .from('project_milestones')
+            .update({ target_date: milestone.target_date })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('project_milestones')
+            .insert({
+              project_id: currentProjectId,
+              ...milestone
+            });
+        }
       }
 
       // Update project status to review
@@ -164,10 +207,10 @@ export function A3Wizard() {
           status: 'review',
           submitted_for_review_at: new Date().toISOString()
         })
-        .eq('id', projectId);
+        .eq('id', currentProjectId);
 
       toast.success("Projeto enviado para aprovação!");
-      navigate(`/project/${projectId}`);
+      navigate(`/projects/${currentProjectId}`);
     } catch (error: any) {
       toast.error("Erro ao enviar: " + error.message);
     } finally {
@@ -229,12 +272,30 @@ export function A3Wizard() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="container max-w-4xl mx-auto py-6 px-4 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando projeto...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isEditingExisting = !!urlProjectId;
+
   return (
     <div className="container max-w-4xl mx-auto py-6 px-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Novo Projeto A3</h1>
+        <h1 className="text-2xl font-bold">
+          {isEditingExisting ? "Detalhar Projeto A3" : "Novo Projeto A3"}
+        </h1>
         <p className="text-muted-foreground">
-          Siga as 6 etapas para criar um projeto A3 completo
+          {isEditingExisting 
+            ? "Continue o detalhamento do projeto A3"
+            : "Siga as 6 etapas para criar um projeto A3 completo"
+          }
         </p>
       </div>
 

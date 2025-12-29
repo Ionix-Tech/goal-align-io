@@ -34,7 +34,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/quick-idea" element={<ProtectedRoute><AppLayout><QuickIdea /></AppLayout></ProtectedRoute>} />
           <Route path="/create-project" element={<ProtectedRoute><AppLayout><CreateA3Project /></AppLayout></ProtectedRoute>} />
-                    <Route path="/projects/:id/structure" element={<ProtectedRoute><AppLayout><CreateProject mode="structure" /></AppLayout></ProtectedRoute>} />
+          <Route path="/projects/:id/structure" element={<ProtectedRoute><AppLayout><CreateProject mode="structure" /></AppLayout></ProtectedRoute>} />
+          <Route path="/projects/:id/a3" element={<ProtectedRoute><AppLayout><CreateA3Project /></AppLayout></ProtectedRoute>} />
           <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
           <Route path="/prioritization" element={<ProtectedRoute><AppLayout><Prioritization /></AppLayout></ProtectedRoute>} />
           <Route path="/portfolio" element={<ProtectedRoute><AppLayout><Portfolio /></AppLayout></ProtectedRoute>} />
