@@ -167,11 +167,10 @@ export function useA3ReviewData(projectId: string | null) {
       if (commentsError) {
         console.error('[useA3ReviewData] Error fetching comments:', commentsError);
       }
-      console.log('[useA3ReviewData] Raw comments:', comments);
 
       const formattedComments: A3Comment[] = (comments || []).map(c => {
         const profile = (c as any).profiles;
-        console.log('[useA3ReviewData] Comment:', c.id, 'Profile:', profile, 'User name:', profile?.full_name);
+        console.log('[useA3ReviewData] Comment by:', profile?.full_name || 'Usuário');
         return {
           id: c.id,
           comment: c.comment,
