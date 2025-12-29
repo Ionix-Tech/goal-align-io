@@ -20,6 +20,7 @@ import ThesisDetail from "./pages/ThesisDetail";
 import Management from "./pages/Management";
 import ProjectExecution from "./pages/ProjectExecution";
 import Intelligence from "./pages/Intelligence";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/management" element={<ProtectedRoute><AppLayout><Management /></AppLayout></ProtectedRoute>} />
           <Route path="/management/:projectId" element={<ProtectedRoute><AppLayout><ProjectExecution /></AppLayout></ProtectedRoute>} />
           <Route path="/intelligence" element={<ProtectedRoute><AppLayout><Intelligence /></AppLayout></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

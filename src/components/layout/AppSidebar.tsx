@@ -1,4 +1,4 @@
-import { Plus, Target, ClipboardCheck, Brain, ChevronRight, ListOrdered, FolderKanban, FileText } from "lucide-react";
+import { Plus, Target, ClipboardCheck, Brain, ChevronRight, ListOrdered, FolderKanban, FileText, Settings } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { InitiativeTypeSelector } from "@/components/projects/InitiativeTypeSelector";
@@ -34,6 +34,7 @@ const menuItems = [
   },
   { title: "Gestão e Execução", url: "/management", icon: ClipboardCheck },
   { title: "Inteligência", url: "/intelligence", icon: Brain },
+  { title: "Configurações", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
