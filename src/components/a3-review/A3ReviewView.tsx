@@ -57,17 +57,50 @@ export function A3ReviewView() {
     
     setIsSubmittingComment(true);
     try {
-      const { error } = await supabase
+      // Insert and select the new comment with profile data
+      const { data: newCommentData, error } = await supabase
         .from('project_comments')
         .insert({
           project_id: id,
           user_id: user.id,
           comment: newComment.trim()
-        });
+        })
+        .select(`
+          id, 
+          comment, 
+          created_at, 
+          user_id,
+          profiles!project_comments_user_id_fkey(id, full_name, avatar_url)
+        `)
+        .single();
       
       if (error) throw error;
       
+      // Log author name
+      const profile = (newCommentData as any)?.profiles;
+      console.log('[A3ReviewView] Comentário salvo por:', profile?.full_name || 'Usuário', '(user_id:', user.id, ')');
+      
+      // Update cache immediately for instant UI update
+      if (newCommentData && data) {
+        const formattedComment = {
+          id: newCommentData.id,
+          comment: newCommentData.comment,
+          created_at: newCommentData.created_at || new Date().toISOString(),
+          user: {
+            id: profile?.id || newCommentData.user_id,
+            full_name: profile?.full_name || 'Usuário',
+            avatar_url: profile?.avatar_url || null
+          }
+        };
+        
+        queryClient.setQueryData(['a3-review-data', id], {
+          ...data,
+          comments: [...data.comments, formattedComment]
+        });
+      }
+      
       setNewComment("");
+      // Also invalidate to ensure data is fresh
       queryClient.invalidateQueries({ queryKey: ['a3-review-data', id] });
       toast.success("Comentário adicionado");
     } catch (err) {
