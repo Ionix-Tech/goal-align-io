@@ -37,6 +37,13 @@ export interface WizardComment {
   };
 }
 
+export interface WizardMilestone {
+  id: string;
+  title: string;
+  description: string;
+  targetDate: string;
+}
+
 export interface A3WizardData {
   // Step 1: Contexto
   name: string;
@@ -67,6 +74,7 @@ export interface A3WizardData {
   m1Date: string;
   m2Date: string;
   m3Date: string;
+  extraMilestones: WizardMilestone[];
 }
 
 const initialData: A3WizardData = {
@@ -86,6 +94,7 @@ const initialData: A3WizardData = {
   m1Date: "",
   m2Date: "",
   m3Date: "",
+  extraMilestones: [],
 };
 
 interface UseA3WizardStateOptions {
@@ -213,6 +222,16 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         const m1 = milestones?.find(m => m.milestone_type === 'decolagem');
         const m2 = milestones?.find(m => m.milestone_type === 'voo');
         const m3 = milestones?.find(m => m.milestone_type === 'escala');
+        
+        // Load extra milestones (those without milestone_type)
+        const extraMilestones: WizardMilestone[] = (milestones || [])
+          .filter(m => !m.milestone_type)
+          .map(m => ({
+            id: m.id,
+            title: m.title,
+            description: m.description || '',
+            targetDate: m.target_date
+          }));
 
         // Map tasks to actions
         const actions: WizardAction[] = (tasks || []).map(task => {
@@ -279,6 +298,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           m1Date: m1?.target_date || "",
           m2Date: m2?.target_date || "",
           m3Date: m3?.target_date || "",
+          extraMilestones,
         });
 
         setProjectId(options.initialProjectId);
@@ -403,6 +423,36 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
     setData(prev => ({ ...prev, indicators }));
   }, []);
 
+  // Extra milestones management
+  const addExtraMilestone = useCallback(() => {
+    setData(prev => ({
+      ...prev,
+      extraMilestones: [
+        ...prev.extraMilestones,
+        {
+          id: crypto.randomUUID(),
+          title: "",
+          description: "",
+          targetDate: ""
+        }
+      ]
+    }));
+  }, []);
+
+  const updateExtraMilestone = useCallback((id: string, updates: Partial<WizardMilestone>) => {
+    setData(prev => ({
+      ...prev,
+      extraMilestones: prev.extraMilestones.map(m => m.id === id ? { ...m, ...updates } : m)
+    }));
+  }, []);
+
+  const removeExtraMilestone = useCallback((id: string) => {
+    setData(prev => ({
+      ...prev,
+      extraMilestones: prev.extraMilestones.filter(m => m.id !== id)
+    }));
+  }, []);
+
   // Validation per step
   const canProceedToStep = useMemo(() => {
     return {
@@ -490,6 +540,9 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
     updateWhyLink,
     removeWhyLink,
     setIndicators,
+    addExtraMilestone,
+    updateExtraMilestone,
+    removeExtraMilestone,
     canProceedToStep,
     goToStep,
     nextStep,

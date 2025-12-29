@@ -38,6 +38,9 @@ export function A3Wizard() {
     updateWhyLink,
     removeWhyLink,
     setIndicators,
+    addExtraMilestone,
+    updateExtraMilestone,
+    removeExtraMilestone,
     canProceedToStep,
     goToStep,
     nextStep,
@@ -316,13 +319,14 @@ export function A3Wizard() {
         .select('id, milestone_type')
         .eq('project_id', currentProjectId);
 
-      const milestones = [
+      // Fixed milestones (M1, M2, M3)
+      const fixedMilestones = [
         { title: "M1 - Decolagem", target_date: data.m1Date, milestone_type: 'decolagem' as const },
         { title: "M2 - Voo", target_date: data.m2Date, milestone_type: 'voo' as const },
         { title: "M3 - Escala", target_date: data.m3Date, milestone_type: 'escala' as const }
       ];
 
-      for (const milestone of milestones) {
+      for (const milestone of fixedMilestones) {
         const existing = existingMilestones?.find(m => m.milestone_type === milestone.milestone_type);
         
         if (existing) {
@@ -338,6 +342,34 @@ export function A3Wizard() {
               ...milestone
             });
         }
+      }
+
+      // --- PERSIST EXTRA MILESTONES ---
+      // Delete existing extra milestones (those without milestone_type)
+      const extraMilestoneIds = existingMilestones
+        ?.filter(m => !m.milestone_type)
+        .map(m => m.id) || [];
+      
+      if (extraMilestoneIds.length > 0) {
+        await supabase
+          .from('project_milestones')
+          .delete()
+          .in('id', extraMilestoneIds);
+      }
+
+      // Insert new extra milestones
+      for (const milestone of data.extraMilestones) {
+        if (!milestone.title.trim() || !milestone.targetDate) continue;
+        
+        await supabase
+          .from('project_milestones')
+          .insert({
+            project_id: currentProjectId,
+            title: milestone.title,
+            description: milestone.description || null,
+            target_date: milestone.targetDate,
+            milestone_type: null
+          });
       }
 
       // Update project status to review
@@ -412,6 +444,9 @@ export function A3Wizard() {
             data={data}
             updateData={updateData}
             setIndicators={setIndicators}
+            addExtraMilestone={addExtraMilestone}
+            updateExtraMilestone={updateExtraMilestone}
+            removeExtraMilestone={removeExtraMilestone}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
           />
