@@ -1,9 +1,15 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useA3ReviewData } from "@/hooks/useA3ReviewData";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 import { 
   ArrowLeft, 
   FileText, 
@@ -24,6 +30,7 @@ import { A3StrategySection } from "./sections/A3StrategySection";
 import { A3ExecutionSection } from "./sections/A3ExecutionSection";
 import { A3ControlSection } from "./sections/A3ControlSection";
 import { A3ReviewActions } from "./A3ReviewActions";
+import { ProjectComments } from "@/components/projects/ProjectComments";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -38,7 +45,38 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export function A3ReviewView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { data, isLoading, error } = useA3ReviewData(id || null);
+  
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !id || !user) return;
+    
+    setIsSubmittingComment(true);
+    try {
+      const { error } = await supabase
+        .from('project_comments')
+        .insert({
+          project_id: id,
+          user_id: user.id,
+          comment: newComment.trim()
+        });
+      
+      if (error) throw error;
+      
+      setNewComment("");
+      queryClient.invalidateQueries({ queryKey: ['a3-review-data', id] });
+      toast.success("Comentário adicionado");
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      toast.error("Erro ao adicionar comentário");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -179,6 +217,20 @@ export function A3ReviewView() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Comments Section */}
+      <Card>
+        <CardContent className="pt-6">
+          <ProjectComments
+            comments={data.comments}
+            canComment={!!user}
+            newComment={newComment}
+            onCommentChange={setNewComment}
+            onAddComment={handleAddComment}
+            isSubmitting={isSubmittingComment}
+          />
+        </CardContent>
+      </Card>
 
       {/* Actions (Approve/Reject) */}
       {data.status === 'review' && (
