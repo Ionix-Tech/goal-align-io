@@ -29,6 +29,13 @@ export function A3Wizard() {
     addRequirement,
     updateRequirement,
     removeRequirement,
+    addAction,
+    updateAction,
+    removeAction,
+    addWhyLink,
+    updateWhyLink,
+    removeWhyLink,
+    setIndicators,
     canProceedToStep,
     goToStep,
     nextStep,
@@ -170,7 +177,138 @@ export function A3Wizard() {
         return;
       }
 
-      // Create milestones if they don't exist
+      // Get requirement IDs for linking
+      const { data: savedReqs } = await supabase
+        .from('project_requirements')
+        .select('id, code')
+        .eq('project_id', currentProjectId);
+
+      const reqIdByCode = new Map<string, string>();
+      (savedReqs || []).forEach(r => reqIdByCode.set(r.code, r.id));
+
+      // --- PERSIST TASKS ---
+      // Delete existing tasks and their links for this project
+      const { data: existingTasks } = await supabase
+        .from('project_tasks')
+        .select('id')
+        .eq('project_id', currentProjectId);
+
+      if (existingTasks && existingTasks.length > 0) {
+        const taskIds = existingTasks.map(t => t.id);
+        await supabase
+          .from('requirement_task_links')
+          .delete()
+          .in('task_id', taskIds);
+        await supabase
+          .from('project_tasks')
+          .delete()
+          .eq('project_id', currentProjectId);
+      }
+
+      // Insert new tasks
+      for (const action of data.actions) {
+        if (!action.description.trim()) continue;
+
+        const { data: newTask, error: taskError } = await supabase
+          .from('project_tasks')
+          .insert({
+            project_id: currentProjectId,
+            title: action.description,
+            assigned_to: action.responsibleId || null,
+            due_date: action.dueDate || null,
+            status: 'not_started',
+            priority: 'medium',
+            created_by: userId
+          })
+          .select()
+          .single();
+
+        if (taskError) throw taskError;
+
+        // Insert requirement links
+        for (const reqCode of action.linkedRequirements) {
+          const reqId = reqIdByCode.get(reqCode);
+          if (reqId) {
+            await supabase
+              .from('requirement_task_links')
+              .insert({
+                task_id: newTask.id,
+                requirement_id: reqId
+              });
+          }
+        }
+      }
+
+      // --- PERSIST INDICATORS ---
+      // Delete existing indicators and their links
+      const { data: existingIndicators } = await supabase
+        .from('project_indicators')
+        .select('id')
+        .eq('project_id', currentProjectId);
+
+      if (existingIndicators && existingIndicators.length > 0) {
+        const indIds = existingIndicators.map(i => i.id);
+        await supabase
+          .from('requirement_indicator_links')
+          .delete()
+          .in('indicator_id', indIds);
+        await supabase
+          .from('project_indicators')
+          .delete()
+          .eq('project_id', currentProjectId);
+      }
+
+      // Insert new indicators
+      for (const indicator of data.indicators) {
+        const { data: newIndicator, error: indError } = await supabase
+          .from('project_indicators')
+          .insert({
+            project_id: currentProjectId,
+            name: indicator.name,
+            unit: indicator.unit || null,
+            current_state: indicator.currentValue,
+            target_state: indicator.targetValue
+          })
+          .select()
+          .single();
+
+        if (indError) throw indError;
+
+        // Insert requirement links
+        for (const reqCode of indicator.linkedRequirementCodes) {
+          const reqId = reqIdByCode.get(reqCode);
+          if (reqId) {
+            await supabase
+              .from('requirement_indicator_links')
+              .insert({
+                indicator_id: newIndicator.id,
+                requirement_id: reqId
+              });
+          }
+        }
+      }
+
+      // --- PERSIST WHY LINKS ---
+      // Delete existing why links
+      await supabase
+        .from('project_why_links')
+        .delete()
+        .eq('project_id', currentProjectId);
+
+      // Insert new why links
+      for (const link of data.whyLinks) {
+        if (!link.url.trim()) continue;
+
+        await supabase
+          .from('project_why_links')
+          .insert({
+            project_id: currentProjectId,
+            url: link.url,
+            label: link.label || null
+          });
+      }
+
+      // --- PERSIST MILESTONES ---
       const { data: existingMilestones } = await supabase
         .from('project_milestones')
         .select('id, milestone_type')
@@ -255,12 +393,23 @@ export function A3Wizard() {
           />
         );
       case 5:
-        return <Step5Execution data={data} />;
+        return (
+          <Step5Execution 
+            data={data}
+            addAction={addAction}
+            updateAction={updateAction}
+            removeAction={removeAction}
+            addWhyLink={addWhyLink}
+            updateWhyLink={updateWhyLink}
+            removeWhyLink={removeWhyLink}
+          />
+        );
       case 6:
         return (
           <Step6Control
             data={data}
             updateData={updateData}
+            setIndicators={setIndicators}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
           />

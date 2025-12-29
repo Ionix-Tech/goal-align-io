@@ -3,6 +3,29 @@ import { useAuth } from "./useAuth";
 import { ProjectRequirement } from "./useRequirements";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface WizardIndicator {
+  id: string;
+  name: string;
+  unit: string;
+  currentValue: string;
+  targetValue: string;
+  linkedRequirementCodes: string[];
+}
+
+export interface WizardAction {
+  id: string;
+  description: string;
+  responsibleId: string;
+  dueDate: string;
+  linkedRequirements: string[];
+}
+
+export interface WizardWhyLink {
+  id: string;
+  url: string;
+  label: string;
+}
+
 export interface A3WizardData {
   // Step 1: Contexto
   name: string;
@@ -25,9 +48,11 @@ export interface A3WizardData {
   // requirements.target_value updated here
   
   // Step 5: Execução
-  // tasks handled separately
+  actions: WizardAction[];
+  whyLinks: WizardWhyLink[];
   
   // Step 6: Controle
+  indicators: WizardIndicator[];
   m1Date: string;
   m2Date: string;
   m3Date: string;
@@ -44,6 +69,9 @@ const initialData: A3WizardData = {
   requirements: [],
   currentSituationDescription: "",
   targetSituationDescription: "",
+  actions: [],
+  whyLinks: [],
+  indicators: [],
   m1Date: "",
   m2Date: "",
   m3Date: "",
@@ -94,10 +122,92 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
 
         if (msError) throw msError;
 
+        // Load tasks (actions)
+        const { data: tasks, error: tasksError } = await supabase
+          .from('project_tasks')
+          .select('*')
+          .eq('project_id', options.initialProjectId);
+
+        if (tasksError) throw tasksError;
+
+        // Load requirement-task links
+        const { data: taskLinks } = await supabase
+          .from('requirement_task_links')
+          .select('task_id, requirement_id');
+
+        // Load indicators
+        const { data: indicators, error: indError } = await supabase
+          .from('project_indicators')
+          .select('*')
+          .eq('project_id', options.initialProjectId);
+
+        if (indError) throw indError;
+
+        // Load requirement-indicator links
+        const { data: indicatorLinks } = await supabase
+          .from('requirement_indicator_links')
+          .select('indicator_id, requirement_id');
+
+        // Load why links
+        const { data: whyLinks, error: whyError } = await supabase
+          .from('project_why_links')
+          .select('*')
+          .eq('project_id', options.initialProjectId);
+
+        if (whyError) throw whyError;
+
+        // Build requirement code lookup
+        const reqCodeMap = new Map<string, string>();
+        const reqIdByCode = new Map<string, string>();
+        (requirements || []).forEach(r => {
+          reqCodeMap.set(r.id, r.code);
+          reqIdByCode.set(r.code, r.id);
+        });
+
         // Map milestones to dates
         const m1 = milestones?.find(m => m.milestone_type === 'decolagem');
         const m2 = milestones?.find(m => m.milestone_type === 'voo');
         const m3 = milestones?.find(m => m.milestone_type === 'escala');
+
+        // Map tasks to actions
+        const actions: WizardAction[] = (tasks || []).map(task => {
+          const linkedReqs = (taskLinks || [])
+            .filter(link => link.task_id === task.id)
+            .map(link => reqCodeMap.get(link.requirement_id) || '')
+            .filter(Boolean);
+
+          return {
+            id: task.id,
+            description: task.title || '',
+            responsibleId: task.assigned_to || '',
+            dueDate: task.due_date || '',
+            linkedRequirements: linkedReqs
+          };
+        });
+
+        // Map indicators
+        const mappedIndicators: WizardIndicator[] = (indicators || []).map(ind => {
+          const linkedReqs = (indicatorLinks || [])
+            .filter(link => link.indicator_id === ind.id)
+            .map(link => reqCodeMap.get(link.requirement_id) || '')
+            .filter(Boolean);
+
+          return {
+            id: ind.id,
+            name: ind.name || '',
+            unit: ind.unit || '',
+            currentValue: ind.current_state || '',
+            targetValue: ind.target_state || '',
+            linkedRequirementCodes: linkedReqs
+          };
+        });
+
+        // Map why links
+        const mappedWhyLinks: WizardWhyLink[] = (whyLinks || []).map(link => ({
+          id: link.id,
+          url: link.url,
+          label: link.label || ''
+        }));
 
         setData({
           name: project.name || "",
@@ -118,6 +228,9 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           })),
           currentSituationDescription: project.current_situation_description || "",
           targetSituationDescription: project.target_situation_description || "",
+          actions,
+          whyLinks: mappedWhyLinks,
+          indicators: mappedIndicators,
           m1Date: m1?.target_date || "",
           m2Date: m2?.target_date || "",
           m3Date: m3?.target_date || "",
@@ -178,6 +291,71 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         .filter((_, i) => i !== index)
         .map((r, i) => ({ ...r, code: `R${i + 1}`, display_order: i }))
     }));
+  }, []);
+
+  // Actions management
+  const addAction = useCallback(() => {
+    setData(prev => ({
+      ...prev,
+      actions: [
+        ...prev.actions,
+        {
+          id: crypto.randomUUID(),
+          description: "",
+          responsibleId: "",
+          dueDate: "",
+          linkedRequirements: []
+        }
+      ]
+    }));
+  }, []);
+
+  const updateAction = useCallback((id: string, updates: Partial<WizardAction>) => {
+    setData(prev => ({
+      ...prev,
+      actions: prev.actions.map(a => a.id === id ? { ...a, ...updates } : a)
+    }));
+  }, []);
+
+  const removeAction = useCallback((id: string) => {
+    setData(prev => ({
+      ...prev,
+      actions: prev.actions.filter(a => a.id !== id)
+    }));
+  }, []);
+
+  // Why links management
+  const addWhyLink = useCallback(() => {
+    setData(prev => ({
+      ...prev,
+      whyLinks: [
+        ...prev.whyLinks,
+        {
+          id: crypto.randomUUID(),
+          url: "",
+          label: ""
+        }
+      ]
+    }));
+  }, []);
+
+  const updateWhyLink = useCallback((id: string, updates: Partial<WizardWhyLink>) => {
+    setData(prev => ({
+      ...prev,
+      whyLinks: prev.whyLinks.map(l => l.id === id ? { ...l, ...updates } : l)
+    }));
+  }, []);
+
+  const removeWhyLink = useCallback((id: string) => {
+    setData(prev => ({
+      ...prev,
+      whyLinks: prev.whyLinks.filter(l => l.id !== id)
+    }));
+  }, []);
+
+  // Indicators management
+  const setIndicators = useCallback((indicators: WizardIndicator[]) => {
+    setData(prev => ({ ...prev, indicators }));
   }, []);
 
   // Validation per step
@@ -259,6 +437,13 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
     addRequirement,
     updateRequirement,
     removeRequirement,
+    addAction,
+    updateAction,
+    removeAction,
+    addWhyLink,
+    updateWhyLink,
+    removeWhyLink,
+    setIndicators,
     canProceedToStep,
     goToStep,
     nextStep,

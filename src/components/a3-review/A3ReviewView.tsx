@@ -164,11 +164,12 @@ export function A3ReviewView() {
           />
         </TabsContent>
 
-        <TabsContent value="execution">
-          <A3ExecutionSection 
-            milestones={data.milestones}
-            whyLinks={data.whyLinks}
-          />
+          <TabsContent value="execution">
+            <A3ExecutionSection 
+              milestones={data.milestones}
+              whyLinks={data.whyLinks}
+              tasks={data.tasks}
+            />
         </TabsContent>
 
         <TabsContent value="control">
