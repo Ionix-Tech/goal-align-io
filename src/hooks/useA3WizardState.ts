@@ -26,6 +26,17 @@ export interface WizardWhyLink {
   label: string;
 }
 
+export interface WizardComment {
+  id: string;
+  comment: string;
+  created_at: string;
+  user: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
+
 export interface A3WizardData {
   // Step 1: Contexto
   name: string;
@@ -88,6 +99,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
   const [projectId, setProjectId] = useState<string | null>(options.initialProjectId || null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(!!options.initialProjectId);
+  const [comments, setComments] = useState<WizardComment[]>([]);
 
   // Load existing project data
   useEffect(() => {
@@ -155,6 +167,39 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           .eq('project_id', options.initialProjectId);
 
         if (whyError) throw whyError;
+
+        // Load comments (for feedback panel)
+        const { data: projectComments, error: commentsError } = await supabase
+          .from('project_comments')
+          .select(`
+            id, 
+            comment, 
+            created_at, 
+            user_id,
+            profiles!project_comments_user_id_fkey(id, full_name, avatar_url)
+          `)
+          .eq('project_id', options.initialProjectId)
+          .order('created_at', { ascending: false });
+
+        if (commentsError) {
+          console.error('Error loading comments:', commentsError);
+        }
+
+        // Format comments
+        const formattedComments: WizardComment[] = (projectComments || []).map(c => {
+          const profile = (c as any).profiles;
+          return {
+            id: c.id,
+            comment: c.comment,
+            created_at: c.created_at || new Date().toISOString(),
+            user: {
+              id: profile?.id || c.user_id,
+              full_name: profile?.full_name || 'Usuário',
+              avatar_url: profile?.avatar_url || null
+            }
+          };
+        });
+        setComments(formattedComments);
 
         // Build requirement code lookup
         const reqCodeMap = new Map<string, string>();
@@ -431,6 +476,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
     projectId,
     isSaving,
     isLoading,
+    comments,
     setIsSaving,
     setProjectId,
     updateData,
