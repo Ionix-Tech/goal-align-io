@@ -7,7 +7,7 @@ export interface ProjectRequirement {
   project_id: string;
   code: string;
   description: string;
-  indicator_name: string;
+  indicator_name: string | null; // Made optional - indicators are linked separately
   unit: string | null;
   current_value: number | null;
   target_value: number | null;
@@ -43,8 +43,8 @@ export function useCreateRequirement() {
       project_id: string;
       code: string;
       description: string;
-      indicator_name: string;
-      unit?: string;
+      indicator_name?: string | null;
+      unit?: string | null;
       display_order: number;
     }) => {
       const { data, error } = await supabase

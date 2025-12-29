@@ -152,7 +152,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         {
           code: nextCode,
           description: "",
-          indicator_name: "",
+          indicator_name: null,
           unit: null,
           current_value: null,
           target_value: null,
@@ -188,9 +188,9 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         return data.name.trim() !== "" && data.objective.trim() !== "";
       },
       3: () => {
-        // Step 2 complete: at least 2 requirements with description and indicator
+        // Step 2 complete: at least 2 requirements with description
         const validReqs = data.requirements.filter(
-          r => r.description.trim() !== "" && r.indicator_name.trim() !== ""
+          r => r.description.trim() !== ""
         );
         return validReqs.length >= 2;
       },

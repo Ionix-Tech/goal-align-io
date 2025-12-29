@@ -21,7 +21,7 @@ export function Step2Requirements({
 }: Step2RequirementsProps) {
   const canAddMore = data.requirements.length < 6;
   const validCount = data.requirements.filter(
-    r => r.description.trim() !== "" && r.indicator_name.trim() !== ""
+    r => r.description.trim() !== ""
   ).length;
 
   return (
@@ -69,35 +69,13 @@ export function Step2Requirements({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`desc-${index}`}>O que precisa melhorar? *</Label>
+                    <Label htmlFor={`desc-${index}`}>O que precisa dar certo? *</Label>
                     <Input
                       id={`desc-${index}`}
                       value={req.description}
                       onChange={(e) => updateRequirement(index, { description: e.target.value })}
                       placeholder="Ex: Reduzir taxa de retrabalho no processo X"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor={`indicator-${index}`}>Nome do Indicador *</Label>
-                      <Input
-                        id={`indicator-${index}`}
-                        value={req.indicator_name}
-                        onChange={(e) => updateRequirement(index, { indicator_name: e.target.value })}
-                        placeholder="Ex: Taxa de Retrabalho"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`unit-${index}`}>Unidade de Medida</Label>
-                      <Input
-                        id={`unit-${index}`}
-                        value={req.unit || ""}
-                        onChange={(e) => updateRequirement(index, { unit: e.target.value || null })}
-                        placeholder="Ex: %, unidades, R$..."
-                      />
-                    </div>
                   </div>
                 </div>
               ))}
@@ -130,7 +108,8 @@ export function Step2Requirements({
           💡 Dica
         </h4>
         <p className="text-sm text-muted-foreground">
-          Requisitos são os indicadores de sucesso do projeto. Pense: "Se não melhorarmos X, o projeto não terá cumprido seu objetivo". Isso ajuda a focar nas métricas realmente importantes.
+          Requisitos são critérios de sucesso do projeto. Pense: "Se isso não melhorar, o projeto não terá cumprido seu objetivo". 
+          Os indicadores serão definidos e correlacionados aos requisitos em etapa posterior.
         </p>
       </div>
     </div>

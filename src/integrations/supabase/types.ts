@@ -502,7 +502,7 @@ export type Database = {
           description: string
           display_order: number
           id: string
-          indicator_name: string
+          indicator_name: string | null
           project_id: string
           target_value: number | null
           unit: string | null
@@ -515,7 +515,7 @@ export type Database = {
           description: string
           display_order?: number
           id?: string
-          indicator_name: string
+          indicator_name?: string | null
           project_id: string
           target_value?: number | null
           unit?: string | null
@@ -528,7 +528,7 @@ export type Database = {
           description?: string
           display_order?: number
           id?: string
-          indicator_name?: string
+          indicator_name?: string | null
           project_id?: string
           target_value?: number | null
           unit?: string | null
@@ -953,6 +953,42 @@ export type Database = {
             columns: ["thesis_id"]
             isOneToOne: false
             referencedRelation: "strategic_theses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requirement_indicator_links: {
+        Row: {
+          created_at: string
+          id: string
+          indicator_id: string
+          requirement_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          indicator_id: string
+          requirement_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          indicator_id?: string
+          requirement_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_indicator_links_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "project_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_indicator_links_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "project_requirements"
             referencedColumns: ["id"]
           },
         ]
