@@ -115,8 +115,8 @@ export function ConvertIdeaDialog({ open, onClose, idea }: ConvertIdeaDialogProp
       
       onClose();
       
-      // Navigate to the new project's detail page
-      navigate(`/projects/${newProject.id}`);
+      // Navigate to the A3 wizard for the new project
+      navigate(`/projects/${newProject.id}/a3`);
     },
     onError: (error: any) => {
       console.error('Error converting idea:', error);
