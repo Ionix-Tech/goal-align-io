@@ -1,20 +1,17 @@
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { A3WizardData } from "@/hooks/useA3WizardState";
-import { ProjectRequirement } from "@/hooks/useRequirements";
-import { Upload, FileImage, AlertCircle } from "lucide-react";
+import { Upload, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 interface Step3DiagnosisProps {
   data: A3WizardData;
   updateData: (updates: Partial<A3WizardData>) => void;
-  updateRequirement: (index: number, updates: Partial<ProjectRequirement>) => void;
 }
 
-export function Step3Diagnosis({ data, updateData, updateRequirement }: Step3DiagnosisProps) {
+export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,8 +22,6 @@ export function Step3Diagnosis({ data, updateData, updateRequirement }: Step3Dia
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
-
-  const allCurrentValuesSet = data.requirements.every(r => r.current_value !== null);
 
   return (
     <div className="space-y-6">
@@ -39,7 +34,7 @@ export function Step3Diagnosis({ data, updateData, updateRequirement }: Step3Dia
             Diagnóstico
           </CardTitle>
           <CardDescription>
-            Onde estamos hoje? Descreva a situação atual e preencha os valores de cada requisito.
+            Onde estamos hoje? Descreva a situação atual com evidências.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -92,49 +87,6 @@ export function Step3Diagnosis({ data, updateData, updateRequirement }: Step3Dia
                     </Button>
                   </div>
                 ))}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <Label>Valores ATUAIS dos Requisitos</Label>
-            <div className="bg-muted/30 rounded-lg p-4">
-              <div className="grid gap-3">
-                {data.requirements.map((req, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-4 bg-background rounded-lg p-3 border"
-                  >
-                    <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-xs font-bold">
-                      {req.code}
-                    </span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{req.indicator_name || "Indicador não definido"}</p>
-                      <p className="text-xs text-muted-foreground">{req.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={req.current_value ?? ""}
-                        onChange={(e) => updateRequirement(index, { 
-                          current_value: e.target.value ? parseFloat(e.target.value) : null 
-                        })}
-                        className="w-24 text-right"
-                        placeholder="Valor"
-                      />
-                      <span className="text-sm text-muted-foreground w-12">
-                        {req.unit || "-"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {!allCurrentValuesSet && (
-              <div className="flex items-center gap-2 text-warning text-sm">
-                <AlertCircle className="w-4 h-4" />
-                <span>Preencha o valor atual de todos os requisitos para continuar.</span>
               </div>
             )}
           </div>
