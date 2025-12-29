@@ -17,6 +17,15 @@ export interface A3Indicator {
   linkedRequirements: string[]; // requirement codes
 }
 
+export interface A3Task {
+  id: string;
+  title: string;
+  assigneeName: string | null;
+  dueDate: string | null;
+  status: string;
+  linkedRequirements: string[]; // requirement codes
+}
+
 export interface A3Milestone {
   id: string;
   title: string;
@@ -42,7 +51,6 @@ export interface A3Attachment {
 }
 
 export interface A3ReviewData {
-  // Basic info
   id: string;
   name: string;
   status: string;
@@ -51,7 +59,6 @@ export interface A3ReviewData {
   submitted_for_review_at: string | null;
   approved_at: string | null;
   
-  // Context (Step 1)
   objective: string | null;
   strategicIndicator: string | null;
   category: string | null;
@@ -61,21 +68,15 @@ export interface A3ReviewData {
   assigneeName: string | null;
   createdByName: string | null;
   
-  // Requirements (Step 2)
   requirements: A3Requirement[];
-  
-  // Diagnosis (Step 3)
   currentSituationDescription: string | null;
-  
-  // Strategy (Step 4)
   targetSituationDescription: string | null;
   
-  // Execution (Step 5)
   milestones: A3Milestone[];
   whyLinks: A3WhyLink[];
   attachments: A3Attachment[];
+  tasks: A3Task[];
   
-  // Control (Step 6)
   indicators: A3Indicator[];
 }
 
@@ -85,7 +86,6 @@ export function useA3ReviewData(projectId: string | null) {
     queryFn: async (): Promise<A3ReviewData | null> => {
       if (!projectId) return null;
 
-      // 1. Fetch main project data with related entities
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .select(`
@@ -97,65 +97,71 @@ export function useA3ReviewData(projectId: string | null) {
         .eq('id', projectId)
         .maybeSingle();
 
-      if (projectError || !project) {
-        console.error('Error fetching project:', projectError);
-        return null;
-      }
+      if (projectError || !project) return null;
 
-      // 2. Fetch requirements
       const { data: requirements } = await supabase
         .from('project_requirements')
         .select('id, code, description, display_order')
         .eq('project_id', projectId)
         .order('display_order');
 
-      // 3. Fetch indicators
       const { data: indicators } = await supabase
         .from('project_indicators')
         .select('id, name, unit, current_state, target_state')
         .eq('project_id', projectId);
 
-      // 4. Fetch requirement-indicator links
       const { data: indicatorLinks } = await supabase
         .from('requirement_indicator_links')
         .select('indicator_id, requirement_id');
 
-      // 5. Fetch milestones
+      const { data: tasks } = await supabase
+        .from('project_tasks')
+        .select('id, title, due_date, status, assigned_to, assignee:profiles!project_tasks_assigned_to_fkey(full_name)')
+        .eq('project_id', projectId);
+
+      const { data: taskLinks } = await supabase
+        .from('requirement_task_links')
+        .select('task_id, requirement_id');
+
       const { data: milestones } = await supabase
         .from('project_milestones')
         .select('id, title, description, target_date, milestone_type, completed')
         .eq('project_id', projectId)
         .order('target_date');
 
-      // 6. Fetch why links
       const { data: whyLinks } = await supabase
         .from('project_why_links')
         .select('id, url, label')
         .eq('project_id', projectId);
 
-      // 7. Fetch attachments
       const { data: attachments } = await supabase
         .from('project_attachments')
         .select('id, file_name, file_path, file_type, file_size, uploaded_at')
         .eq('project_id', projectId)
         .order('uploaded_at', { ascending: false });
 
-      // Build requirement code lookup
       const reqCodeMap = new Map<string, string>();
       (requirements || []).forEach(r => reqCodeMap.set(r.id, r.code));
 
-      // Map indicators with their linked requirements
-      const indicatorsWithLinks: A3Indicator[] = (indicators || []).map(ind => {
-        const links = (indicatorLinks || [])
+      const indicatorsWithLinks: A3Indicator[] = (indicators || []).map(ind => ({
+        ...ind,
+        linkedRequirements: (indicatorLinks || [])
           .filter(link => link.indicator_id === ind.id)
           .map(link => reqCodeMap.get(link.requirement_id) || '')
-          .filter(Boolean);
-        
-        return {
-          ...ind,
-          linkedRequirements: links
-        };
-      });
+          .filter(Boolean)
+      }));
+
+      const tasksWithLinks: A3Task[] = (tasks || []).map(task => ({
+        id: task.id,
+        title: task.title,
+        assigneeName: (task.assignee as any)?.full_name || null,
+        dueDate: task.due_date,
+        status: task.status,
+        linkedRequirements: (taskLinks || [])
+          .filter(link => link.task_id === task.id)
+          .map(link => reqCodeMap.get(link.requirement_id) || '')
+          .filter(Boolean)
+      }));
 
       return {
         id: project.id,
@@ -165,7 +171,6 @@ export function useA3ReviewData(projectId: string | null) {
         created_at: project.created_at,
         submitted_for_review_at: project.submitted_for_review_at,
         approved_at: project.approved_at,
-        
         objective: project.objective,
         strategicIndicator: project.strategic_indicator,
         category: project.category,
@@ -174,16 +179,13 @@ export function useA3ReviewData(projectId: string | null) {
         assignedTo: project.assigned_to,
         assigneeName: (project.assignee as any)?.full_name || null,
         createdByName: (project.creator as any)?.full_name || null,
-        
         requirements: (requirements || []) as A3Requirement[],
-        
         currentSituationDescription: project.current_situation_description,
         targetSituationDescription: project.target_situation_description,
-        
         milestones: (milestones || []) as A3Milestone[],
         whyLinks: (whyLinks || []) as A3WhyLink[],
         attachments: (attachments || []) as A3Attachment[],
-        
+        tasks: tasksWithLinks,
         indicators: indicatorsWithLinks
       };
     },

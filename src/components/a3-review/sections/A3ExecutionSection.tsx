@@ -1,14 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { A3Milestone, A3WhyLink } from "@/hooks/useA3ReviewData";
-import { Calendar, ExternalLink, Link, PlaneTakeoff, Plane, PlaneLanding } from "lucide-react";
+import { A3Milestone, A3WhyLink, A3Task } from "@/hooks/useA3ReviewData";
+import { Calendar, ExternalLink, Link, PlaneTakeoff, Plane, PlaneLanding, ClipboardList, User, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
 
 interface A3ExecutionSectionProps {
   milestones: A3Milestone[];
   whyLinks: A3WhyLink[];
+  tasks: A3Task[];
 }
 
 const getMilestoneIcon = (type: string | null) => {
@@ -38,9 +38,63 @@ const getMilestoneLabel = (type: string | null) => {
   }
 };
 
-export function A3ExecutionSection({ milestones, whyLinks }: A3ExecutionSectionProps) {
+export function A3ExecutionSection({ milestones, whyLinks, tasks }: A3ExecutionSectionProps) {
   return (
     <div className="space-y-4">
+      {/* Tasks/Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-primary" />
+            Ações Planejadas
+          </CardTitle>
+          <CardDescription>
+            Ações definidas para alcançar os objetivos do projeto
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {tasks.length > 0 ? (
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <div 
+                  key={task.id}
+                  className="border rounded-lg p-4 bg-card space-y-2"
+                >
+                  <p className="font-medium">{task.title}</p>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    {task.assigneeName && (
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        {task.assigneeName}
+                      </span>
+                    )}
+                    {task.dueDate && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {format(new Date(task.dueDate), "dd/MM/yyyy")}
+                      </span>
+                    )}
+                  </div>
+                  {task.linkedRequirements.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {task.linkedRequirements.map(code => (
+                        <Badge key={code} variant="secondary" className="text-xs">
+                          {code}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">
+              Nenhuma ação definida.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Milestones */}
       <Card>
         <CardHeader>
@@ -66,15 +120,7 @@ export function A3ExecutionSection({ milestones, whyLinks }: A3ExecutionSectionP
                       {getMilestoneLabel(milestone.milestone_type)}
                     </span>
                   </div>
-                  
                   <p className="text-sm font-medium">{milestone.title}</p>
-                  
-                  {milestone.description && (
-                    <p className="text-xs text-muted-foreground">
-                      {milestone.description}
-                    </p>
-                  )}
-                  
                   <div className="flex items-center justify-between">
                     <p className="text-sm">
                       {format(new Date(milestone.target_date), "dd 'de' MMMM", { locale: ptBR })}
@@ -103,9 +149,6 @@ export function A3ExecutionSection({ milestones, whyLinks }: A3ExecutionSectionP
             <Link className="w-5 h-5 text-primary" />
             Links de Referência
           </CardTitle>
-          <CardDescription>
-            Documentos, artigos e referências importantes para o projeto
-          </CardDescription>
         </CardHeader>
         <CardContent>
           {whyLinks.length > 0 ? (
@@ -123,11 +166,6 @@ export function A3ExecutionSection({ milestones, whyLinks }: A3ExecutionSectionP
                     <p className="font-medium text-sm truncate group-hover:text-primary">
                       {link.label || link.url}
                     </p>
-                    {link.label && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {link.url}
-                      </p>
-                    )}
                   </div>
                 </a>
               ))}

@@ -5,62 +5,45 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { A3WizardData } from "@/hooks/useA3WizardState";
+import { A3WizardData, WizardAction, WizardWhyLink } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { Plus, Trash2, AlertCircle, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface LocalAction {
-  id: string;
-  description: string;
-  responsibleId: string;
-  dueDate: string;
-  linkedRequirements: string[];
-}
 
 interface Step5ExecutionProps {
   data: A3WizardData;
+  addAction: () => void;
+  updateAction: (id: string, updates: Partial<WizardAction>) => void;
+  removeAction: (id: string) => void;
+  addWhyLink: () => void;
+  updateWhyLink: (id: string, updates: Partial<WizardWhyLink>) => void;
+  removeWhyLink: (id: string) => void;
 }
 
-export function Step5Execution({ data }: Step5ExecutionProps) {
+export function Step5Execution({ 
+  data, 
+  addAction, 
+  updateAction, 
+  removeAction,
+  addWhyLink,
+  updateWhyLink,
+  removeWhyLink
+}: Step5ExecutionProps) {
   const { data: teamMembers = [] } = useTeamMembers();
-  const [actions, setActions] = useState<LocalAction[]>([]);
-
-  const addAction = () => {
-    setActions(prev => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        description: "",
-        responsibleId: "",
-        dueDate: "",
-        linkedRequirements: []
-      }
-    ]);
-  };
-
-  const updateAction = (id: string, updates: Partial<LocalAction>) => {
-    setActions(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-  };
-
-  const removeAction = (id: string) => {
-    setActions(prev => prev.filter(a => a.id !== id));
-  };
 
   const toggleRequirementLink = (actionId: string, reqCode: string) => {
-    setActions(prev => prev.map(a => {
-      if (a.id !== actionId) return a;
-      const linked = a.linkedRequirements.includes(reqCode)
-        ? a.linkedRequirements.filter(r => r !== reqCode)
-        : [...a.linkedRequirements, reqCode];
-      return { ...a, linkedRequirements: linked };
-    }));
+    const action = data.actions.find(a => a.id === actionId);
+    if (!action) return;
+    
+    const linked = action.linkedRequirements.includes(reqCode)
+      ? action.linkedRequirements.filter(r => r !== reqCode)
+      : [...action.linkedRequirements, reqCode];
+    updateAction(actionId, { linkedRequirements: linked });
   };
 
   // Coverage analysis
   const coverage = data.requirements.map(req => {
-    const linkedActions = actions.filter(a => 
+    const linkedActions = data.actions.filter(a => 
       a.linkedRequirements.includes(req.code) && a.description.trim() !== ""
     );
     return {
@@ -72,12 +55,10 @@ export function Step5Execution({ data }: Step5ExecutionProps) {
   });
 
   const uncoveredCount = coverage.filter(c => !c.covered).length;
-  const validActionsCount = actions.filter(a => 
-    a.description.trim() !== "" && a.linkedRequirements.length > 0
-  ).length;
 
   return (
     <div className="space-y-6">
+      {/* Actions Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -91,7 +72,7 @@ export function Step5Execution({ data }: Step5ExecutionProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {actions.length === 0 ? (
+          {data.actions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma ação adicionada ainda.</p>
@@ -99,7 +80,7 @@ export function Step5Execution({ data }: Step5ExecutionProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              {actions.map((action, index) => (
+              {data.actions.map((action, index) => (
                 <div
                   key={action.id}
                   className="border rounded-lg p-4 bg-card space-y-4"
@@ -234,6 +215,63 @@ export function Step5Execution({ data }: Step5ExecutionProps) {
               </p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Why Links Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link className="w-5 h-5 text-primary" />
+            Links de Referência
+          </CardTitle>
+          <CardDescription>
+            Adicione links para documentos, artigos ou referências importantes para o projeto.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {data.whyLinks.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <ExternalLink className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">Nenhum link adicionado ainda.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {data.whyLinks.map((link) => (
+                <div
+                  key={link.id}
+                  className="flex items-center gap-3 border rounded-lg p-3 bg-card"
+                >
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input
+                      value={link.url}
+                      onChange={(e) => updateWhyLink(link.id, { url: e.target.value })}
+                      placeholder="https://..."
+                      type="url"
+                    />
+                    <Input
+                      value={link.label}
+                      onChange={(e) => updateWhyLink(link.id, { label: e.target.value })}
+                      placeholder="Descrição do link (opcional)"
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeWhyLink(link.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Button onClick={addWhyLink} variant="outline" className="w-full gap-2">
+            <Plus className="w-4 h-4" />
+            Adicionar Link
+          </Button>
         </CardContent>
       </Card>
 

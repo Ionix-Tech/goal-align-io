@@ -3,17 +3,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { A3WizardData } from "@/hooks/useA3WizardState";
+import { A3WizardData, WizardIndicator } from "@/hooks/useA3WizardState";
 import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3 } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { WizardIndicatorManager, WizardIndicator } from "./WizardIndicatorManager";
+import { WizardIndicatorManager } from "./WizardIndicatorManager";
 
 interface Step6ControlProps {
   data: A3WizardData;
   updateData: (updates: Partial<A3WizardData>) => void;
+  setIndicators: (indicators: WizardIndicator[]) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
 }
@@ -27,9 +28,8 @@ const checklistItems = [
   { id: "actions", label: "Ações planejadas com responsáveis e prazos" },
 ];
 
-export function Step6Control({ data, updateData, onSubmit, isSubmitting }: Step6ControlProps) {
+export function Step6Control({ data, updateData, setIndicators, onSubmit, isSubmitting }: Step6ControlProps) {
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
-  const [indicators, setIndicators] = useState<WizardIndicator[]>([]);
 
   // Auto-calculate M2 and M3 based on M1
   const milestoneDates = useMemo(() => {
@@ -93,7 +93,7 @@ export function Step6Control({ data, updateData, onSubmit, isSubmitting }: Step6
         </CardHeader>
         <CardContent>
           <WizardIndicatorManager
-            indicators={indicators}
+            indicators={data.indicators}
             onIndicatorsChange={setIndicators}
             requirements={requirementOptions}
           />
@@ -243,11 +243,11 @@ export function Step6Control({ data, updateData, onSubmit, isSubmitting }: Step6
               </div>
               <div>
                 <span className="text-muted-foreground">Indicadores:</span>
-                <p className="font-medium">{indicators.length}</p>
+                <p className="font-medium">{data.indicators.length}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Categoria:</span>
-                <p className="font-medium">{data.category || "-"}</p>
+                <span className="text-muted-foreground">Ações:</span>
+                <p className="font-medium">{data.actions.length}</p>
               </div>
             </div>
           </div>
