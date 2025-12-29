@@ -3,18 +3,22 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { A3WizardData, WizardIndicator } from "@/hooks/useA3WizardState";
-import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3 } from "lucide-react";
+import { A3WizardData, WizardIndicator, WizardMilestone } from "@/hooks/useA3WizardState";
+import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { WizardIndicatorManager } from "./WizardIndicatorManager";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Step6ControlProps {
   data: A3WizardData;
   updateData: (updates: Partial<A3WizardData>) => void;
   setIndicators: (indicators: WizardIndicator[]) => void;
+  addExtraMilestone: () => void;
+  updateExtraMilestone: (id: string, updates: Partial<WizardMilestone>) => void;
+  removeExtraMilestone: (id: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
 }
@@ -28,11 +32,20 @@ const checklistItems = [
   { id: "actions", label: "Ações planejadas com responsáveis e prazos" },
 ];
 
-export function Step6Control({ data, updateData, setIndicators, onSubmit, isSubmitting }: Step6ControlProps) {
+export function Step6Control({ 
+  data, 
+  updateData, 
+  setIndicators, 
+  addExtraMilestone,
+  updateExtraMilestone,
+  removeExtraMilestone,
+  onSubmit, 
+  isSubmitting 
+}: Step6ControlProps) {
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
 
-  // Auto-calculate M2 and M3 based on M1
-  const milestoneDates = useMemo(() => {
+  // Calculate suggested dates for M2 and M3 based on M1
+  const suggestedDates = useMemo(() => {
     if (!data.m1Date) return { m2: "", m3: "" };
     
     const m1 = new Date(data.m1Date);
@@ -45,16 +58,26 @@ export function Step6Control({ data, updateData, setIndicators, onSubmit, isSubm
     };
   }, [data.m1Date]);
 
-  // Update M2 and M3 when M1 changes
+  // Update M2 and M3 automatically when M1 changes (only if they're empty or auto-generated)
   const handleM1Change = (date: string) => {
-    updateData({ m1Date: date });
     if (date) {
       const m1 = new Date(date);
-      updateData({
-        m1Date: date,
-        m2Date: format(addDays(m1, 45), "yyyy-MM-dd"),
-        m3Date: format(addDays(m1, 90), "yyyy-MM-dd")
-      });
+      const newM2 = format(addDays(m1, 45), "yyyy-MM-dd");
+      const newM3 = format(addDays(m1, 90), "yyyy-MM-dd");
+      
+      // Only auto-fill if M2/M3 are empty or match the old calculated values
+      const updates: Partial<A3WizardData> = { m1Date: date };
+      
+      if (!data.m2Date || data.m2Date === suggestedDates.m2) {
+        updates.m2Date = newM2;
+      }
+      if (!data.m3Date || data.m3Date === suggestedDates.m3) {
+        updates.m3Date = newM3;
+      }
+      
+      updateData(updates);
+    } else {
+      updateData({ m1Date: date });
     }
   };
 
@@ -144,48 +167,122 @@ export function Step6Control({ data, updateData, setIndicators, onSubmit, isSubm
               </div>
 
               {/* M2 - Voo */}
-              <div className="border rounded-lg p-4 bg-muted/50 space-y-3">
-                <div className="flex items-center gap-2 text-warning">
-                  <Plane className="w-5 h-5" />
-                  <span className="font-semibold">M2 - Voo</span>
+              <TooltipProvider>
+                <div className="border rounded-lg p-4 bg-card space-y-3">
+                  <div className="flex items-center gap-2 text-warning">
+                    <Plane className="w-5 h-5" />
+                    <span className="font-semibold">M2 - Voo</span>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-xs text-muted-foreground cursor-help">
+                        Checkpoint intermediário (sugestão: +45 dias)
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>A data é calculada automaticamente como M1 + 45 dias, mas você pode ajustar manualmente</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Input
+                    type="date"
+                    value={data.m2Date}
+                    onChange={(e) => updateData({ m2Date: e.target.value })}
+                    className="w-full"
+                  />
+                  {data.m2Date && (
+                    <p className="text-sm text-center font-medium">
+                      {formatDisplayDate(data.m2Date)}
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Checkpoint intermediário (+45 dias)
-                </p>
-                <Input
-                  type="date"
-                  value={milestoneDates.m2}
-                  disabled
-                  className="w-full bg-muted"
-                />
-                {milestoneDates.m2 && (
-                  <p className="text-sm text-center font-medium">
-                    {formatDisplayDate(milestoneDates.m2)}
-                  </p>
-                )}
-              </div>
+              </TooltipProvider>
 
               {/* M3 - Escala */}
-              <div className="border rounded-lg p-4 bg-muted/50 space-y-3">
-                <div className="flex items-center gap-2 text-success">
-                  <PlaneLanding className="w-5 h-5" />
-                  <span className="font-semibold">M3 - Escala</span>
+              <TooltipProvider>
+                <div className="border rounded-lg p-4 bg-card space-y-3">
+                  <div className="flex items-center gap-2 text-success">
+                    <PlaneLanding className="w-5 h-5" />
+                    <span className="font-semibold">M3 - Escala</span>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-xs text-muted-foreground cursor-help">
+                        Finalização e resultados (sugestão: +90 dias)
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>A data é calculada automaticamente como M1 + 90 dias, mas você pode ajustar manualmente</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Input
+                    type="date"
+                    value={data.m3Date}
+                    onChange={(e) => updateData({ m3Date: e.target.value })}
+                    className="w-full"
+                  />
+                  {data.m3Date && (
+                    <p className="text-sm text-center font-medium">
+                      {formatDisplayDate(data.m3Date)}
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Finalização e resultados (+90 dias)
-                </p>
-                <Input
-                  type="date"
-                  value={milestoneDates.m3}
-                  disabled
-                  className="w-full bg-muted"
-                />
-                {milestoneDates.m3 && (
-                  <p className="text-sm text-center font-medium">
-                    {formatDisplayDate(milestoneDates.m3)}
-                  </p>
-                )}
-              </div>
+              </TooltipProvider>
+            </div>
+
+            {/* Extra Milestones */}
+            <div className="mt-6 space-y-4">
+              <Label className="flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Milestones Adicionais (opcional)
+              </Label>
+              
+              {data.extraMilestones.length > 0 && (
+                <div className="space-y-3">
+                  {data.extraMilestones.map((milestone, index) => (
+                    <div 
+                      key={milestone.id} 
+                      className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30"
+                    >
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Input
+                          placeholder={`Milestone ${index + 1}`}
+                          value={milestone.title}
+                          onChange={(e) => updateExtraMilestone(milestone.id, { title: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Descrição (opcional)"
+                          value={milestone.description}
+                          onChange={(e) => updateExtraMilestone(milestone.id, { description: e.target.value })}
+                        />
+                        <Input
+                          type="date"
+                          value={milestone.targetDate}
+                          onChange={(e) => updateExtraMilestone(milestone.id, { targetDate: e.target.value })}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeExtraMilestone(milestone.id)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addExtraMilestone}
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar Milestone
+              </Button>
             </div>
           </div>
 
