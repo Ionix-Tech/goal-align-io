@@ -28,7 +28,7 @@ export function WizardFeedbackPanel({ comments }: WizardFeedbackPanelProps) {
     c.comment.includes("Projeto devolvido") || c.comment.startsWith("🔄")
   );
   
-  const [isOpen, setIsOpen] = useState(hasRejectionComment);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (comments.length === 0) return null;
 
