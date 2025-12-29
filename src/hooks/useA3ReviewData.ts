@@ -152,22 +152,37 @@ export function useA3ReviewData(projectId: string | null) {
         .eq('project_id', projectId)
         .order('uploaded_at', { ascending: false });
 
-      const { data: comments } = await supabase
+      const { data: comments, error: commentsError } = await supabase
         .from('project_comments')
-        .select('id, comment, created_at, user_id, author:profiles!project_comments_user_id_fkey(id, full_name, avatar_url)')
+        .select(`
+          id, 
+          comment, 
+          created_at, 
+          user_id,
+          profiles!project_comments_user_id_fkey(id, full_name, avatar_url)
+        `)
         .eq('project_id', projectId)
         .order('created_at', { ascending: true });
 
-      const formattedComments: A3Comment[] = (comments || []).map(c => ({
-        id: c.id,
-        comment: c.comment,
-        created_at: c.created_at || '',
-        user: {
-          id: (c.author as any)?.id || c.user_id,
-          full_name: (c.author as any)?.full_name || 'Usuário',
-          avatar_url: (c.author as any)?.avatar_url || null
-        }
-      }));
+      if (commentsError) {
+        console.error('[useA3ReviewData] Error fetching comments:', commentsError);
+      }
+      console.log('[useA3ReviewData] Raw comments:', comments);
+
+      const formattedComments: A3Comment[] = (comments || []).map(c => {
+        const profile = (c as any).profiles;
+        console.log('[useA3ReviewData] Comment:', c.id, 'Profile:', profile, 'User name:', profile?.full_name);
+        return {
+          id: c.id,
+          comment: c.comment,
+          created_at: c.created_at || '',
+          user: {
+            id: profile?.id || c.user_id,
+            full_name: profile?.full_name || 'Usuário',
+            avatar_url: profile?.avatar_url || null
+          }
+        };
+      });
 
       const reqCodeMap = new Map<string, string>();
       (requirements || []).forEach(r => reqCodeMap.set(r.id, r.code));
