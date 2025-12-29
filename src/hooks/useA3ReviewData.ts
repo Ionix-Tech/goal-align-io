@@ -50,6 +50,17 @@ export interface A3Attachment {
   uploaded_at: string;
 }
 
+export interface A3Comment {
+  id: string;
+  comment: string;
+  created_at: string;
+  user: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
+
 export interface A3ReviewData {
   id: string;
   name: string;
@@ -76,6 +87,7 @@ export interface A3ReviewData {
   whyLinks: A3WhyLink[];
   attachments: A3Attachment[];
   tasks: A3Task[];
+  comments: A3Comment[];
   
   indicators: A3Indicator[];
 }
@@ -140,6 +152,23 @@ export function useA3ReviewData(projectId: string | null) {
         .eq('project_id', projectId)
         .order('uploaded_at', { ascending: false });
 
+      const { data: comments } = await supabase
+        .from('project_comments')
+        .select('id, comment, created_at, user_id, author:profiles!project_comments_user_id_fkey(id, full_name, avatar_url)')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true });
+
+      const formattedComments: A3Comment[] = (comments || []).map(c => ({
+        id: c.id,
+        comment: c.comment,
+        created_at: c.created_at || '',
+        user: {
+          id: (c.author as any)?.id || c.user_id,
+          full_name: (c.author as any)?.full_name || 'Usuário',
+          avatar_url: (c.author as any)?.avatar_url || null
+        }
+      }));
+
       const reqCodeMap = new Map<string, string>();
       (requirements || []).forEach(r => reqCodeMap.set(r.id, r.code));
 
@@ -186,6 +215,7 @@ export function useA3ReviewData(projectId: string | null) {
         whyLinks: (whyLinks || []) as A3WhyLink[],
         attachments: (attachments || []) as A3Attachment[],
         tasks: tasksWithLinks,
+        comments: formattedComments,
         indicators: indicatorsWithLinks
       };
     },
