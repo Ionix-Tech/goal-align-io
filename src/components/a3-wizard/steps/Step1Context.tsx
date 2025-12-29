@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { A3WizardData } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTheses } from "@/hooks/useTheses";
+import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { PROJECT_CATEGORIES } from "@/config/categories";
+import { ComboboxWithCustom } from "@/components/ui/combobox-with-custom";
 
 interface Step1ContextProps {
   data: A3WizardData;
@@ -16,6 +18,19 @@ interface Step1ContextProps {
 export function Step1Context({ data, updateData }: Step1ContextProps) {
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: theses = [] } = useTheses({ includeArchived: false });
+  const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
+
+  const kpiOptions = thesisDetails?.kpis?.map(kpi => ({
+    value: kpi.name,
+    label: kpi.unit ? `${kpi.name} (${kpi.unit})` : kpi.name
+  })) || [];
+
+  const handleThesisChange = (value: string) => {
+    updateData({ 
+      thesisId: value,
+      strategicIndicator: "" // Clear indicator when thesis changes
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -58,7 +73,7 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
               <Label htmlFor="thesis">Tese Estratégica (OKR)</Label>
               <Select
                 value={data.thesisId}
-                onValueChange={(value) => updateData({ thesisId: value })}
+                onValueChange={handleThesisChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a tese..." />
@@ -75,12 +90,23 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
 
             <div className="space-y-2">
               <Label htmlFor="strategic-indicator">Indicador Macro Impactado</Label>
-              <Input
-                id="strategic-indicator"
-                value={data.strategicIndicator}
-                onChange={(e) => updateData({ strategicIndicator: e.target.value })}
-                placeholder="Ex: OEE, Custo de Qualidade..."
-              />
+              {data.thesisId && kpiOptions.length > 0 ? (
+                <ComboboxWithCustom
+                  options={kpiOptions}
+                  value={data.strategicIndicator}
+                  onChange={(value) => updateData({ strategicIndicator: value })}
+                  placeholder="Selecione ou digite..."
+                  emptyText="Nenhum indicador encontrado."
+                  customOptionLabel="Usar indicador"
+                />
+              ) : (
+                <Input
+                  id="strategic-indicator"
+                  value={data.strategicIndicator}
+                  onChange={(e) => updateData({ strategicIndicator: e.target.value })}
+                  placeholder="Ex: OEE, Custo de Qualidade..."
+                />
+              )}
             </div>
           </div>
 
