@@ -27,9 +27,9 @@ const menuItems = [
     title: "Estratégia", 
     icon: Target,
     subitems: [
+      { title: "Objetivos", url: "/theses", icon: FileText },
       { title: "Priorização", url: "/prioritization", icon: ListOrdered },
       { title: "Portfólio", url: "/portfolio", icon: FolderKanban },
-      { title: "Objetivos", url: "/theses", icon: FileText },
     ]
   },
   { title: "Gestão e Execução", url: "/management", icon: ClipboardCheck },
