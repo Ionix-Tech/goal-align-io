@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useA3WizardState } from "@/hooks/useA3WizardState";
 import { A3WizardProgress } from "./A3WizardProgress";
+import { WizardFeedbackPanel } from "./WizardFeedbackPanel";
 import { Step1Context } from "./steps/Step1Context";
 import { Step2Requirements } from "./steps/Step2Requirements";
 import { Step3Diagnosis } from "./steps/Step3Diagnosis";
@@ -23,6 +24,7 @@ export function A3Wizard() {
     projectId,
     isSaving,
     isLoading,
+    comments,
     setIsSaving,
     setProjectId,
     updateData,
@@ -445,6 +447,12 @@ export function A3Wizard() {
           }
         </p>
       </div>
+
+      {comments.length > 0 && (
+        <div className="mb-4">
+          <WizardFeedbackPanel comments={comments} />
+        </div>
+      )}
 
       <A3WizardProgress
         currentStep={currentStep}
