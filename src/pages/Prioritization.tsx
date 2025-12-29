@@ -70,6 +70,9 @@ const Prioritization = () => {
         category: project.category
       });
       setShowConvertDialog(true);
+    } else if (project.initiative_type === 'project' && project.status === 'draft') {
+      // Draft projects go directly to A3 wizard
+      navigate(`/projects/${project.id}/a3`);
     } else {
       navigate(`/projects/${project.id}`);
     }

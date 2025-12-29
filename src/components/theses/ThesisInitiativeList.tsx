@@ -77,7 +77,14 @@ export function ThesisInitiativeList({
               <Card 
                 key={initiative.id}
                 className="hover:shadow-sm transition-shadow cursor-pointer group"
-                onClick={() => navigate(`/projects/${initiative.id}`)}
+                onClick={() => {
+                  // Draft projects go directly to A3 wizard
+                  if (initiative.initiative_type === 'project' && initiative.status === 'draft') {
+                    navigate(`/projects/${initiative.id}/a3`);
+                  } else {
+                    navigate(`/projects/${initiative.id}`);
+                  }
+                }}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-4">
