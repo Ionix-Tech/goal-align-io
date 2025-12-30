@@ -1,4 +1,4 @@
-import { Building2, Users, FileText, TrendingUp, Factory, CheckCircle, Cog, Truck, ShoppingCart, Monitor, DollarSign } from 'lucide-react';
+import { Building2, Users, FileText, TrendingUp, Factory, Truck, Monitor, Brain, Lightbulb } from 'lucide-react';
 
 export const PROJECT_CATEGORIES = [
   { 
@@ -14,34 +14,16 @@ export const PROJECT_CATEGORIES = [
     colorClass: 'bg-purple-100 text-purple-700 border-purple-300'
   },
   { 
-    value: 'administrativo', 
-    label: 'Administrativo', 
+    value: 'administrativo_financas', 
+    label: 'Administrativo/Finanças', 
     icon: FileText,
     colorClass: 'bg-gray-100 text-gray-700 border-gray-300'
   },
   { 
-    value: 'comercial', 
-    label: 'Comercial', 
-    icon: TrendingUp,
-    colorClass: 'bg-blue-100 text-blue-700 border-blue-300'
-  },
-  { 
-    value: 'industrial', 
-    label: 'Industrial', 
+    value: 'operacoes', 
+    label: 'Operações', 
     icon: Factory,
     colorClass: 'bg-orange-100 text-orange-700 border-orange-300'
-  },
-  { 
-    value: 'qualidade', 
-    label: 'Qualidade', 
-    icon: CheckCircle,
-    colorClass: 'bg-green-100 text-green-700 border-green-300'
-  },
-  { 
-    value: 'engenharia', 
-    label: 'Engenharia', 
-    icon: Cog,
-    colorClass: 'bg-cyan-100 text-cyan-700 border-cyan-300'
   },
   { 
     value: 'logistica', 
@@ -50,21 +32,27 @@ export const PROJECT_CATEGORIES = [
     colorClass: 'bg-amber-100 text-amber-700 border-amber-300'
   },
   { 
-    value: 'compras', 
-    label: 'Compras', 
-    icon: ShoppingCart,
-    colorClass: 'bg-rose-100 text-rose-700 border-rose-300'
-  },
-  { 
     value: 'ti', 
-    label: 'TI', 
+    label: 'Tecnologia da Informação', 
     icon: Monitor,
     colorClass: 'bg-indigo-100 text-indigo-700 border-indigo-300'
   },
   { 
-    value: 'financeiro', 
-    label: 'Financeiro', 
-    icon: DollarSign,
+    value: 'comercial', 
+    label: 'Comercial', 
+    icon: TrendingUp,
+    colorClass: 'bg-blue-100 text-blue-700 border-blue-300'
+  },
+  { 
+    value: 'centro_inteligencia', 
+    label: 'Centro de Inteligência Freitas', 
+    icon: Brain,
+    colorClass: 'bg-cyan-100 text-cyan-700 border-cyan-300'
+  },
+  { 
+    value: 'business_design', 
+    label: 'Business Design', 
+    icon: Lightbulb,
     colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-300'
   },
 ] as const;
