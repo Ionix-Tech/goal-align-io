@@ -27,14 +27,38 @@ export function TaskManagementPanel({ projectId, milestones, indicators, members
   const [milestoneFilter, setMilestoneFilter] = useState<string>('all');
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          task.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-      const matchesMilestone = milestoneFilter === 'all' || task.milestone_id === milestoneFilter;
-      
-      return matchesSearch && matchesStatus && matchesMilestone;
-    });
+    return tasks
+      .filter((task) => {
+        const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+        const matchesMilestone = milestoneFilter === 'all' || task.milestone_id === milestoneFilter;
+        
+        return matchesSearch && matchesStatus && matchesMilestone;
+      })
+      .sort((a, b) => {
+        // 1. Tarefas concluídas vão para o final
+        if (a.status === 'completed' && b.status !== 'completed') return 1;
+        if (b.status === 'completed' && a.status !== 'completed') return -1;
+        
+        // 2. Tarefas bloqueadas têm prioridade alta (atenção necessária)
+        if (a.status === 'blocked' && b.status !== 'blocked') return -1;
+        if (b.status === 'blocked' && a.status !== 'blocked') return 1;
+        
+        // 3. Ordenar por prioridade (alta > média > baixa)
+        const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        const priorityDiff = (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1);
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        // 4. Ordenar por data de vencimento (mais próximas primeiro)
+        if (a.due_date && b.due_date) {
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+        }
+        if (a.due_date && !b.due_date) return -1;
+        if (!a.due_date && b.due_date) return 1;
+        
+        return 0;
+      });
   }, [tasks, searchQuery, statusFilter, milestoneFilter]);
 
   const stats = useMemo(() => {

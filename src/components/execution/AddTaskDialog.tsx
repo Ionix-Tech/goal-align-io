@@ -76,7 +76,20 @@ export function AddTaskDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      toast.error("Título é obrigatório");
+      return;
+    }
+
+    if (!assignedTo) {
+      toast.error("Selecione um responsável para a tarefa");
+      return;
+    }
+
+    if (!dueDate) {
+      toast.error("Selecione uma data de vencimento para a tarefa");
+      return;
+    }
     
     // Validação: data fim < data início
     if (startDate && dueDate && new Date(startDate) > new Date(dueDate)) {
@@ -220,10 +233,10 @@ export function AddTaskDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="assignedTo">Atribuir a</Label>
+            <Label htmlFor="assignedTo">Responsável *</Label>
             <Select value={assignedTo || undefined} onValueChange={setAssignedTo}>
               <SelectTrigger id="assignedTo">
-                <SelectValue placeholder="Não atribuído" />
+                <SelectValue placeholder="Selecione um responsável" />
               </SelectTrigger>
               <SelectContent>
                 {members.map((member) => (
@@ -246,7 +259,7 @@ export function AddTaskDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Data de Vencimento</Label>
+              <Label htmlFor="dueDate">Data de Vencimento *</Label>
               <Input
                 id="dueDate"
                 type="date"

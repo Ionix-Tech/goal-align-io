@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock, XCircle, Eye, PauseCircle, History, Calendar, Link2, ArrowRight } from 'lucide-react';
+import { CalendarDays, Flag, MoreVertical, CheckCircle2, Circle, Clock, XCircle, Eye, PauseCircle, History, Calendar, Link2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TaskStatusUpdateDialog } from './TaskStatusUpdateDialog';
@@ -42,11 +42,52 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const StatusIcon = status.icon;
 
+  const getDaysInfo = () => {
+    if (!task.due_date || task.status === 'completed') return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(task.due_date);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      const absDays = Math.abs(diffDays);
+      return { 
+        text: `${absDays} dia${absDays > 1 ? 's' : ''} de atraso`, 
+        className: 'text-red-500 font-medium',
+        icon: AlertCircle
+      };
+    } else if (diffDays === 0) {
+      return { 
+        text: 'Vence hoje!', 
+        className: 'text-amber-500 font-medium',
+        icon: Clock
+      };
+    } else if (diffDays <= 3) {
+      return { 
+        text: `${diffDays} dia${diffDays > 1 ? 's' : ''} restante${diffDays > 1 ? 's' : ''}`, 
+        className: 'text-amber-500',
+        icon: Clock
+      };
+    } else {
+      return { 
+        text: `${diffDays} dias restantes`, 
+        className: 'text-muted-foreground',
+        icon: null
+      };
+    }
+  };
+
+  const daysInfo = getDaysInfo();
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
 
   return (
     <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex gap-4">
+        {/* Lado Esquerdo - Conteúdo principal */}
         <div className="flex-1 space-y-3">
           <div className="flex items-start gap-3">
             <button
@@ -84,44 +125,63 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            {(task.start_date || task.due_date) && (
-              <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-500 font-medium' : ''}`}>
-                <CalendarDays className="h-4 w-4" />
-                {task.start_date && format(new Date(task.start_date), "dd/MM", { locale: ptBR })}
-                {task.start_date && task.due_date && <ArrowRight className="h-3 w-3" />}
-                {task.due_date && format(new Date(task.due_date), "dd/MM", { locale: ptBR })}
-                {isOverdue && ' (Atrasada)'}
-              </div>
-            )}
-            {task.assignee && (
-              <div className="flex items-center gap-2">
+          {task.link_url && (
+            <a 
+              href={task.link_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              <Link2 className="h-4 w-4" />
+              <span>Ver link</span>
+            </a>
+          )}
+        </div>
+
+        {/* Lado Direito - Destaque Responsável e Prazo */}
+        <div className="flex flex-col items-end justify-between border-l pl-4 min-w-[160px]">
+          {/* Responsável */}
+          {task.assignee && (
+            <div className="text-right">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                Responsável
+              </span>
+              <div className="flex items-center gap-2 mt-1 justify-end">
+                <span className="text-sm font-medium">{task.assignee.full_name}</span>
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={task.assignee.avatar_url || undefined} />
                   <AvatarFallback className="text-xs">
                     {task.assignee.full_name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm">{task.assignee.full_name}</span>
               </div>
-            )}
-            {task.link_url && (
-              <a 
-                href={task.link_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-primary hover:underline"
-              >
-                <Link2 className="h-4 w-4" />
-                <span className="truncate max-w-[100px]">Link</span>
-              </a>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Prazo */}
+          {task.due_date && (
+            <div className="text-right mt-4">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                Prazo
+              </span>
+              <div className={`text-sm font-medium mt-1 flex items-center justify-end gap-1 ${isOverdue ? 'text-red-500' : ''}`}>
+                <CalendarDays className="h-4 w-4" />
+                {format(new Date(task.due_date), "dd/MM/yyyy", { locale: ptBR })}
+              </div>
+              {daysInfo && (
+                <div className={`text-xs mt-1 flex items-center justify-end gap-1 ${daysInfo.className}`}>
+                  {daysInfo.icon && <daysInfo.icon className="h-3 w-3" />}
+                  {daysInfo.text}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
+        {/* Menu de ações */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
