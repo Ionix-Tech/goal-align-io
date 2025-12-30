@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Heart, Brain, Zap } from "lucide-react";
 import { useTheses, useUpdateThesis, useDeleteThesis, type Thesis } from "@/hooks/useTheses";
+import { usePillars } from "@/hooks/usePillars";
 import { ThesisCard } from "@/components/theses/ThesisCard";
 import { CreateThesisDialog } from "@/components/theses/CreateThesisDialog";
 import { EditThesisDialog } from "@/components/theses/EditThesisDialog";
@@ -21,6 +22,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const PILLAR_ICONS: Record<string, React.ReactNode> = {
+  corpo: <Zap className="h-5 w-5 text-green-600" />,
+  alma: <Heart className="h-5 w-5 text-rose-600" />,
+  mente: <Brain className="h-5 w-5 text-violet-600" />,
+};
+
+const PILLAR_COLORS: Record<string, string> = {
+  corpo: "border-green-200 bg-green-50/50",
+  alma: "border-rose-200 bg-rose-50/50",
+  mente: "border-violet-200 bg-violet-50/50",
+};
+
 export default function Theses() {
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -36,6 +49,7 @@ export default function Theses() {
   const { data: theses, isLoading } = useTheses({ 
     year: selectedYear
   });
+  const { data: pillars = [], isLoading: pillarsLoading } = usePillars();
   const updateThesis = useUpdateThesis();
   const deleteThesis = useDeleteThesis();
 
@@ -87,7 +101,16 @@ export default function Theses() {
     setSelectedThesis(null);
   };
 
-  if (isLoading || roleLoading) {
+  // Group theses by pillar
+  const thesesByPillar = pillars.map(pillar => ({
+    pillar,
+    theses: (theses || []).filter(t => (t as any).pillar_id === pillar.id)
+  }));
+
+  // Also get unlinked theses (those without pillar_id)
+  const unlinkedTheses = (theses || []).filter(t => !(t as any).pillar_id);
+
+  if (isLoading || roleLoading || pillarsLoading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="space-y-2">
@@ -137,8 +160,64 @@ export default function Theses() {
         </Select>
       </div>
 
-      {/* Lista de Objetivos */}
-      {!theses || theses.length === 0 ? (
+      {/* Objetivos agrupados por Pilar */}
+      {thesesByPillar.map(({ pillar, theses: pillarTheses }) => (
+        <div key={pillar.id} className={`rounded-lg border p-4 ${PILLAR_COLORS[pillar.pillar_type]}`}>
+          <div className="flex items-center gap-2 mb-4">
+            {PILLAR_ICONS[pillar.pillar_type]}
+            <h2 className="text-lg font-semibold">{pillar.name}</h2>
+            <span className="text-sm text-muted-foreground">
+              ({pillarTheses.length} objetivo{pillarTheses.length !== 1 ? 's' : ''})
+            </span>
+          </div>
+          
+          {pillarTheses.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              Nenhum objetivo para este pilar em {selectedYear}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {pillarTheses.map((thesis) => (
+                <ThesisCard
+                  key={thesis.id}
+                  thesis={thesis}
+                  onClick={(t) => navigate(`/theses/${t.id}`)}
+                  onEdit={canManageTheses ? () => handleEdit(thesis) : undefined}
+                  onArchive={canManageTheses ? () => handleArchiveClick(thesis) : undefined}
+                  onDelete={canManageTheses ? () => handleDeleteClick(thesis) : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Objetivos sem pilar (legado) */}
+      {unlinkedTheses.length > 0 && (
+        <div className="rounded-lg border p-4 bg-muted/30">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-muted-foreground">Sem Pilar Vinculado</h2>
+            <span className="text-sm text-muted-foreground">
+              ({unlinkedTheses.length} objetivo{unlinkedTheses.length !== 1 ? 's' : ''})
+            </span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {unlinkedTheses.map((thesis) => (
+              <ThesisCard
+                key={thesis.id}
+                thesis={thesis}
+                onClick={(t) => navigate(`/theses/${t.id}`)}
+                onEdit={canManageTheses ? () => handleEdit(thesis) : undefined}
+                onArchive={canManageTheses ? () => handleArchiveClick(thesis) : undefined}
+                onDelete={canManageTheses ? () => handleDeleteClick(thesis) : undefined}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {(!theses || theses.length === 0) && (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
           <div className="text-muted-foreground mb-4">
             Nenhum objetivo estratégico encontrado para {selectedYear}
@@ -149,19 +228,6 @@ export default function Theses() {
               Criar Primeiro Objetivo
             </Button>
           )}
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {theses.map((thesis) => (
-            <ThesisCard
-              key={thesis.id}
-              thesis={thesis}
-              onClick={(t) => navigate(`/theses/${t.id}`)}
-              onEdit={canManageTheses ? () => handleEdit(thesis) : undefined}
-              onArchive={canManageTheses ? () => handleArchiveClick(thesis) : undefined}
-              onDelete={canManageTheses ? () => handleDeleteClick(thesis) : undefined}
-            />
-          ))}
         </div>
       )}
 

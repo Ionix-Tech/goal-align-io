@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateThesis } from "@/hooks/useTheses";
 import { useCreateThesisKPI } from "@/hooks/useThesisKPIs";
+import { usePillars } from "@/hooks/usePillars";
 import { THESIS_TEMPLATES } from "@/config/thesisTemplates";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Brain, Zap } from "lucide-react";
 
 interface CreateThesisDialogProps {
   open: boolean;
@@ -21,8 +22,15 @@ interface KPIFormData {
   unit: string;
 }
 
+const PILLAR_ICONS: Record<string, React.ReactNode> = {
+  corpo: <Zap className="h-4 w-4 text-green-600" />,
+  alma: <Heart className="h-4 w-4 text-rose-600" />,
+  mente: <Brain className="h-4 w-4 text-violet-600" />,
+};
+
 export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogProps) {
   const [step, setStep] = useState(1);
+  const { data: pillars = [] } = usePillars();
   const [formData, setFormData] = useState<{
     name: string;
     description: string;
@@ -31,6 +39,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
     period_start: string;
     period_end: string;
     thesis_type: "operational_efficiency" | "sales_expansion" | "new_business" | "custom";
+    pillar_id: string;
     is_active: boolean;
     is_archived: boolean;
   }>(() => {
@@ -42,7 +51,8 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
       year: nextYear,
       period_start: `${nextYear}-01-01`,
       period_end: `${nextYear}-12-31`,
-      thesis_type: "operational_efficiency",
+      thesis_type: "custom",
+      pillar_id: "",
       is_active: true,
       is_archived: false
     };
@@ -90,7 +100,8 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
         year: nextYear,
         period_start: `${nextYear}-01-01`,
         period_end: `${nextYear}-12-31`,
-        thesis_type: "operational_efficiency",
+        thesis_type: "custom",
+        pillar_id: "",
         is_active: true,
         is_archived: false
       });
@@ -136,12 +147,34 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
           {step === 1 && (
             <div className="space-y-4">
               <div>
+                <Label htmlFor="pillar_id">Pilar Estratégico *</Label>
+                <Select
+                  value={formData.pillar_id}
+                  onValueChange={(value) => setFormData({ ...formData, pillar_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o pilar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pillars.map((pillar) => (
+                      <SelectItem key={pillar.id} value={pillar.id}>
+                        <div className="flex items-center gap-2">
+                          {PILLAR_ICONS[pillar.pillar_type]}
+                          {pillar.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="name">Nome do Objetivo *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Eficiência Operacional 2026"
+                  placeholder="Ex: Aumentar Eficiência Operacional"
                 />
               </div>
 
@@ -338,7 +371,7 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
           ) : (
             <Button 
               onClick={handleSubmit}
-              disabled={createThesis.isPending || !formData.name || !formData.objective}
+              disabled={createThesis.isPending || !formData.name || !formData.objective || !formData.pillar_id}
             >
               Criar Objetivo
             </Button>

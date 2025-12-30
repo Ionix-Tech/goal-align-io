@@ -282,6 +282,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           category: project.category || "",
           assignedTo: project.assigned_to || "",
           members: [],
+          pillarId: "", // Will be populated from thesis relation if needed
           thesisId: project.thesis_id || "",
           requirements: (requirements || []).map(r => ({
             code: r.code,

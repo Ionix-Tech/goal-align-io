@@ -3,21 +3,36 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { A3WizardData } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { useTheses } from "@/hooks/useTheses";
+import { usePillars, useThesesByPillar } from "@/hooks/usePillars";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { PROJECT_CATEGORIES } from "@/config/categories";
 import { ComboboxWithCustom } from "@/components/ui/combobox-with-custom";
+import { Heart, Brain, Zap, X } from "lucide-react";
 
 interface Step1ContextProps {
   data: A3WizardData;
   updateData: (updates: Partial<A3WizardData>) => void;
 }
 
+const PILLAR_ICONS: Record<string, React.ReactNode> = {
+  corpo: <Zap className="h-4 w-4 text-green-600" />,
+  alma: <Heart className="h-4 w-4 text-rose-600" />,
+  mente: <Brain className="h-4 w-4 text-violet-600" />,
+};
+
+const PILLAR_COLORS: Record<string, string> = {
+  corpo: "border-green-300 bg-green-50 text-green-700",
+  alma: "border-rose-300 bg-rose-50 text-rose-700",
+  mente: "border-violet-300 bg-violet-50 text-violet-700",
+};
+
 export function Step1Context({ data, updateData }: Step1ContextProps) {
   const { data: teamMembers = [] } = useTeamMembers();
-  const { data: theses = [] } = useTheses({ includeArchived: false });
+  const { data: pillars = [] } = usePillars();
+  const { data: objectives = [] } = useThesesByPillar(data.pillarId || undefined);
   const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
 
   const kpiOptions = thesisDetails?.kpis?.map(kpi => ({
@@ -25,12 +40,36 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
     label: kpi.unit ? `${kpi.name} (${kpi.unit})` : kpi.name
   })) || [];
 
-  const handleThesisChange = (value: string) => {
+  const handlePillarChange = (value: string) => {
     updateData({ 
-      thesisId: value,
-      strategicIndicator: "" // Clear indicator when thesis changes
+      pillarId: value,
+      thesisId: "", // Clear objective when pillar changes
+      strategicIndicator: "" // Clear indicator when pillar changes
     });
   };
+
+  const handleObjectiveChange = (value: string) => {
+    updateData({ 
+      thesisId: value,
+      strategicIndicator: "" // Clear indicator when objective changes
+    });
+  };
+
+  const handleAddMember = (memberId: string) => {
+    if (!data.members.includes(memberId)) {
+      updateData({ members: [...data.members, memberId] });
+    }
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    updateData({ members: data.members.filter(id => id !== memberId) });
+  };
+
+  const availableMembers = teamMembers.filter(
+    member => member.id !== data.assignedTo && !data.members.includes(member.id)
+  );
+
+  const selectedMembers = teamMembers.filter(member => data.members.includes(member.id));
 
   return (
     <div className="space-y-6">
@@ -68,28 +107,56 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="thesis">Tese Estratégica (OKR)</Label>
-              <Select
-                value={data.thesisId}
-                onValueChange={handleThesisChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a tese..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {theses.map((thesis) => (
-                    <SelectItem key={thesis.id} value={thesis.id}>
-                      {thesis.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Vinculação Estratégica */}
+          <div className="rounded-lg border p-4 space-y-4 bg-muted/30">
+            <h4 className="font-medium text-sm">Vinculação Estratégica</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pillar">Pilar (CMA)</Label>
+                <Select
+                  value={data.pillarId}
+                  onValueChange={handlePillarChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o pilar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pillars.map((pillar) => (
+                      <SelectItem key={pillar.id} value={pillar.id}>
+                        <div className="flex items-center gap-2">
+                          {PILLAR_ICONS[pillar.pillar_type]}
+                          {pillar.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="objective-select">Objetivo</Label>
+                <Select
+                  value={data.thesisId}
+                  onValueChange={handleObjectiveChange}
+                  disabled={!data.pillarId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={data.pillarId ? "Selecione o objetivo..." : "Selecione um pilar primeiro"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {objectives.map((obj) => (
+                      <SelectItem key={obj.id} value={obj.id}>
+                        {obj.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="strategic-indicator">Indicador Macro Impactado</Label>
+              <Label htmlFor="strategic-indicator">Principal Indicador (KR) Estratégico Impactado</Label>
               {data.thesisId && kpiOptions.length > 0 ? (
                 <ComboboxWithCustom
                   options={kpiOptions}
@@ -104,7 +171,8 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
                   id="strategic-indicator"
                   value={data.strategicIndicator}
                   onChange={(e) => updateData({ strategicIndicator: e.target.value })}
-                  placeholder="Ex: OEE, Custo de Qualidade..."
+                  placeholder={data.thesisId ? "Ex: OEE, Custo de Qualidade..." : "Selecione um objetivo primeiro"}
+                  disabled={!data.thesisId}
                 />
               )}
             </div>
@@ -120,7 +188,7 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a área..." />
                 </SelectTrigger>
-              <SelectContent>
+                <SelectContent>
                   {PROJECT_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
@@ -149,6 +217,43 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
               </Select>
             </div>
           </div>
+
+          {/* Membros do Time */}
+          <div className="space-y-2">
+            <Label>Membros do Time (opcional)</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedMembers.map((member) => (
+                <Badge
+                  key={member.id}
+                  variant="secondary"
+                  className="flex items-center gap-1 pr-1"
+                >
+                  {member.full_name}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveMember(member.id)}
+                    className="ml-1 rounded-full hover:bg-muted p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            {availableMembers.length > 0 && (
+              <Select onValueChange={handleAddMember}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Adicionar membro..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -157,7 +262,7 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
           💡 Dica
         </h4>
         <p className="text-sm text-muted-foreground">
-          Certifique-se de vincular o projeto a uma Tese Estratégica. Isso garante alinhamento com os OKRs da empresa e facilita o acompanhamento de resultados.
+          Certifique-se de vincular o projeto a um Pilar e Objetivo Estratégico. Isso garante alinhamento com os OKRs da empresa e facilita o acompanhamento de resultados.
         </p>
       </div>
     </div>
