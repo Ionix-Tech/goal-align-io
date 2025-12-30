@@ -160,12 +160,12 @@ const ProjectExecution = () => {
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
             <TabsTrigger value="thesis">📄 Detalhamento</TabsTrigger>
+            <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
             <TabsTrigger value="visualization">
               <LayoutGrid className="h-4 w-4 mr-1" />
               Visualização
             </TabsTrigger>
-            <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atividades</TabsTrigger>
           </TabsList>
 
