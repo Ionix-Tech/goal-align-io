@@ -14,6 +14,7 @@ export interface Thesis {
   period_start: string;
   period_end: string;
   thesis_type: ThesisType;
+  pillar_id: string | null;
   is_active: boolean;
   is_archived: boolean;
   created_by: string;

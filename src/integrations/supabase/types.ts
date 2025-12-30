@@ -1541,6 +1541,17 @@ export type Database = {
         | "customer"
         | "market"
         | "culture_team"
+        | "diretoria"
+        | "gestao_pessoas"
+        | "administrativo"
+        | "comercial"
+        | "industrial"
+        | "qualidade"
+        | "engenharia"
+        | "logistica"
+        | "compras"
+        | "ti"
+        | "financeiro"
       project_status:
         | "idea"
         | "draft"
@@ -1694,6 +1705,17 @@ export const Constants = {
         "customer",
         "market",
         "culture_team",
+        "diretoria",
+        "gestao_pessoas",
+        "administrativo",
+        "comercial",
+        "industrial",
+        "qualidade",
+        "engenharia",
+        "logistica",
+        "compras",
+        "ti",
+        "financeiro",
       ],
       project_status: [
         "idea",

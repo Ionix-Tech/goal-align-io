@@ -13,6 +13,7 @@ import { useThesisDetails, type ThesisKPI } from "@/hooks/useThesisDetails";
 import { useThesisProjects } from "@/hooks/useThesisProjects";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDeleteThesisKPI } from "@/hooks/useThesisKPIs";
+import { usePillars } from "@/hooks/usePillars";
 import { ThesisInitiativeList } from "@/components/theses/ThesisInitiativeList";
 import { EditThesisDialog } from "@/components/theses/EditThesisDialog";
 import { LinkInitiativeToThesisDialog } from "@/components/theses/LinkInitiativeToThesisDialog";
@@ -34,19 +35,19 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// Configuração visual baseada no nome do objetivo
-const THESIS_VISUAL_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-  ALMA: { 
+// Configuração visual baseada no tipo de pilar
+const PILLAR_VISUAL_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  alma: { 
     icon: <Heart className="h-8 w-8" />, 
     color: "#e11d48", // rose-600
     label: "Engajamento" 
   },
-  MENTE: { 
+  mente: { 
     icon: <Brain className="h-8 w-8" />, 
     color: "#7c3aed", // violet-600
     label: "Experiência" 
   },
-  CORPO: { 
+  corpo: { 
     icon: <Zap className="h-8 w-8" />, 
     color: "#16a34a", // green-600
     label: "Resultado" 
@@ -78,6 +79,7 @@ export default function ThesisDetail() {
   
   const { data: thesis, isLoading: thesisLoading } = useThesisDetails(id);
   const { data: initiatives, isLoading: initiativesLoading } = useThesisProjects(id);
+  const { data: pillars = [] } = usePillars();
 
   const canManage = role === "ceo" || role === "pmo_manager";
 
@@ -131,15 +133,22 @@ export default function ThesisDetail() {
     setMeasurementKPI(kpi);
     setHistoryDialogOpen(true);
   };
+
+  // Get pillar info for the thesis
+  const pillar = pillars.find(p => p.id === (thesis as any)?.pillar_id);
   
-  // Configuração visual baseada no nome
-  const config = thesis 
-    ? THESIS_VISUAL_CONFIG[thesis.name.toUpperCase()] || { 
+  // Configuração visual baseada no pilar
+  const config = pillar 
+    ? PILLAR_VISUAL_CONFIG[pillar.pillar_type] || { 
         icon: <Zap className="h-8 w-8" />, 
         color: "#6b7280", 
         label: "Objetivo" 
       }
-    : null;
+    : { 
+        icon: <Zap className="h-8 w-8" />, 
+        color: "#6b7280", 
+        label: "Objetivo" 
+      };
 
   if (thesisLoading || initiativesLoading) {
     return (
@@ -195,15 +204,17 @@ export default function ThesisDetail() {
             <span style={{ color: config?.color }}>{config?.icon}</span>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <Badge 
-                  variant="outline" 
-                  style={{ 
-                    borderColor: config?.color,
-                    color: config?.color
-                  }}
-                >
-                  {config?.label}
-                </Badge>
+                {pillar && (
+                  <Badge 
+                    variant="outline" 
+                    style={{ 
+                      borderColor: config?.color,
+                      color: config?.color
+                    }}
+                  >
+                    {pillar.name}
+                  </Badge>
+                )}
                 {thesis.is_archived && (
                   <Badge variant="secondary">Arquivada</Badge>
                 )}
