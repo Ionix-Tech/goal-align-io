@@ -1591,6 +1591,10 @@ export type Database = {
         | "compras"
         | "ti"
         | "financeiro"
+        | "administrativo_financas"
+        | "operacoes"
+        | "centro_inteligencia"
+        | "business_design"
       project_status:
         | "idea"
         | "draft"
@@ -1755,6 +1759,10 @@ export const Constants = {
         "compras",
         "ti",
         "financeiro",
+        "administrativo_financas",
+        "operacoes",
+        "centro_inteligencia",
+        "business_design",
       ],
       project_status: [
         "idea",
