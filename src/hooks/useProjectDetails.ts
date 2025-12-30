@@ -28,6 +28,8 @@ export interface ProjectDetails {
   approved_at: string | null;
   approved_by: string | null;
   source_idea_id: string | null;
+  current_situation_description: string | null;
+  target_situation_description: string | null;
   source_idea?: {
     id: string;
     name: string;

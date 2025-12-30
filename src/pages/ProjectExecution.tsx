@@ -324,9 +324,10 @@ const ProjectExecution = () => {
                 <div>
                   <span className="text-sm text-muted-foreground">Situação Atual:</span>
                   <p className="text-sm whitespace-pre-wrap mt-1">
-                    {situations && situations.length > 0 
-                      ? situations.map(s => s.current_problem).join('\n\n')
-                      : 'Não descrita'}
+                    {project.current_situation_description 
+                      || (situations && situations.length > 0 
+                          ? situations.map(s => s.current_problem).join('\n\n')
+                          : 'Não descrita')}
                   </p>
                 </div>
                 {project.attachments && project.attachments.length > 0 && (
@@ -350,9 +351,10 @@ const ProjectExecution = () => {
                 <div>
                   <span className="text-sm text-muted-foreground">Situação Alvo:</span>
                   <p className="text-sm whitespace-pre-wrap mt-1">
-                    {situations && situations.length > 0 
-                      ? situations.map(s => s.target_goal).join('\n\n')
-                      : 'Não descrita'}
+                    {project.target_situation_description 
+                      || (situations && situations.length > 0 
+                          ? situations.map(s => s.target_goal).join('\n\n')
+                          : 'Não descrita')}
                   </p>
                 </div>
                 {project.indicators.length > 0 && (
