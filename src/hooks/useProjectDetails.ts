@@ -95,6 +95,18 @@ export interface ProjectDetails {
     email: string;
     avatar_url: string | null;
   } | null;
+  tasks?: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    due_date: string | null;
+    assigned_to: string | null;
+    assigned_to_name?: string;
+  }>;
+  attachments?: Array<{
+    id: string;
+    file_name: string;
+  }>;
 }
 
 export function useProjectDetails(projectId: string | null) {
@@ -127,7 +139,9 @@ export function useProjectDetails(projectId: string | null) {
         { data: assignee },
         { data: sourceIdea },
         { data: thesisData },
-        { data: thesisKPIs }
+        { data: thesisKPIs },
+        { data: tasks },
+        { data: attachments }
       ] = await Promise.all([
         supabase.from('project_indicators').select('*').eq('project_id', projectId),
         supabase.from('project_milestones').select('*').eq('project_id', projectId),
@@ -154,7 +168,16 @@ export function useProjectDetails(projectId: string | null) {
           : Promise.resolve({ data: null }),
         projectData.thesis_id
           ? supabase.from('thesis_kpis').select('id, name, current_value, target_value, unit').eq('thesis_id', projectData.thesis_id)
-          : Promise.resolve({ data: null })
+          : Promise.resolve({ data: null }),
+        supabase
+          .from('project_tasks')
+          .select('id, title, description, due_date, assigned_to, profiles:assigned_to(full_name)')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('project_attachments')
+          .select('id, file_name')
+          .eq('project_id', projectId)
       ]);
 
       // Encontrar o KPI vinculado ao projeto pelo strategic_indicator
@@ -282,7 +305,16 @@ export function useProjectDetails(projectId: string | null) {
           user: c.profiles
         })),
         creator,
-        assignee
+        assignee,
+        tasks: (tasks || []).map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description,
+          due_date: t.due_date,
+          assigned_to: t.assigned_to,
+          assigned_to_name: t.profiles?.full_name || null
+        })),
+        attachments: attachments || []
       };
 
       console.log('[useProjectDetails] Project data:', data);
