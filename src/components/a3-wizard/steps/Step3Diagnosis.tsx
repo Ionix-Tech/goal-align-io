@@ -2,7 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { A3WizardData } from "@/hooks/useA3WizardState";
-import { Upload, FileText, FileSpreadsheet, File, X, ZoomIn } from "lucide-react";
+import { Upload, FileText, FileSpreadsheet, File, X, ZoomIn, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -55,7 +55,7 @@ function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void
       >
         <FileText className="w-6 h-6 text-red-500" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded transition-opacity flex items-center justify-center">
-          <ZoomIn className="w-4 h-4 text-white" />
+          <ExternalLink className="w-4 h-4 text-white" />
         </div>
       </div>
     );
@@ -75,7 +75,7 @@ interface Step3DiagnosisProps {
 
 export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [previewFile, setPreviewFile] = useState<{ url: string; name: string; type: 'image' | 'pdf' } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -90,13 +90,17 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type.includes('pdf');
     
-    if (isImage || isPdf) {
+    if (isPdf) {
+      // Abrir PDF em nova aba - funciona em todos os navegadores
       const url = URL.createObjectURL(file);
-      setPreviewFile({ 
-        url, 
-        name: file.name, 
-        type: isPdf ? 'pdf' : 'image' 
-      });
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return;
+    }
+    
+    if (isImage) {
+      const url = URL.createObjectURL(file);
+      setPreviewFile({ url, name: file.name });
     }
   };
 
@@ -195,19 +199,11 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
             <DialogTitle>{previewFile?.name}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center">
-            {previewFile?.type === 'image' ? (
-              <img 
-                src={previewFile.url} 
-                alt={previewFile.name}
-                className="max-w-full max-h-[70vh] object-contain rounded-lg"
-              />
-            ) : previewFile?.type === 'pdf' ? (
-              <iframe
-                src={previewFile.url}
-                title={previewFile.name}
-                className="w-full h-[70vh] rounded-lg border"
-              />
-            ) : null}
+            <img 
+              src={previewFile?.url} 
+              alt={previewFile?.name}
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+            />
           </div>
         </DialogContent>
       </Dialog>
