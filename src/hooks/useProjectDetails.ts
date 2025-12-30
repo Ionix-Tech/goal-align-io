@@ -65,6 +65,10 @@ export interface ProjectDetails {
     completed_at: string | null;
     progress: number;
     milestone_type?: 'decolagem' | 'voo' | 'escala' | null;
+    taskStats?: {
+      total: number;
+      completed: number;
+    };
   }>;
   members: Array<{
     id: string;
@@ -104,6 +108,8 @@ export interface ProjectDetails {
     due_date: string | null;
     assigned_to: string | null;
     assigned_to_name?: string;
+    status: string;
+    milestone_id: string | null;
   }>;
   attachments?: Array<{
     id: string;
@@ -173,7 +179,7 @@ export function useProjectDetails(projectId: string | null) {
           : Promise.resolve({ data: null }),
         supabase
           .from('project_tasks')
-          .select('id, title, description, due_date, assigned_to, profiles:assigned_to(full_name)')
+          .select('id, title, description, due_date, assigned_to, status, milestone_id, profiles:assigned_to(full_name)')
           .eq('project_id', projectId)
           .order('created_at', { ascending: true }),
         supabase
@@ -279,6 +285,19 @@ export function useProjectDetails(projectId: string | null) {
       // Normalize initiative_type (action_plan -> project)
       const normalizedType = projectData.initiative_type === 'action_plan' ? 'project' : projectData.initiative_type;
 
+      // Calcular estatísticas de tarefas por milestone para progresso automático
+      const taskStatsByMilestone = new Map<string, { total: number; completed: number }>();
+      (tasks || []).forEach((task: any) => {
+        if (task.milestone_id) {
+          const current = taskStatsByMilestone.get(task.milestone_id) || { total: 0, completed: 0 };
+          current.total++;
+          if (task.status === 'completed') {
+            current.completed++;
+          }
+          taskStatsByMilestone.set(task.milestone_id, current);
+        }
+      });
+
       // Montar o objeto final
       const data = {
         ...projectData,
@@ -292,10 +311,18 @@ export function useProjectDetails(projectId: string | null) {
           trend: indicatorTrendMap.get(ind.id) || undefined,
           lastUpdate: indicatorLastUpdateMap.get(ind.id) || null
         })),
-        milestones: (milestones || []).map((m: any) => ({
-          ...m,
-          progress: milestoneProgressMap.get(m.id) || 0
-        })),
+        milestones: (milestones || []).map((m: any) => {
+          const taskStats = taskStatsByMilestone.get(m.id) || { total: 0, completed: 0 };
+          // Progresso automático: % de tarefas concluídas (se tiver tarefas vinculadas)
+          const autoProgress = taskStats.total > 0 
+            ? Math.round((taskStats.completed / taskStats.total) * 100)
+            : 0;
+          return {
+            ...m,
+            progress: autoProgress,
+            taskStats
+          };
+        }),
         members: (members || []).map((m: any) => ({
           id: m.id,
           user: m.profiles
@@ -314,7 +341,9 @@ export function useProjectDetails(projectId: string | null) {
           description: t.description,
           due_date: t.due_date,
           assigned_to: t.assigned_to,
-          assigned_to_name: t.profiles?.full_name || null
+          assigned_to_name: t.profiles?.full_name || null,
+          status: t.status,
+          milestone_id: t.milestone_id
         })),
         attachments: attachments || []
       };
