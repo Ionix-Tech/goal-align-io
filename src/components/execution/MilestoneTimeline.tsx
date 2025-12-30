@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, Plus, Calendar, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Calendar, Trash2, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { EditMilestoneDateDialog } from "./EditMilestoneDateDialog";
 
 interface Milestone {
   id: string;
@@ -49,6 +50,7 @@ export function MilestoneTimeline({
 }: MilestoneTimelineProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(null);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
 
   const handleDeleteClick = (milestoneId: string) => {
     setMilestoneToDelete(milestoneId);
@@ -147,6 +149,14 @@ export function MilestoneTimeline({
                         <span className="font-medium">
                           {format(new Date(milestone.target_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                         </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => setEditingMilestone(milestone)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
                         {isCompleted && milestone.completed_at && (
                           <>
                             <span className="mx-2">•</span>
@@ -241,6 +251,13 @@ export function MilestoneTimeline({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Date Dialog */}
+      <EditMilestoneDateDialog
+        open={!!editingMilestone}
+        onOpenChange={(open) => !open && setEditingMilestone(null)}
+        milestone={editingMilestone}
+      />
     </>
   );
 }
