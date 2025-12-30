@@ -27,13 +27,13 @@ interface ProjectCoverSectionProps {
     name: string;
     objective: string;
   } | null;
-  thesisKPIs?: Array<{
+  linkedKPI?: {
     id: string;
     name: string;
     current_value: number | null;
     target_value: number;
     unit: string | null;
-  }>;
+  } | null;
   onAddRequirement?: () => void;
   onEditRequirements?: () => void;
 }
@@ -43,7 +43,7 @@ export function ProjectCoverSection({
   requirements, 
   situations,
   thesis,
-  thesisKPIs,
+  linkedKPI,
   onAddRequirement,
   onEditRequirements
 }: ProjectCoverSectionProps) {
@@ -160,7 +160,42 @@ export function ProjectCoverSection({
               </div>
             )}
             
-            {project.strategic_indicator && (
+            {project.strategic_indicator && linkedKPI && (
+              <>
+                {thesis && <Separator />}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <BarChart3 className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Indicador Macro Vinculado</span>
+                  </div>
+                  <div className="bg-muted/50 rounded-md p-3">
+                    <p className="text-sm font-medium mb-2">{linkedKPI.name}</p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        Atual: {linkedKPI.current_value ?? '—'} {linkedKPI.unit}
+                      </span>
+                      <span className="text-xs text-muted-foreground">|</span>
+                      <span className="text-xs text-muted-foreground">
+                        Meta: {linkedKPI.target_value} {linkedKPI.unit}
+                      </span>
+                    </div>
+                    {(() => {
+                      const progress = linkedKPI.current_value && linkedKPI.target_value 
+                        ? Math.min(100, (linkedKPI.current_value / linkedKPI.target_value) * 100)
+                        : 0;
+                      return (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Progress value={progress} className="flex-1 h-2" />
+                          <span className="text-xs font-medium w-10 text-right">{Math.round(progress)}%</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {project.strategic_indicator && !linkedKPI && (
               <>
                 {thesis && <Separator />}
                 <div>
@@ -169,31 +204,6 @@ export function ProjectCoverSection({
                     <span className="text-xs font-medium text-muted-foreground">Indicador Macro</span>
                   </div>
                   <p className="text-sm">{project.strategic_indicator}</p>
-                </div>
-              </>
-            )}
-
-            {thesisKPIs && thesisKPIs.length > 0 && (
-              <>
-                <Separator />
-                <div>
-                  <span className="text-xs font-medium text-muted-foreground mb-2 block">KPIs da Tese</span>
-                  <div className="space-y-2">
-                    {thesisKPIs.map(kpi => {
-                      const progress = kpi.current_value && kpi.target_value 
-                        ? Math.min(100, (kpi.current_value / kpi.target_value) * 100)
-                        : 0;
-                      return (
-                        <div key={kpi.id} className="flex items-center gap-3">
-                          <span className="text-xs flex-1">{kpi.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {kpi.current_value ?? '—'} / {kpi.target_value} {kpi.unit}
-                          </span>
-                          <Progress value={progress} className="w-16 h-1.5" />
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
               </>
             )}

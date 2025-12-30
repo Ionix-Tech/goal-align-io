@@ -181,6 +181,8 @@ const ProjectExecution = () => {
                 project={project}
                 requirements={requirements || []}
                 situations={situations || []}
+                thesis={project.thesis}
+                linkedKPI={project.linkedKPI}
                 onAddRequirement={() => setShowAddRequirementDialog(true)}
                 onEditRequirements={() => setShowEditRequirementsDialog(true)}
               />
