@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { A3Attachment } from "@/hooks/useA3ReviewData";
 import { Search, FileIcon, ExternalLink, Image, FileText } from "lucide-react";
@@ -19,6 +20,44 @@ const formatFileSize = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
+
+function AttachmentThumbnail({ attachment }: { attachment: A3Attachment }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const isImage = attachment.file_type.startsWith('image/');
+
+  useEffect(() => {
+    if (!isImage) return;
+    
+    const fetchImageUrl = async () => {
+      const { data } = await supabase.storage
+        .from('project-attachments')
+        .createSignedUrl(attachment.file_path, 3600);
+      if (data?.signedUrl) {
+        setImageUrl(data.signedUrl);
+      }
+    };
+    
+    fetchImageUrl();
+  }, [attachment.file_path, isImage]);
+
+  if (isImage && imageUrl) {
+    return (
+      <div className="w-12 h-12 rounded overflow-hidden bg-muted flex-shrink-0">
+        <img 
+          src={imageUrl} 
+          alt={attachment.file_name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center flex-shrink-0 text-muted-foreground">
+      {getFileIcon(attachment.file_type)}
+    </div>
+  );
+}
 
 export function A3DiagnosisSection({ description, attachments }: A3DiagnosisSectionProps) {
   const handleDownload = async (attachment: A3Attachment) => {
@@ -72,9 +111,7 @@ export function A3DiagnosisSection({ description, attachments }: A3DiagnosisSect
                     key={att.id}
                     className="flex items-center gap-3 p-3 border rounded-lg bg-background hover:bg-muted/30 transition-colors"
                   >
-                    <div className="text-muted-foreground">
-                      {getFileIcon(att.file_type)}
-                    </div>
+                    <AttachmentThumbnail attachment={att} />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate text-sm">{att.file_name}</p>
                       <p className="text-xs text-muted-foreground">
