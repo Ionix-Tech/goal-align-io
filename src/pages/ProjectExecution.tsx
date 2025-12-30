@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useRequirements } from "@/hooks/useRequirements";
+import { useDeleteMilestone } from "@/hooks/useMilestones";
 import { HealthStatusBadge } from "@/components/management/HealthStatusBadge";
 import { MilestoneTimeline } from "@/components/execution/MilestoneTimeline";
 import { MilestoneTracker } from "@/components/execution/MilestoneTracker";
@@ -47,6 +48,7 @@ const ProjectExecution = () => {
   const { data: situations } = useProjectSituations(projectId || null);
   const { data: requirements } = useRequirements(projectId || null);
   const { data: reportData } = useA3ReportData(projectId || null);
+  const deleteMilestone = useDeleteMilestone();
   const [activeTab, setActiveTab] = useState("overview");
 
   // Dialog states
@@ -579,6 +581,9 @@ const ProjectExecution = () => {
                     setSelectedMilestone({ id: milestone.id, title: milestone.title, progress: milestone.progress || 0 });
                     setShowMilestoneDateHistoryDialog(true);
                   }
+                }}
+                onDeleteMilestone={(milestoneId) => {
+                  deleteMilestone.mutate({ milestoneId, projectId: project.id });
                 }}
               />
             </div>
