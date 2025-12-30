@@ -200,11 +200,76 @@ const ProjectExecution = () => {
 
           {/* Aba: Indicadores */}
           <TabsContent value="indicators" className="space-y-6">
+            {/* Seção 1: Indicador Estratégico */}
+            <Card className="border-l-4 border-l-primary">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  🎯 Indicador Estratégico
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Vinculado à tese estratégica
+                </p>
+              </CardHeader>
+              <CardContent>
+                {project.thesis && project.linkedKPI ? (
+                  <div className="space-y-4">
+                    <Badge variant="secondary">{project.thesis.name}</Badge>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-semibold text-base">{project.linkedKPI.name}</h4>
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Atual</p>
+                          <p className="text-lg font-bold text-primary">
+                            {project.linkedKPI.current_value ?? '--'}
+                            {project.linkedKPI.unit && <span className="text-sm ml-1">{project.linkedKPI.unit}</span>}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Meta</p>
+                          <p className="text-lg font-bold">
+                            {project.linkedKPI.target_value}
+                            {project.linkedKPI.unit && <span className="text-sm ml-1">{project.linkedKPI.unit}</span>}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Progresso</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full transition-all"
+                                style={{ 
+                                  width: `${Math.min(100, Math.max(0, 
+                                    project.linkedKPI.current_value && project.linkedKPI.target_value 
+                                      ? (project.linkedKPI.current_value / project.linkedKPI.target_value) * 100 
+                                      : 0
+                                  ))}%` 
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-semibold">
+                              {project.linkedKPI.current_value && project.linkedKPI.target_value 
+                                ? Math.round((project.linkedKPI.current_value / project.linkedKPI.target_value) * 100)
+                                : 0}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">
+                    Este projeto não está vinculado a um indicador estratégico
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Seção 2: Indicadores do Projeto */}
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold">Indicadores de Desempenho</h3>
+                <h3 className="text-lg font-semibold">Indicadores do Projeto</h3>
                 <p className="text-sm text-muted-foreground">
-                  Acompanhe as métricas e evolução do projeto
+                  Métricas específicas para acompanhar este projeto
                 </p>
               </div>
               <Button onClick={() => setShowAddIndicatorDialog(true)}>
