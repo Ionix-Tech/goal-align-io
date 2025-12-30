@@ -139,44 +139,64 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         </div>
 
         {/* Lado Direito - Destaque Responsável e Prazo */}
-        <div className="flex flex-col items-end justify-between border-l pl-4 min-w-[160px]">
-          {/* Responsável */}
-          {task.assignee && (
-            <div className="text-right">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                Responsável
-              </span>
-              <div className="flex items-center gap-2 mt-1 justify-end">
-                <span className="text-sm font-medium">{task.assignee.full_name}</span>
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={task.assignee.avatar_url || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {task.assignee.full_name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            </div>
-          )}
-
-          {/* Prazo */}
-          {task.due_date && (
-            <div className="text-right mt-4">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                Prazo
-              </span>
-              <div className={`text-sm font-medium mt-1 flex items-center justify-end gap-1 ${isOverdue ? 'text-red-500' : ''}`}>
-                <CalendarDays className="h-4 w-4" />
-                {format(new Date(task.due_date), "dd/MM/yyyy", { locale: ptBR })}
-              </div>
-              {daysInfo && (
-                <div className={`text-xs mt-1 flex items-center justify-end gap-1 ${daysInfo.className}`}>
-                  {daysInfo.icon && <daysInfo.icon className="h-3 w-3" />}
-                  {daysInfo.text}
+        {(task.assignee || task.due_date) && (
+          <div className="flex flex-col items-end justify-between border-l pl-4 min-w-[160px]">
+            {/* Responsável */}
+            {task.assignee ? (
+              <div className="text-right">
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Responsável
+                </span>
+                <div className="flex items-center gap-2 mt-1 justify-end">
+                  <span className="text-sm font-medium">{task.assignee.full_name}</span>
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={task.assignee.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {task.assignee.full_name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            ) : (
+              <div className="text-right">
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Responsável
+                </span>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Não atribuído
+                </div>
+              </div>
+            )}
+
+            {/* Prazo */}
+            {task.due_date ? (
+              <div className="text-right mt-4">
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Prazo
+                </span>
+                <div className={`text-sm font-medium mt-1 flex items-center justify-end gap-1 ${isOverdue ? 'text-red-500' : ''}`}>
+                  <CalendarDays className="h-4 w-4" />
+                  {format(new Date(task.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                </div>
+                {daysInfo && (
+                  <div className={`text-xs mt-1 flex items-center justify-end gap-1 ${daysInfo.className}`}>
+                    {daysInfo.icon && <daysInfo.icon className="h-3 w-3" />}
+                    {daysInfo.text}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-right mt-4">
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Prazo
+                </span>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Sem prazo
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Menu de ações */}
         <DropdownMenu>
