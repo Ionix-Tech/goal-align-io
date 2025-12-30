@@ -4,12 +4,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { A3WizardData } from "@/hooks/useA3WizardState";
+import { A3WizardData, StrategicKPI } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { usePillars, useThesesByPillar } from "@/hooks/usePillars";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { PROJECT_CATEGORIES } from "@/config/categories";
-import { ComboboxWithCustom } from "@/components/ui/combobox-with-custom";
 import { Heart, Brain, Zap, X } from "lucide-react";
 
 interface Step1ContextProps {
@@ -35,23 +34,49 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
   const { data: objectives = [] } = useThesesByPillar(data.pillarId || undefined);
   const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
 
-  const kpiOptions = thesisDetails?.kpis?.map(kpi => ({
-    value: kpi.name,
-    label: kpi.unit ? `${kpi.name} (${kpi.unit})` : kpi.name
-  })) || [];
+  const availableKPIs = thesisDetails?.kpis?.filter(
+    kpi => !data.strategicKpis.some(selected => selected.kpiId === kpi.id)
+  ) || [];
 
   const handlePillarChange = (value: string) => {
     updateData({ 
       pillarId: value,
       thesisId: "", // Clear objective when pillar changes
-      strategicIndicator: "" // Clear indicator when pillar changes
+      strategicIndicator: "",
+      strategicKpis: [] // Clear KPIs when pillar changes
     });
   };
 
   const handleObjectiveChange = (value: string) => {
     updateData({ 
       thesisId: value,
-      strategicIndicator: "" // Clear indicator when objective changes
+      strategicIndicator: "",
+      strategicKpis: [] // Clear KPIs when objective changes
+    });
+  };
+
+  const handleAddKPI = (kpiId: string) => {
+    const kpi = thesisDetails?.kpis?.find(k => k.id === kpiId);
+    if (!kpi) return;
+    
+    const newKPI: StrategicKPI = {
+      id: crypto.randomUUID(),
+      kpiId: kpi.id,
+      kpiName: kpi.name
+    };
+    
+    updateData({ 
+      strategicKpis: [...data.strategicKpis, newKPI],
+      // Also update legacy field for backwards compatibility
+      strategicIndicator: data.strategicKpis.length === 0 ? kpi.name : data.strategicIndicator
+    });
+  };
+
+  const handleRemoveKPI = (kpiId: string) => {
+    const updatedKpis = data.strategicKpis.filter(k => k.kpiId !== kpiId);
+    updateData({ 
+      strategicKpis: updatedKpis,
+      strategicIndicator: updatedKpis.length > 0 ? updatedKpis[0].kpiName : ""
     });
   };
 
@@ -156,25 +181,53 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="strategic-indicator">Principal Indicador (KR) Estratégico Impactado</Label>
-              {data.thesisId && kpiOptions.length > 0 ? (
-                <ComboboxWithCustom
-                  options={kpiOptions}
-                  value={data.strategicIndicator}
-                  onChange={(value) => updateData({ strategicIndicator: value })}
-                  placeholder="Selecione ou digite..."
-                  emptyText="Nenhum indicador encontrado."
-                  customOptionLabel="Usar indicador"
-                />
-              ) : (
-                <Input
-                  id="strategic-indicator"
-                  value={data.strategicIndicator}
-                  onChange={(e) => updateData({ strategicIndicator: e.target.value })}
-                  placeholder={data.thesisId ? "Ex: OEE, Custo de Qualidade..." : "Selecione um objetivo primeiro"}
-                  disabled={!data.thesisId}
-                />
+              <Label>Indicadores (KRs) Estratégicos Impactados</Label>
+              
+              {/* Selected KPIs as badges */}
+              {data.strategicKpis.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {data.strategicKpis.map((kpi) => {
+                    const kpiDetails = thesisDetails?.kpis?.find(k => k.id === kpi.kpiId);
+                    return (
+                      <Badge
+                        key={kpi.kpiId}
+                        variant="secondary"
+                        className="flex items-center gap-1 pr-1"
+                      >
+                        {kpi.kpiName}
+                        {kpiDetails?.unit && <span className="text-muted-foreground">({kpiDetails.unit})</span>}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveKPI(kpi.kpiId)}
+                          className="ml-1 rounded-full hover:bg-muted p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
               )}
+              
+              {/* Dropdown to add more KPIs */}
+              {data.thesisId && availableKPIs.length > 0 ? (
+                <Select onValueChange={handleAddKPI}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Adicionar indicador..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableKPIs.map((kpi) => (
+                      <SelectItem key={kpi.id} value={kpi.id}>
+                        {kpi.name} {kpi.unit && `(${kpi.unit})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : !data.thesisId ? (
+                <p className="text-sm text-muted-foreground">Selecione um objetivo primeiro</p>
+              ) : availableKPIs.length === 0 && data.strategicKpis.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum indicador disponível para este objetivo</p>
+              ) : null}
             </div>
           </div>
 
