@@ -21,6 +21,8 @@ import { AddIndicatorMeasurementDialog } from "@/components/execution/AddIndicat
 import { IndicatorHistoryDialog } from "@/components/execution/IndicatorHistoryDialog";
 import { AddMilestoneDialog } from "@/components/execution/AddMilestoneDialog";
 import { AddIndicatorDialog } from "@/components/execution/AddIndicatorDialog";
+import { AddRequirementDialog } from "@/components/execution/AddRequirementDialog";
+import { EditRequirementsDialog } from "@/components/execution/EditRequirementsDialog";
 import { TaskManagementPanel } from "@/components/execution/TaskManagementPanel";
 import { IndicatorEvolutionChart } from "@/components/execution/IndicatorEvolutionChart";
 import { SituationManagement } from "@/components/execution/SituationManagement";
@@ -55,9 +57,24 @@ const ProjectExecution = () => {
   const [showIndicatorHistoryDialog, setShowIndicatorHistoryDialog] = useState(false);
   const [showAddMilestoneDialog, setShowAddMilestoneDialog] = useState(false);
   const [showAddIndicatorDialog, setShowAddIndicatorDialog] = useState(false);
+  const [showAddRequirementDialog, setShowAddRequirementDialog] = useState(false);
+  const [showEditRequirementsDialog, setShowEditRequirementsDialog] = useState(false);
 
   const [selectedMilestone, setSelectedMilestone] = useState<{ id: string; title: string; progress: number } | null>(null);
   const [selectedIndicator, setSelectedIndicator] = useState<{ id: string; name: string; targetValue?: string; unit?: string | null } | null>(null);
+
+  // Helper to generate next requirement code
+  const getNextRequirementCode = () => {
+    if (!requirements || requirements.length === 0) return "R1";
+    const maxNumber = requirements.reduce((max, req) => {
+      const match = req.code.match(/R(\d+)/);
+      if (match) {
+        return Math.max(max, parseInt(match[1], 10));
+      }
+      return max;
+    }, 0);
+    return `R${maxNumber + 1}`;
+  };
 
   if (isLoading) {
     return (
@@ -164,6 +181,8 @@ const ProjectExecution = () => {
                 project={project}
                 requirements={requirements || []}
                 situations={situations || []}
+                onAddRequirement={() => setShowAddRequirementDialog(true)}
+                onEditRequirements={() => setShowEditRequirementsDialog(true)}
               />
             </div>
 
@@ -430,6 +449,21 @@ const ProjectExecution = () => {
         open={showAddIndicatorDialog}
         onOpenChange={setShowAddIndicatorDialog}
         projectId={project.id}
+      />
+
+      <AddRequirementDialog
+        open={showAddRequirementDialog}
+        onOpenChange={setShowAddRequirementDialog}
+        projectId={project.id}
+        nextCode={getNextRequirementCode()}
+        nextDisplayOrder={(requirements?.length || 0) + 1}
+      />
+
+      <EditRequirementsDialog
+        open={showEditRequirementsDialog}
+        onOpenChange={setShowEditRequirementsDialog}
+        projectId={project.id}
+        requirements={requirements || []}
       />
 
       {/* Relatório A3 para impressão (oculto na tela) */}
