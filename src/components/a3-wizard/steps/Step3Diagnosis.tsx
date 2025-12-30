@@ -2,9 +2,56 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { A3WizardData } from "@/hooks/useA3WizardState";
-import { Upload, FileImage } from "lucide-react";
+import { Upload, FileText, FileSpreadsheet, File, X, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+function getFileIcon(fileType: string) {
+  if (fileType.includes('pdf')) return <FileText className="w-6 h-6 text-red-500" />;
+  if (fileType.includes('sheet') || fileType.includes('excel') || fileType.includes('xls')) {
+    return <FileSpreadsheet className="w-6 h-6 text-green-500" />;
+  }
+  return <File className="w-6 h-6 text-muted-foreground" />;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void }) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const isImage = file.type.startsWith('image/');
+
+  useEffect(() => {
+    if (!isImage) return;
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file, isImage]);
+
+  if (isImage && preview) {
+    return (
+      <div 
+        className="w-12 h-12 rounded overflow-hidden bg-muted cursor-pointer hover:ring-2 hover:ring-primary transition-all relative group"
+        onClick={onClick}
+      >
+        <img src={preview} alt={file.name} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <ZoomIn className="w-4 h-4 text-white" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center">
+      {getFileIcon(file.type)}
+    </div>
+  );
+}
 
 interface Step3DiagnosisProps {
   data: A3WizardData;
@@ -13,6 +60,7 @@ interface Step3DiagnosisProps {
 
 export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -21,6 +69,20 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const openPreview = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setPreviewImage({ url, name: file.name });
+    }
+  };
+
+  const closePreview = () => {
+    if (previewImage) {
+      URL.revokeObjectURL(previewImage.url);
+      setPreviewImage(null);
+    }
   };
 
   return (
@@ -72,18 +134,21 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
             </div>
             
             {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
                 {attachments.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                    <FileImage className="w-4 h-4" />
-                    <span className="text-sm">{file.name}</span>
+                  <div key={index} className="flex items-center gap-3 bg-muted/50 rounded-lg p-2">
+                    <LocalFileThumbnail file={file} onClick={() => openPreview(file)} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5"
+                      className="h-6 w-6 shrink-0"
                       onClick={() => removeAttachment(index)}
                     >
-                      ×
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
@@ -101,6 +166,21 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
           Anexe evidências visuais (gráficos, fotos do processo, prints de sistemas) para documentar a situação atual. Isso será fundamental durante as apresentações e para referência futura.
         </p>
       </div>
+
+      <Dialog open={!!previewImage} onOpenChange={closePreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{previewImage?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center">
+            <img 
+              src={previewImage?.url} 
+              alt={previewImage?.name}
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
