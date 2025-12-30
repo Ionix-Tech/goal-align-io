@@ -24,6 +24,7 @@ function formatFileSize(bytes: number): string {
 function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void }) {
   const [preview, setPreview] = useState<string | null>(null);
   const isImage = file.type.startsWith('image/');
+  const isPdf = file.type.includes('pdf');
 
   useEffect(() => {
     if (!isImage) return;
@@ -46,6 +47,20 @@ function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void
     );
   }
 
+  if (isPdf) {
+    return (
+      <div 
+        className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all relative group"
+        onClick={onClick}
+      >
+        <FileText className="w-6 h-6 text-red-500" />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded transition-opacity flex items-center justify-center">
+          <ZoomIn className="w-4 h-4 text-white" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center">
       {getFileIcon(file.type)}
@@ -60,7 +75,7 @@ interface Step3DiagnosisProps {
 
 export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string; type: 'image' | 'pdf' } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -72,16 +87,23 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
   };
 
   const openPreview = (file: File) => {
-    if (file.type.startsWith('image/')) {
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type.includes('pdf');
+    
+    if (isImage || isPdf) {
       const url = URL.createObjectURL(file);
-      setPreviewImage({ url, name: file.name });
+      setPreviewFile({ 
+        url, 
+        name: file.name, 
+        type: isPdf ? 'pdf' : 'image' 
+      });
     }
   };
 
   const closePreview = () => {
-    if (previewImage) {
-      URL.revokeObjectURL(previewImage.url);
-      setPreviewImage(null);
+    if (previewFile) {
+      URL.revokeObjectURL(previewFile.url);
+      setPreviewFile(null);
     }
   };
 
@@ -167,17 +189,25 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
         </p>
       </div>
 
-      <Dialog open={!!previewImage} onOpenChange={closePreview}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+      <Dialog open={!!previewFile} onOpenChange={closePreview}>
+        <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>{previewImage?.name}</DialogTitle>
+            <DialogTitle>{previewFile?.name}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center">
-            <img 
-              src={previewImage?.url} 
-              alt={previewImage?.name}
-              className="max-w-full max-h-[70vh] object-contain rounded-lg"
-            />
+            {previewFile?.type === 'image' ? (
+              <img 
+                src={previewFile.url} 
+                alt={previewFile.name}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            ) : previewFile?.type === 'pdf' ? (
+              <iframe
+                src={previewFile.url}
+                title={previewFile.name}
+                className="w-full h-[70vh] rounded-lg border"
+              />
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
