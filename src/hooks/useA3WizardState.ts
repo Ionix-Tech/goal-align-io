@@ -44,11 +44,18 @@ export interface WizardMilestone {
   targetDate: string;
 }
 
+export interface StrategicKPI {
+  id: string;
+  kpiId: string;
+  kpiName: string;
+}
+
 export interface A3WizardData {
   // Step 1: Contexto
   name: string;
   objective: string;
-  strategicIndicator: string;
+  strategicIndicator: string; // kept for backwards compatibility
+  strategicKpis: StrategicKPI[]; // new field for multiple KPIs
   category: string;
   assignedTo: string;
   members: string[];
@@ -82,6 +89,7 @@ const initialData: A3WizardData = {
   name: "",
   objective: "",
   strategicIndicator: "",
+  strategicKpis: [],
   category: "",
   assignedTo: "",
   members: [],
@@ -275,10 +283,23 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           label: link.label || ''
         }));
 
+        // Load strategic KPIs from new table
+        const { data: strategicKpisData } = await supabase
+          .from('project_strategic_kpis')
+          .select('id, kpi_id, kpi_name')
+          .eq('project_id', options.initialProjectId);
+
+        const mappedStrategicKpis: StrategicKPI[] = (strategicKpisData || []).map(kpi => ({
+          id: kpi.id,
+          kpiId: kpi.kpi_id,
+          kpiName: kpi.kpi_name
+        }));
+
         setData({
           name: project.name || "",
           objective: project.objective || "",
           strategicIndicator: project.strategic_indicator || "",
+          strategicKpis: mappedStrategicKpis,
           category: project.category || "",
           assignedTo: project.assigned_to || "",
           members: [],

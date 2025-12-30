@@ -372,6 +372,24 @@ export function A3Wizard() {
           });
       }
 
+      // --- PERSIST STRATEGIC KPIs ---
+      // Delete existing strategic KPIs for this project
+      await supabase
+        .from('project_strategic_kpis')
+        .delete()
+        .eq('project_id', currentProjectId);
+
+      // Insert new strategic KPIs
+      for (const kpi of data.strategicKpis) {
+        await supabase
+          .from('project_strategic_kpis')
+          .insert({
+            project_id: currentProjectId,
+            kpi_id: kpi.kpiId,
+            kpi_name: kpi.kpiName
+          });
+      }
+
       // Update project status to review
       await supabase
         .from('projects')

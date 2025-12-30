@@ -648,6 +648,45 @@ export type Database = {
           },
         ]
       }
+      project_strategic_kpis: {
+        Row: {
+          created_at: string | null
+          id: string
+          kpi_id: string
+          kpi_name: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          kpi_id: string
+          kpi_name: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          kpi_id?: string
+          kpi_name?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_strategic_kpis_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "thesis_kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_strategic_kpis_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tasks: {
         Row: {
           assigned_to: string | null
