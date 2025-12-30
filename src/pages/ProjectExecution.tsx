@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Plus, Lightbulb, BarChart3 } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Lightbulb, LayoutGrid, BarChart3, Columns } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +33,7 @@ import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
 import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachmentsCard";
 import { LinkedIdeasCard } from "@/components/execution/LinkedIdeasCard";
 import { GanttChart } from "@/components/execution/GanttChart";
+import { ProjectKanban } from "@/components/execution/ProjectKanban";
 import { Target, FileCheck, AlertCircle } from "lucide-react";
 
 const strategicPillars = [
@@ -160,9 +161,9 @@ const ProjectExecution = () => {
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
             <TabsTrigger value="thesis">📄 Detalhamento</TabsTrigger>
             <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
-            <TabsTrigger value="gantt">
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Gantt
+            <TabsTrigger value="visualization">
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Visualização
             </TabsTrigger>
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="updates">🔄 Atividades</TabsTrigger>
@@ -532,15 +533,33 @@ const ProjectExecution = () => {
             </Card>
           </TabsContent>
 
-          {/* Aba: Gantt */}
-          <TabsContent value="gantt" className="space-y-6">
-            <GanttChart 
-              projectId={project.id}
-              onTaskClick={(taskId) => {
-                // Navega para a aba de atualizações onde as tarefas são gerenciadas
-                setActiveTab('updates');
-              }}
-            />
+          {/* Aba: Visualização (Gantt + Kanban) */}
+          <TabsContent value="visualization" className="space-y-6">
+            <Tabs defaultValue="gantt" className="w-full">
+              <TabsList>
+                <TabsTrigger value="gantt">
+                  <BarChart3 className="h-4 w-4 mr-1" />
+                  Gantt
+                </TabsTrigger>
+                <TabsTrigger value="kanban">
+                  <Columns className="h-4 w-4 mr-1" />
+                  Kanban
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="gantt" className="mt-4">
+                <GanttChart 
+                  projectId={project.id}
+                  onTaskClick={(taskId) => {
+                    setActiveTab('updates');
+                  }}
+                />
+              </TabsContent>
+              
+              <TabsContent value="kanban" className="mt-4">
+                <ProjectKanban projectId={project.id} />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Aba: Milestones */}
