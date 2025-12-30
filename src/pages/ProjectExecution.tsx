@@ -7,8 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
+import { useRequirements } from "@/hooks/useRequirements";
 import { HealthStatusBadge } from "@/components/management/HealthStatusBadge";
 import { MilestoneTimeline } from "@/components/execution/MilestoneTimeline";
+import { MilestoneTracker } from "@/components/execution/MilestoneTracker";
+import { ProjectCoverSection } from "@/components/execution/ProjectCoverSection";
+import { ActivitySection } from "@/components/execution/ActivitySection";
 import { IndicatorCards } from "@/components/execution/IndicatorCards";
 import { AddMilestoneUpdateDialog } from "@/components/execution/AddMilestoneUpdateDialog";
 import { MilestoneHistoryDialog } from "@/components/execution/MilestoneHistoryDialog";
@@ -39,6 +43,7 @@ const ProjectExecution = () => {
   const navigate = useNavigate();
   const { data: project, isLoading } = useProjectDetails(projectId || null);
   const { data: situations } = useProjectSituations(projectId || null);
+  const { data: requirements } = useRequirements(projectId || null);
   const { data: reportData } = useA3ReportData(projectId || null);
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -146,160 +151,30 @@ const ProjectExecution = () => {
 
           {/* Aba: Capa */}
           <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium">Milestones</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {project.milestones.filter(m => m.completed).length}/{project.milestones.length}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">concluídos</p>
-                    </CardContent>
-                  </Card>
+            {/* Milestone Tracker no topo */}
+            <MilestoneTracker milestones={project.milestones} />
+            
+            {/* Seção: Visão do Projeto */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Visão do Projeto
+              </h2>
+              <ProjectCoverSection
+                project={project}
+                requirements={requirements || []}
+                situations={situations || []}
+              />
+            </div>
 
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium">Membros</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{project.members.length}</div>
-                      <p className="text-xs text-muted-foreground mt-1">no time</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Objetivo do Projeto */}
-                {project.objective && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="h-5 w-5" />
-                        Objetivo
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {project.objective}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Situações Atual vs Situação Alvo */}
-                {situations && situations.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5" />
-                        Situação Atual vs Situação Alvo
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Problemas identificados e metas correspondentes que o projeto deve alcançar
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        {situations.map((situation, index) => (
-                          <div key={situation.id} className="space-y-3">
-                            {index > 0 && <Separator className="my-4" />}
-                            
-                            <div className="grid gap-4 md:grid-cols-2">
-                              {/* Situação Atual */}
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <AlertCircle className="h-4 w-4 text-destructive" />
-                                  <h4 className="font-semibold text-sm">Situação Atual / Problema</h4>
-                                </div>
-                                <p className="text-sm text-muted-foreground bg-destructive/10 p-3 rounded-md border border-destructive/20">
-                                  {situation.current_problem}
-                                </p>
-                              </div>
-
-                              {/* Situação Alvo */}
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                  <h4 className="font-semibold text-sm">Situação Alvo / Meta</h4>
-                                </div>
-                                <p className="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded-md border border-green-200 dark:border-green-900/30">
-                                  {situation.target_goal}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Indicadores da situação (se existirem) */}
-                            {situation.indicators && situation.indicators.length > 0 && (
-                              <div className="mt-3 pt-3 border-t">
-                                <p className="text-xs font-medium text-muted-foreground mb-2">
-                                  Indicadores vinculados ({situation.indicators.length})
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                  {situation.indicators.map((ind: any) => (
-                                    <Badge key={ind.id} variant="outline" className="text-xs">
-                                      {ind.name}: {ind.current_value} → {ind.target_value} {ind.unit}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Requisitos */}
-                {project.requirements && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileCheck className="h-5 w-5" />
-                        Requisitos
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {project.requirements}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <ProjectAttachmentsCard projectId={projectId!} />
-
-                {/* Ideias de Origem */}
-                <LinkedIdeasCard projectId={projectId!} />
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informações Rápidas</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Gestor Responsável</p>
-                      <p className="text-base mt-1">
-                        {project.assignee?.full_name || 'Não atribuído'}
-                      </p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Criado por</p>
-                      <p className="text-base mt-1">{project.creator?.full_name}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Data de Aprovação</p>
-                      <p className="text-base mt-1">
-                        {project.approved_at
-                          ? new Date(project.approved_at).toLocaleDateString('pt-BR')
-                          : 'N/A'}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+            {/* Seção: Atividade */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FileCheck className="h-5 w-5 text-primary" />
+                Atividade
+              </h2>
+              <ActivitySection projectId={projectId!} />
+            </div>
           </TabsContent>
 
           {/* Aba: Indicadores */}
