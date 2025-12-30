@@ -19,6 +19,7 @@ export interface ProjectDetails {
   how_much: string | null;
   thesis_id: string | null;
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
+  strategic_indicator: string | null;
   status: 'idea' | 'draft' | 'review' | 'approved' | 'archived';
   created_at: string;
   created_by: string;
@@ -49,6 +50,7 @@ export interface ProjectDetails {
     completed: boolean;
     completed_at: string | null;
     progress: number;
+    milestone_type?: 'decolagem' | 'voo' | 'escala' | null;
   }>;
   members: Array<{
     id: string;
