@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Target, FileCheck, AlertCircle, TrendingUp, BarChart3, Compass } from "lucide-react";
+import { Target, FileCheck, AlertCircle, TrendingUp, BarChart3, Compass, Plus, Pencil } from "lucide-react";
 import type { ProjectDetails } from "@/hooks/useProjectDetails";
 import type { ProjectRequirement } from "@/hooks/useRequirements";
 
@@ -33,6 +34,8 @@ interface ProjectCoverSectionProps {
     target_value: number;
     unit: string | null;
   }>;
+  onAddRequirement?: () => void;
+  onEditRequirements?: () => void;
 }
 
 export function ProjectCoverSection({ 
@@ -40,7 +43,9 @@ export function ProjectCoverSection({
   requirements, 
   situations,
   thesis,
-  thesisKPIs
+  thesisKPIs,
+  onAddRequirement,
+  onEditRequirements
 }: ProjectCoverSectionProps) {
   return (
     <div className="space-y-6">
@@ -62,15 +67,31 @@ export function ProjectCoverSection({
       )}
 
       {/* Requisitos - Tabela Compacta */}
-      {requirements.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <FileCheck className="h-4 w-4 text-primary" />
               Requisitos
             </CardTitle>
-          </CardHeader>
-          <CardContent>
+            <div className="flex items-center gap-2">
+              {requirements.length > 0 && onEditRequirements && (
+                <Button variant="ghost" size="sm" onClick={onEditRequirements}>
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Editar
+                </Button>
+              )}
+              {onAddRequirement && (
+                <Button variant="outline" size="sm" onClick={onAddRequirement}>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Adicionar
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {requirements.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -103,9 +124,21 @@ export function ProjectCoverSection({
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-sm text-muted-foreground mb-3">
+                Nenhum requisito cadastrado ainda.
+              </p>
+              {onAddRequirement && (
+                <Button variant="outline" size="sm" onClick={onAddRequirement}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Requisito
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Objetivo Estratégico */}
       {(thesis || project.strategic_indicator) && (
