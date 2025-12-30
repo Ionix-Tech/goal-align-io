@@ -32,6 +32,18 @@ export interface ProjectDetails {
     id: string;
     name: string;
   } | null;
+  thesis?: {
+    id: string;
+    name: string;
+    objective: string;
+  } | null;
+  linkedKPI?: {
+    id: string;
+    name: string;
+    current_value: number | null;
+    target_value: number;
+    unit: string | null;
+  } | null;
   indicators: Array<{
     id: string;
     name: string;
@@ -113,7 +125,9 @@ export function useProjectDetails(projectId: string | null) {
         { data: comments },
         { data: creator },
         { data: assignee },
-        { data: sourceIdea }
+        { data: sourceIdea },
+        { data: thesisData },
+        { data: thesisKPIs }
       ] = await Promise.all([
         supabase.from('project_indicators').select('*').eq('project_id', projectId),
         supabase.from('project_milestones').select('*').eq('project_id', projectId),
@@ -134,8 +148,24 @@ export function useProjectDetails(projectId: string | null) {
           : Promise.resolve({ data: null }),
         projectData.source_idea_id
           ? supabase.from('projects').select('id, name').eq('id', projectData.source_idea_id).single()
+          : Promise.resolve({ data: null }),
+        projectData.thesis_id
+          ? supabase.from('strategic_theses').select('id, name, objective').eq('id', projectData.thesis_id).single()
+          : Promise.resolve({ data: null }),
+        projectData.thesis_id
+          ? supabase.from('thesis_kpis').select('id, name, current_value, target_value, unit').eq('thesis_id', projectData.thesis_id)
           : Promise.resolve({ data: null })
       ]);
+
+      // Encontrar o KPI vinculado ao projeto pelo strategic_indicator
+      let linkedKPI = null;
+      if (projectData.strategic_indicator && thesisKPIs && thesisKPIs.length > 0) {
+        const normalizedIndicator = projectData.strategic_indicator.toLowerCase().replace(/\s+/g, ' ').trim();
+        linkedKPI = thesisKPIs.find((kpi: any) => {
+          const normalizedKPIName = kpi.name.toLowerCase().replace(/\s+/g, ' ').trim();
+          return normalizedKPIName.includes(normalizedIndicator) || normalizedIndicator.includes(normalizedKPIName);
+        }) || null;
+      }
 
       // Buscar milestone updates apenas se houver milestones
       const { data: milestoneUpdates } = milestones?.length
@@ -209,6 +239,8 @@ export function useProjectDetails(projectId: string | null) {
         ...projectData,
         initiative_type: normalizedType,
         source_idea: sourceIdea || null,
+        thesis: thesisData || null,
+        linkedKPI,
         indicators: (indicators || []).map((ind: any) => ({
           ...ind,
           progress: indicatorProgressMap.get(ind.id) || 0,
