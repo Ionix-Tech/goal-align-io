@@ -1164,6 +1164,42 @@ export type Database = {
           },
         ]
       }
+      strategic_pillars: {
+        Row: {
+          color_class: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          pillar_type: Database["public"]["Enums"]["pillar_type"]
+        }
+        Insert: {
+          color_class?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          pillar_type: Database["public"]["Enums"]["pillar_type"]
+        }
+        Update: {
+          color_class?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          pillar_type?: Database["public"]["Enums"]["pillar_type"]
+        }
+        Relationships: []
+      }
       strategic_theses: {
         Row: {
           created_at: string | null
@@ -1176,6 +1212,7 @@ export type Database = {
           objective: string
           period_end: string
           period_start: string
+          pillar_id: string | null
           thesis_type: Database["public"]["Enums"]["thesis_type"]
           updated_at: string | null
           year: number
@@ -1191,6 +1228,7 @@ export type Database = {
           objective: string
           period_end: string
           period_start: string
+          pillar_id?: string | null
           thesis_type: Database["public"]["Enums"]["thesis_type"]
           updated_at?: string | null
           year: number
@@ -1206,6 +1244,7 @@ export type Database = {
           objective?: string
           period_end?: string
           period_start?: string
+          pillar_id?: string | null
           thesis_type?: Database["public"]["Enums"]["thesis_type"]
           updated_at?: string | null
           year?: number
@@ -1216,6 +1255,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_theses_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_pillars"
             referencedColumns: ["id"]
           },
         ]
@@ -1488,6 +1534,7 @@ export type Database = {
       app_role: "ceo" | "pmo_manager" | "project_member"
       initiative_type: "idea" | "project" | "action_plan"
       milestone_type: "decolagem" | "voo" | "escala"
+      pillar_type: "corpo" | "alma" | "mente"
       project_category:
         | "productivity"
         | "safety"
@@ -1640,6 +1687,7 @@ export const Constants = {
       app_role: ["ceo", "pmo_manager", "project_member"],
       initiative_type: ["idea", "project", "action_plan"],
       milestone_type: ["decolagem", "voo", "escala"],
+      pillar_type: ["corpo", "alma", "mente"],
       project_category: [
         "productivity",
         "safety",
