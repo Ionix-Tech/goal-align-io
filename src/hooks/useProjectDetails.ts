@@ -160,11 +160,31 @@ export function useProjectDetails(projectId: string | null) {
       // Encontrar o KPI vinculado ao projeto pelo strategic_indicator
       let linkedKPI = null;
       if (projectData.strategic_indicator && thesisKPIs && thesisKPIs.length > 0) {
-        const normalizedIndicator = projectData.strategic_indicator.toLowerCase().replace(/\s+/g, ' ').trim();
+        // Normalização robusta: remove TABs, quebras de linha e espaços extras
+        const normalizeForComparison = (str: string) => {
+          return str
+            .toLowerCase()
+            .replace(/[\t\r\n]/g, ' ')  // TABs e quebras de linha viram espaço
+            .replace(/\s+/g, ' ')        // múltiplos espaços viram um
+            .trim();
+        };
+
+        const normalizedIndicator = normalizeForComparison(projectData.strategic_indicator);
+        
         linkedKPI = thesisKPIs.find((kpi: any) => {
-          const normalizedKPIName = kpi.name.toLowerCase().replace(/\s+/g, ' ').trim();
-          return normalizedKPIName.includes(normalizedIndicator) || normalizedIndicator.includes(normalizedKPIName);
+          const normalizedKPIName = normalizeForComparison(kpi.name);
+          // Comparação flexível: igualdade OU um contém o outro
+          return normalizedKPIName === normalizedIndicator || 
+                 normalizedKPIName.includes(normalizedIndicator) || 
+                 normalizedIndicator.includes(normalizedKPIName);
         }) || null;
+
+        console.log('[useProjectDetails] KPI matching:', {
+          strategicIndicator: projectData.strategic_indicator,
+          normalizedIndicator,
+          availableKPIs: thesisKPIs.map((k: any) => ({ name: k.name, normalized: normalizeForComparison(k.name) })),
+          matchedKPI: linkedKPI
+        });
       }
 
       // Buscar milestone updates apenas se houver milestones
