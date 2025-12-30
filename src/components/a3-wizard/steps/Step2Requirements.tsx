@@ -19,7 +19,7 @@ export function Step2Requirements({
   updateRequirement,
   removeRequirement
 }: Step2RequirementsProps) {
-  const canAddMore = data.requirements.length < 6;
+  const canAddMore = data.requirements.length < 15;
   const validCount = data.requirements.filter(
     r => r.description.trim() !== ""
   ).length;
@@ -35,7 +35,7 @@ export function Step2Requirements({
             Requisitos
           </CardTitle>
           <CardDescription>
-            O que precisa dar certo? Defina de 2 a 6 requisitos que indicam sucesso do projeto.
+            O que precisa dar certo? Defina de 1 a 15 requisitos que indicam sucesso do projeto.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -43,7 +43,7 @@ export function Step2Requirements({
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhum requisito adicionado ainda.</p>
-              <p className="text-sm">Adicione pelo menos 2 requisitos para continuar.</p>
+              <p className="text-sm">Adicione pelo menos 1 requisito para continuar.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -56,7 +56,7 @@ export function Step2Requirements({
                     <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
                       {req.code}
                     </span>
-                    {data.requirements.length > 2 && (
+                    {data.requirements.length > 1 && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -85,8 +85,8 @@ export function Step2Requirements({
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-sm text-muted-foreground">
               {validCount} de {data.requirements.length} requisitos válidos
-              {validCount < 2 && (
-                <span className="text-destructive ml-2">(mínimo 2 necessários)</span>
+            {validCount < 1 && (
+                <span className="text-destructive ml-2">(mínimo 1 necessário)</span>
               )}
             </div>
             
@@ -109,7 +109,7 @@ export function Step2Requirements({
         </h4>
         <p className="text-sm text-muted-foreground">
           Requisitos são critérios de sucesso do projeto. Pense: "Se isso não melhorar, o projeto não terá cumprido seu objetivo". 
-          Os indicadores serão definidos e correlacionados aos requisitos em etapa posterior.
+          As ações e indicadores serão definidos para atender os requisitos (em etapas posteriores).
         </p>
       </div>
     </div>
