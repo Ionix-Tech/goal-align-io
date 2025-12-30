@@ -52,6 +52,7 @@ export interface A3WizardData {
   category: string;
   assignedTo: string;
   members: string[];
+  pillarId: string;
   thesisId: string;
   
   // Step 2: Requisitos
@@ -84,6 +85,7 @@ const initialData: A3WizardData = {
   category: "",
   assignedTo: "",
   members: [],
+  pillarId: "",
   thesisId: "",
   requirements: [],
   currentSituationDescription: "",
