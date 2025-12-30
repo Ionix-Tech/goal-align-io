@@ -485,11 +485,11 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         return data.name.trim() !== "" && data.objective.trim() !== "";
       },
       3: () => {
-        // Step 2 complete: at least 2 requirements with description
+        // Step 2 complete: at least 1 requirement with description
         const validReqs = data.requirements.filter(
           r => r.description.trim() !== ""
         );
-        return validReqs.length >= 2;
+        return validReqs.length >= 1;
       },
       4: () => {
         // Step 3 complete: situation description required

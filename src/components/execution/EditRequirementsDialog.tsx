@@ -42,8 +42,8 @@ export function EditRequirementsDialog({
   };
 
   const handleDelete = async (id: string) => {
-    if (editedRequirements.length <= 2) {
-      toast.error("O projeto deve ter pelo menos 2 requisitos");
+    if (editedRequirements.length <= 1) {
+      toast.error("O projeto deve ter pelo menos 1 requisito");
       return;
     }
 
@@ -89,7 +89,7 @@ export function EditRequirementsDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(req.id)}
-                  disabled={editedRequirements.length <= 2 || deleteRequirement.isPending}
+                  disabled={editedRequirements.length <= 1 || deleteRequirement.isPending}
                   className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
