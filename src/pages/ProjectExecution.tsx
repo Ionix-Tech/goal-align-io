@@ -250,81 +250,214 @@ const ProjectExecution = () => {
             />
           </TabsContent>
 
-          {/* Aba: Objetivo do Projeto */}
-          <TabsContent value="thesis" className="space-y-6">
+          {/* Aba: Objetivo do Projeto - Detalhamento A3 */}
+          <TabsContent value="thesis" className="space-y-4">
+            {/* 1. Contexto */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Objetivo Original do Projeto
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
+                  Contexto
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">Contexto</h3>
-                  <p className="text-sm whitespace-pre-wrap">{project.context || 'Sem contexto'}</p>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">Objetivo</h3>
-                  <p className="text-sm whitespace-pre-wrap">{project.objective || 'Sem objetivo'}</p>
-                </div>
-
-                <Separator />
-
-                {project.description && (
-                  <>
-                    <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-2">Ideia Original</h3>
-                      <p className="text-sm whitespace-pre-wrap">{project.description}</p>
-                    </div>
-                    <Separator />
-                  </>
-                )}
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Indicadores Definidos</h3>
-                  <div className="space-y-3">
-                    {project.indicators.map((ind, index) => (
-                      <Card key={ind.id}>
-                        <CardContent className="pt-4">
-                          <p className="text-xs text-muted-foreground mb-2">Indicador {index + 1}</p>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <span className="text-xs font-medium">Estado Atual: </span>
-                              <span className="text-sm">{ind.current_state}</span>
-                            </div>
-                            <div>
-                              <span className="text-xs font-medium">Meta: </span>
-                              <span className="text-sm">{ind.target_state}</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+              <CardContent className="space-y-3 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-muted-foreground">📌 Nome:</span>
+                    <p className="font-medium">{project.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">🎯 Objetivo Estratégico:</span>
+                    <p className="font-medium">{project.thesis?.name || 'Não vinculado'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">📊 Indicador Macro:</span>
+                    <p className="font-medium">{project.linkedKPI?.name?.replace(/\t/g, ' ') || 'Não definido'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">👤 Líder:</span>
+                    <p className="font-medium">{project.assignee?.full_name || project.creator?.full_name || '--'}</p>
                   </div>
                 </div>
+                {project.members.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground">👥 Equipe:</span>
+                    <p className="font-medium">{project.members.map(m => m.user.full_name).join(', ')}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Milestones Planejados</h3>
+            {/* 2. Requisitos */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
+                  Requisitos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {requirements && requirements.length > 0 ? (
                   <div className="space-y-2">
-                    {project.milestones.map((ms) => (
-                      <Card key={ms.id}>
-                        <CardContent className="pt-4">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{ms.title}</span>
-                            <span className="text-xs text-muted-foreground">
+                    {requirements.map((req) => (
+                      <div key={req.id} className="flex gap-3 text-sm border-b border-border/50 pb-2 last:border-0">
+                        <span className="font-mono font-semibold text-primary min-w-[40px]">{req.code}</span>
+                        <span>{req.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhum requisito definido</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 3. Diagnóstico */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
+                  Diagnóstico
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <span className="text-sm text-muted-foreground">Situação Atual:</span>
+                  <p className="text-sm whitespace-pre-wrap mt-1">
+                    {situations && situations.length > 0 
+                      ? situations.map(s => s.current_problem).join('\n\n')
+                      : 'Não descrita'}
+                  </p>
+                </div>
+                {project.attachments && project.attachments.length > 0 && (
+                  <div className="pt-2">
+                    <span className="text-sm text-muted-foreground">📎 Anexos: </span>
+                    <span className="text-sm">{project.attachments.length} arquivo(s)</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 4. Estratégia */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</span>
+                  Estratégia
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <span className="text-sm text-muted-foreground">Situação Alvo:</span>
+                  <p className="text-sm whitespace-pre-wrap mt-1">
+                    {situations && situations.length > 0 
+                      ? situations.map(s => s.target_goal).join('\n\n')
+                      : 'Não descrita'}
+                  </p>
+                </div>
+                {project.indicators.length > 0 && (
+                  <div className="mt-4">
+                    <div className="rounded-md border">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="text-left p-2 font-medium">Indicador</th>
+                            <th className="text-center p-2 font-medium">Atual</th>
+                            <th className="text-center p-2 font-medium">Meta</th>
+                            <th className="text-center p-2 font-medium">Unidade</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {project.indicators.map((ind) => (
+                            <tr key={ind.id} className="border-t">
+                              <td className="p-2">{ind.name}</td>
+                              <td className="p-2 text-center">{ind.current_state}</td>
+                              <td className="p-2 text-center">{ind.target_state}</td>
+                              <td className="p-2 text-center text-muted-foreground">{ind.unit || '--'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 5. Execução */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">5</span>
+                  Execução
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <span className="text-sm text-muted-foreground">Ações Planejadas:</span>
+                {project.tasks && project.tasks.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {project.tasks.map((task) => (
+                      <div key={task.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">•</span>
+                          <span>{task.title}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-muted-foreground text-xs">
+                          {task.due_date && (
+                            <span>📅 {new Date(task.due_date).toLocaleDateString('pt-BR')}</span>
+                          )}
+                          {task.assigned_to_name && (
+                            <span>👤 {task.assigned_to_name}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">Nenhuma ação planejada</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 6. Controle */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">6</span>
+                  Controle
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <span className="text-sm text-muted-foreground">Milestones:</span>
+                {project.milestones.length > 0 ? (
+                  <div className="space-y-2 mt-1">
+                    {project.milestones
+                      .sort((a, b) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime())
+                      .map((ms) => {
+                        const typeIcon = ms.milestone_type === 'decolagem' ? '🚀' : ms.milestone_type === 'voo' ? '✈️' : ms.milestone_type === 'escala' ? '🌍' : '📌';
+                        return (
+                          <div key={ms.id} className="flex items-center justify-between text-sm">
+                            <span>
+                              {typeIcon} {ms.title}
+                            </span>
+                            <span className="text-muted-foreground">
                               {new Date(ms.target_date).toLocaleDateString('pt-BR')}
                             </span>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        );
+                      })}
                   </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhum milestone definido</p>
+                )}
+                <Separator className="my-3" />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Data de Aprovação:</span>
+                  <span className="font-medium">
+                    {project.approved_at 
+                      ? new Date(project.approved_at).toLocaleDateString('pt-BR')
+                      : '--'}
+                  </span>
                 </div>
               </CardContent>
             </Card>
