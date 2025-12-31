@@ -31,7 +31,7 @@ export function Step4Strategy({ data, updateData }: Step4StrategyProps) {
             <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
               4
             </span>
-            Estratégia
+            Situação Alvo
           </CardTitle>
           <CardDescription>
             Onde queremos chegar? Descreva a situação desejada ao final do projeto.
@@ -90,7 +90,7 @@ export function Step4Strategy({ data, updateData }: Step4StrategyProps) {
 
           {/* Resumo dos Requisitos */}
           <div className="space-y-3">
-            <Label>Requisitos a serem atendidos</Label>
+            <Label><span className="font-semibold">Para apoiar reflexão:</span> Requisitos a serem atendidos</Label>
             <div className="bg-muted/30 rounded-lg p-4">
               {data.requirements.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-2">
@@ -113,7 +113,7 @@ export function Step4Strategy({ data, updateData }: Step4StrategyProps) {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Os indicadores e metas serão definidos na etapa de Controle.
+              São as metas traçadas para cada problema identificado na situação atual. Deste modo, cada Situação Atual identificada com um número deve ter uma respectiva Situação Alvo. Aqui também é preciso quantificar cada meta, colocando de preferência o valor real que se pretende atingir. Seguindo o exemplo anterior, ao invés de determinar "reduzir o consumo de água", descrever "reduzir de XX para YY o consumo de água". Prefira também esta última descrição ao invés de colocar "reduzir em 10%", se a meta é 10%, descreva o patamar atual e a meta do valor em questão.
             </p>
           </div>
         </CardContent>
