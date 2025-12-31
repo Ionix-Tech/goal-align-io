@@ -2,10 +2,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { A3WizardData } from "@/hooks/useA3WizardState";
-import { Upload, FileText, FileSpreadsheet, File, X, ZoomIn, ExternalLink } from "lucide-react";
+import { Upload, FileText, FileSpreadsheet, File, X, ZoomIn, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 function getFileIcon(fileType: string) {
   if (fileType.includes('pdf')) return <FileText className="w-6 h-6 text-red-500" />;
@@ -55,7 +61,7 @@ function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void
       >
         <FileText className="w-6 h-6 text-red-500" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded transition-opacity flex items-center justify-center">
-          <ExternalLink className="w-4 h-4 text-white" />
+          <ZoomIn className="w-4 h-4 text-white" />
         </div>
       </div>
     );
@@ -73,9 +79,16 @@ interface Step3DiagnosisProps {
   updateData: (updates: Partial<A3WizardData>) => void;
 }
 
+type PreviewState = 
+  | { type: 'image'; url: string; name: string }
+  | { type: 'pdf'; file: File; name: string };
+
 export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
+  const [previewFile, setPreviewFile] = useState<PreviewState | null>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pdfError, setPdfError] = useState<boolean>(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -91,23 +104,51 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
     const isPdf = file.type.includes('pdf');
     
     if (isPdf) {
-      // Abrir PDF em nova aba - funciona em todos os navegadores
-      const url = URL.createObjectURL(file);
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setPreviewFile({ type: 'pdf', file, name: file.name });
+      setCurrentPage(1);
+      setNumPages(0);
+      setPdfError(false);
       return;
     }
     
     if (isImage) {
       const url = URL.createObjectURL(file);
-      setPreviewFile({ url, name: file.name });
+      setPreviewFile({ type: 'image', url, name: file.name });
     }
   };
 
   const closePreview = () => {
-    if (previewFile) {
+    if (previewFile?.type === 'image') {
       URL.revokeObjectURL(previewFile.url);
-      setPreviewFile(null);
+    }
+    setPreviewFile(null);
+    setNumPages(0);
+    setCurrentPage(1);
+    setPdfError(false);
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setPdfError(false);
+  };
+
+  const onDocumentLoadError = () => {
+    setPdfError(true);
+  };
+
+  const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, numPages));
+
+  const downloadPdf = () => {
+    if (previewFile?.type === 'pdf') {
+      const url = URL.createObjectURL(previewFile.file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = previewFile.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -198,12 +239,84 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
           <DialogHeader>
             <DialogTitle>{previewFile?.name}</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center">
-            <img 
-              src={previewFile?.url} 
-              alt={previewFile?.name}
-              className="max-w-full max-h-[70vh] object-contain rounded-lg"
-            />
+          <div className="flex flex-col items-center justify-center">
+            {previewFile?.type === 'image' && (
+              <img 
+                src={previewFile.url} 
+                alt={previewFile.name}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            )}
+            
+            {previewFile?.type === 'pdf' && !pdfError && (
+              <>
+                <div className="overflow-auto max-h-[60vh] border rounded-lg bg-muted/30">
+                  <Document
+                    file={previewFile.file}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
+                    loading={
+                      <div className="flex items-center justify-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                      </div>
+                    }
+                  >
+                    <Page 
+                      pageNumber={currentPage} 
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                      className="mx-auto"
+                    />
+                  </Document>
+                </div>
+                
+                {numPages > 0 && (
+                  <div className="flex items-center gap-4 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToPrevPage}
+                      disabled={currentPage <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Página {currentPage} de {numPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToNextPage}
+                      disabled={currentPage >= numPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={downloadPdf}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Baixar
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {previewFile?.type === 'pdf' && pdfError && (
+              <div className="flex flex-col items-center justify-center p-8 gap-4">
+                <FileText className="h-16 w-16 text-muted-foreground" />
+                <p className="text-muted-foreground text-center">
+                  Não foi possível visualizar o PDF.<br />
+                  Você pode baixá-lo para abrir em outro programa.
+                </p>
+                <Button onClick={downloadPdf}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar PDF
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
