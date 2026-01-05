@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Loader2, Check, Cloud } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useA3WizardState } from "@/hooks/useA3WizardState";
+import { useDebounce } from "@/hooks/useDebounce";
 import { A3WizardProgress } from "./A3WizardProgress";
 import { WizardFeedbackPanel } from "./WizardFeedbackPanel";
 import { Step1Context } from "./steps/Step1Context";
@@ -50,6 +51,14 @@ export function A3Wizard() {
   } = useA3WizardState({ initialProjectId: urlProjectId });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const isInitialLoad = useRef(true);
+  const dataRef = useRef(data);
+  
+  // Keep dataRef in sync
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const canNavigateTo = (step: number): boolean => {
     if (step < currentStep) return true;
@@ -64,6 +73,123 @@ export function A3Wizard() {
     }
     return true;
   };
+
+  // Auto-save function (silent, no toast)
+  const performAutoSave = useCallback(async () => {
+    if (!userId || isInitialLoad.current) return;
+    if (!dataRef.current.name?.trim()) return; // Don't save without a name
+    
+    setAutoSaveStatus('saving');
+    try {
+      const currentProjectId = projectId || urlProjectId;
+      
+      if (currentProjectId) {
+        // Update existing project
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            name: dataRef.current.name,
+            objective: dataRef.current.objective,
+            strategic_indicator: dataRef.current.strategicIndicator,
+            category: (dataRef.current.category || null) as any,
+            assigned_to: dataRef.current.assignedTo || null,
+            thesis_id: dataRef.current.thesisId || null,
+            current_situation_description: dataRef.current.currentSituationDescription,
+            target_situation_description: dataRef.current.targetSituationDescription,
+            current_step: currentStep,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentProjectId);
+
+        if (error) throw error;
+        
+        // Update or create requirements
+        for (const req of dataRef.current.requirements) {
+          const { data: existingReq } = await supabase
+            .from('project_requirements')
+            .select('id')
+            .eq('project_id', currentProjectId)
+            .eq('code', req.code)
+            .single();
+
+          if (existingReq) {
+            await supabase
+              .from('project_requirements')
+              .update({
+                description: req.description,
+                indicator_name: req.indicator_name,
+                unit: req.unit,
+                current_value: req.current_value,
+                target_value: req.target_value,
+                display_order: req.display_order
+              })
+              .eq('id', existingReq.id);
+          } else {
+            await supabase
+              .from('project_requirements')
+              .insert({
+                project_id: currentProjectId,
+                code: req.code,
+                description: req.description,
+                indicator_name: req.indicator_name,
+                unit: req.unit,
+                current_value: req.current_value,
+                target_value: req.target_value,
+                display_order: req.display_order
+              });
+          }
+        }
+        
+        setAutoSaveStatus('saved');
+      } else {
+        // Create new project
+        const { data: newProject, error } = await supabase
+          .from('projects')
+          .insert([{
+            name: dataRef.current.name || "Novo Projeto A3",
+            objective: dataRef.current.objective,
+            strategic_indicator: dataRef.current.strategicIndicator,
+            category: (dataRef.current.category || null) as any,
+            assigned_to: dataRef.current.assignedTo || null,
+            thesis_id: dataRef.current.thesisId || null,
+            current_situation_description: dataRef.current.currentSituationDescription,
+            target_situation_description: dataRef.current.targetSituationDescription,
+            current_step: currentStep,
+            status: 'draft',
+            initiative_type: 'project',
+            created_by: userId
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        setProjectId(newProject.id);
+        // Update URL without reload
+        window.history.replaceState(null, '', `/create-a3/${newProject.id}`);
+        setAutoSaveStatus('saved');
+      }
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      setAutoSaveStatus('error');
+    }
+  }, [userId, projectId, urlProjectId, currentStep, setProjectId]);
+
+  // Debounced auto-save (2 seconds)
+  const debouncedAutoSave = useDebounce(performAutoSave, 2000);
+
+  // Watch for data changes and trigger auto-save
+  useEffect(() => {
+    if (isInitialLoad.current) {
+      // Skip first render after loading
+      const timer = setTimeout(() => {
+        isInitialLoad.current = false;
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+    
+    setAutoSaveStatus('idle');
+    debouncedAutoSave();
+  }, [data, debouncedAutoSave]);
 
   const saveProgress = async () => {
     if (!userId) {
@@ -541,15 +667,38 @@ export function A3Wizard() {
   return (
     <div className="container max-w-4xl mx-auto py-6 px-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">
-          {isEditingExisting ? "Detalhar Projeto A3" : "Novo Projeto A3"}
-        </h1>
-        <p className="text-muted-foreground">
-          {isEditingExisting 
-            ? "Continue o detalhamento do projeto A3"
-            : "Siga as 7 etapas para criar um projeto A3 completo"
-          }
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">
+              {isEditingExisting ? "Detalhar Projeto A3" : "Novo Projeto A3"}
+            </h1>
+            <p className="text-muted-foreground">
+              {isEditingExisting 
+                ? "Continue o detalhamento do projeto A3"
+                : "Siga as 7 etapas para criar um projeto A3 completo"
+              }
+            </p>
+          </div>
+          
+          {/* Auto-save status indicator */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {autoSaveStatus === 'saving' && (
+              <>
+                <Cloud className="w-4 h-4 animate-pulse" />
+                <span>Salvando...</span>
+              </>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <>
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-green-600">Salvo</span>
+              </>
+            )}
+            {autoSaveStatus === 'error' && (
+              <span className="text-destructive">Erro ao salvar</span>
+            )}
+          </div>
+        </div>
       </div>
 
       {comments.length > 0 && (
