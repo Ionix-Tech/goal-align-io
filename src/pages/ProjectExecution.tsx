@@ -111,7 +111,7 @@ const ProjectExecution = () => {
   return (
     <AppLayout
       customBreadcrumbs={[
-        { label: "Gestão", href: "/management" },
+        { label: "Gestão e Execução", href: "/management" },
         { label: project.name }
       ]}
     >
