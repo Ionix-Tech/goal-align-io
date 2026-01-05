@@ -78,11 +78,15 @@ export function AICopilotPanel({
     reset
   } = useA3Copilot();
 
-  // Load guidance when step changes
+  // Load guidance and clear chat when step changes
   useEffect(() => {
     if (!isCollapsed) {
       getGuidance(currentStep, data);
     }
+    // Clear chat and tips when step changes
+    setChatMessages([]);
+    setCurrentTip(null);
+    setExpandedMessages(new Set());
   }, [currentStep, isCollapsed]);
 
   const handleSuggestName = async () => {
