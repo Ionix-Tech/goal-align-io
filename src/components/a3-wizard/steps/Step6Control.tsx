@@ -3,14 +3,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { A3WizardData, WizardIndicator, WizardMilestone } from "@/hooks/useA3WizardState";
-import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target } from "lucide-react";
+import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target, Crosshair } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { WizardIndicatorManager } from "./WizardIndicatorManager";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useThesisDetails } from "@/hooks/useThesisDetails";
 
 interface Step6ControlProps {
   data: A3WizardData;
@@ -43,6 +45,7 @@ export function Step6Control({
   isSubmitting 
 }: Step6ControlProps) {
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
+  const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
 
   // Calculate suggested dates for M2 and M3 based on M1
   const suggestedDates = useMemo(() => {
@@ -103,6 +106,64 @@ export function Step6Control({
 
   return (
     <div className="space-y-6">
+      {/* Objetivo Estratégico */}
+      {(data.thesisId || data.strategicKpis.length > 0) && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Crosshair className="w-5 h-5 text-primary" />
+              Objetivo Estratégico
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Objetivo (Tese) */}
+            {thesisDetails && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Objetivo</Label>
+                <p className="font-medium">{thesisDetails.name}</p>
+                {thesisDetails.objective && (
+                  <p className="text-sm text-muted-foreground">{thesisDetails.objective}</p>
+                )}
+              </div>
+            )}
+
+            {/* KPIs Estratégicos Selecionados */}
+            {data.strategicKpis.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
+                  Indicadores Estratégicos (KRs) Impactados
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {data.strategicKpis.map((kpi) => {
+                    const kpiDetails = thesisDetails?.kpis?.find(k => k.id === kpi.kpiId);
+                    return (
+                      <Badge key={kpi.kpiId} variant="secondary" className="gap-1">
+                        {kpi.kpiName}
+                        {kpiDetails?.unit && (
+                          <span className="text-muted-foreground">({kpiDetails.unit})</span>
+                        )}
+                        {kpiDetails?.target_value != null && (
+                          <span className="text-muted-foreground">
+                            → Meta: {kpiDetails.target_value}
+                          </span>
+                        )}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Mensagem se não houver KPIs mas tiver tese */}
+            {data.thesisId && data.strategicKpis.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">
+                Nenhum indicador estratégico selecionado. Volte ao passo 1 para vincular.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Como vamos medir? */}
       <Card>
         <CardHeader>
