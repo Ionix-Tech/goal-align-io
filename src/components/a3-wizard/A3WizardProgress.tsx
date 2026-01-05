@@ -10,7 +10,7 @@ interface A3WizardProgressProps {
 const steps = [
   { number: 1, label: "Contexto", sublabel: "O que é esse projeto?", icon: FileText },
   { number: 2, label: "Requisitos", sublabel: "O que precisa dar certo?", icon: Target },
-  { number: 3, label: "Diagnóstico", sublabel: "Onde estamos hoje?", icon: Search },
+  { number: 3, label: "Situação Atual", sublabel: "Onde estamos hoje?", icon: Search },
   { number: 4, label: "Estratégia", sublabel: "Onde queremos chegar?", icon: Lightbulb },
   { number: 5, label: "Execução", sublabel: "O que vamos fazer?", icon: ClipboardList },
   { number: 6, label: "Controle", sublabel: "Quando vamos verificar?", icon: Shield },

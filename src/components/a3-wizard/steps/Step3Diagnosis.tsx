@@ -158,7 +158,7 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
             <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
               3
             </span>
-            Diagnóstico
+            Situação Atual
           </CardTitle>
           <CardDescription>
             Onde estamos hoje? Descreva a situação atual com evidências.
@@ -228,7 +228,7 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
           💡 Dica
         </h4>
         <p className="text-sm text-muted-foreground">
-          Anexe evidências visuais (gráficos, fotos do processo, prints de sistemas) para documentar a situação atual. Isso será fundamental durante as apresentações e para referência futura.
+          É uma fotografia do momento presente em que o item analisado se encontra em desacordo com os requisitos do negócio. O ideal neste caso é relacionar cada item que estiver NOK a uma situação atual, ou seja, um item Não OK causa um problema que deverá ser analisado e solucionado. Procure quantificar o que está sendo descrito, por exemplo, ao invés de simplesmente dizer o consumo de água está alto, coloque qual é o consumo atual.
         </p>
       </div>
 

@@ -76,7 +76,7 @@ export function A3DiagnosisSection({ description, attachments }: A3DiagnosisSect
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="w-5 h-5 text-primary" />
-            Diagnóstico - Situação Atual
+            Situação Atual
           </CardTitle>
           <CardDescription>
             Descrição do cenário atual e problemas identificados

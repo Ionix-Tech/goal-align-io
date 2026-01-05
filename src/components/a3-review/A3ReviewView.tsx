@@ -197,7 +197,7 @@ export function A3ReviewView() {
           </TabsTrigger>
           <TabsTrigger value="diagnosis" className="flex items-center gap-2 py-3">
             <Search className="w-4 h-4" />
-            <span className="hidden sm:inline">Diagnóstico</span>
+            <span className="hidden sm:inline">Situação Atual</span>
           </TabsTrigger>
           <TabsTrigger value="strategy" className="flex items-center gap-2 py-3">
             <Rocket className="w-4 h-4" />
