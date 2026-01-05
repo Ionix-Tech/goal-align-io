@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings2, Filter, Database as DatabaseIcon, FileText, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectExecutionCard } from "@/components/management/ProjectExecutionCard";
 import { WorkloadDashboard } from "@/components/management/WorkloadDashboard";
+import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
 import { useApprovedProjects } from "@/hooks/useApprovedProjects";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -60,6 +61,27 @@ const Management = () => {
     red: projects?.filter(p => p.current_health === 'red').length || 0,
     noStatus: projects?.filter(p => !p.current_health).length || 0
   };
+
+  // Prepare context for AI chat
+  const chatProjectsSummary = useMemo(() => ({
+    total: stats.total,
+    healthy: stats.green,
+    attention: stats.yellow,
+    critical: stats.red,
+    noStatus: stats.noStatus,
+  }), [stats]);
+
+  const chatProjects = useMemo(() => 
+    (projects || []).map(p => ({
+      id: p.id,
+      name: p.name,
+      health: p.current_health,
+      progress: p.milestones_total > 0
+        ? Math.round((p.milestones_completed / p.milestones_total) * 100)
+        : 0,
+      pendingTasks: undefined,
+    })),
+  [projects]);
 
   return (
     <div className="p-8">
@@ -281,6 +303,13 @@ const Management = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* AI Chat */}
+      <ManagementChatPanel
+        contextType="management"
+        projectsSummary={chatProjectsSummary}
+        projects={chatProjects}
+      />
     </div>
   );
 };
