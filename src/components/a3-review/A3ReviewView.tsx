@@ -21,7 +21,8 @@ import {
   CheckCircle,
   Clock,
   User,
-  Building
+  Building,
+  LayoutGrid
 } from "lucide-react";
 import { A3ContextSection } from "./sections/A3ContextSection";
 import { A3RequirementsSection } from "./sections/A3RequirementsSection";
@@ -29,6 +30,7 @@ import { A3DiagnosisSection } from "./sections/A3DiagnosisSection";
 import { A3StrategySection } from "./sections/A3StrategySection";
 import { A3ExecutionSection } from "./sections/A3ExecutionSection";
 import { A3ControlSection } from "./sections/A3ControlSection";
+import { A3MatrixSection } from "./sections/A3MatrixSection";
 import { A3ReviewActions } from "./A3ReviewActions";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { format } from "date-fns";
@@ -186,7 +188,7 @@ export function A3ReviewView() {
 
       {/* Tabs Navigation */}
       <Tabs defaultValue="context" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 h-auto">
+        <TabsList className="grid w-full grid-cols-7 h-auto">
           <TabsTrigger value="context" className="flex items-center gap-2 py-3">
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">Contexto</span>
@@ -210,6 +212,10 @@ export function A3ReviewView() {
           <TabsTrigger value="control" className="flex items-center gap-2 py-3">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Controle</span>
+          </TabsTrigger>
+          <TabsTrigger value="matrix" className="flex items-center gap-2 py-3">
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">Matriz</span>
           </TabsTrigger>
         </TabsList>
 
@@ -235,18 +241,29 @@ export function A3ReviewView() {
           />
         </TabsContent>
 
-          <TabsContent value="execution">
-            <A3ExecutionSection 
-              milestones={data.milestones}
-              whyLinks={data.whyLinks}
-              tasks={data.tasks}
-            />
+        <TabsContent value="execution">
+          <A3ExecutionSection 
+            milestones={data.milestones}
+            whyLinks={data.whyLinks}
+            tasks={data.tasks}
+            indicators={data.indicators}
+          />
         </TabsContent>
 
         <TabsContent value="control">
           <A3ControlSection 
             indicators={data.indicators}
             requirements={data.requirements}
+            tasks={data.tasks}
+          />
+        </TabsContent>
+
+        <TabsContent value="matrix">
+          <A3MatrixSection 
+            tasks={data.tasks}
+            requirements={data.requirements}
+            indicators={data.indicators}
+            milestones={data.milestones}
           />
         </TabsContent>
       </Tabs>

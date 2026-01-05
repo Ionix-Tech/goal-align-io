@@ -24,6 +24,8 @@ export interface A3Task {
   dueDate: string | null;
   status: string;
   linkedRequirements: string[]; // requirement codes
+  linkedIndicatorIds: string[]; // indicator IDs
+  milestoneId: string | null;
 }
 
 export interface A3Milestone {
@@ -128,12 +130,16 @@ export function useA3ReviewData(projectId: string | null) {
 
       const { data: tasks } = await supabase
         .from('project_tasks')
-        .select('id, title, due_date, status, assigned_to, assignee:profiles!project_tasks_assigned_to_fkey(full_name)')
+        .select('id, title, due_date, status, assigned_to, milestone_id, assignee:profiles!project_tasks_assigned_to_fkey(full_name)')
         .eq('project_id', projectId);
 
       const { data: taskLinks } = await supabase
         .from('requirement_task_links')
         .select('task_id, requirement_id');
+
+      const { data: taskIndicatorLinks } = await supabase
+        .from('task_indicator_links')
+        .select('task_id, indicator_id');
 
       const { data: milestones } = await supabase
         .from('project_milestones')
@@ -200,10 +206,14 @@ export function useA3ReviewData(projectId: string | null) {
         assigneeName: (task.assignee as any)?.full_name || null,
         dueDate: task.due_date,
         status: task.status,
+        milestoneId: task.milestone_id || null,
         linkedRequirements: (taskLinks || [])
           .filter(link => link.task_id === task.id)
           .map(link => reqCodeMap.get(link.requirement_id) || '')
-          .filter(Boolean)
+          .filter(Boolean),
+        linkedIndicatorIds: (taskIndicatorLinks || [])
+          .filter(link => link.task_id === task.id)
+          .map(link => link.indicator_id)
       }));
 
       return {
