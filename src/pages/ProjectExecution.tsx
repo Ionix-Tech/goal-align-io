@@ -208,7 +208,12 @@ const ProjectExecution = () => {
                 <FileCheck className="h-5 w-5 text-primary" />
                 Atividade
               </h2>
-              <ActivitySection projectId={projectId!} />
+              <ActivitySection 
+                projectId={projectId!}
+                requirements={requirements || []}
+                milestones={project.milestones.map(m => ({ id: m.id, title: m.title, milestone_type: m.milestone_type }))}
+                indicators={project.indicators.map(i => ({ id: i.id, name: i.name }))}
+              />
             </div>
           </TabsContent>
 
