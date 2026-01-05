@@ -12,7 +12,7 @@ const steps = [
   { number: 2, label: "Requisitos", sublabel: "O que precisa dar certo?", icon: Target },
   { number: 3, label: "Situação Atual", sublabel: "Onde estamos hoje?", icon: Search },
   { number: 4, label: "Situação Alvo", sublabel: "Onde queremos chegar?", icon: Lightbulb },
-  { number: 5, label: "Execução", sublabel: "O que vamos fazer?", icon: ClipboardList },
+  { number: 5, label: "Plano de Ação", sublabel: "O que vamos fazer?", icon: ClipboardList },
   { number: 6, label: "Controle", sublabel: "Quando vamos verificar?", icon: Shield },
 ];
 
