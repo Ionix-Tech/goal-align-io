@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, Plus, Lightbulb, LayoutGrid, BarChart3, Columns } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useRequirements } from "@/hooks/useRequirements";
 import { useDeleteMilestone } from "@/hooks/useMilestones";
+import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { HealthStatusBadge } from "@/components/management/HealthStatusBadge";
 import { MilestoneTimeline } from "@/components/execution/MilestoneTimeline";
 import { MilestoneTracker } from "@/components/execution/MilestoneTracker";
@@ -35,7 +36,9 @@ import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachment
 import { LinkedIdeasCard } from "@/components/execution/LinkedIdeasCard";
 import { GanttChart } from "@/components/execution/GanttChart";
 import { ProjectKanban } from "@/components/execution/ProjectKanban";
+import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
 import { Target, FileCheck, AlertCircle } from "lucide-react";
+import { format } from "date-fns";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -50,6 +53,7 @@ const ProjectExecution = () => {
   const { data: situations } = useProjectSituations(projectId || null);
   const { data: requirements } = useRequirements(projectId || null);
   const { data: reportData } = useA3ReportData(projectId || null);
+  const { data: tasks } = useProjectTasks(projectId || null);
   const deleteMilestone = useDeleteMilestone();
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -107,6 +111,38 @@ const ProjectExecution = () => {
   const handleExportReport = () => {
     window.print();
   };
+
+  // Prepare context for AI chat
+  const chatProjectDetails = useMemo(() => {
+    const pendingTasks = (tasks || []).filter(t => t.status !== 'completed');
+    const completedTasks = (tasks || []).filter(t => t.status === 'completed');
+    
+    return {
+      name: project.name,
+      objective: project.objective || undefined,
+      health: undefined, // Could be fetched from health status if available
+      milestones: project.milestones.map(m => ({
+        title: m.title,
+        targetDate: m.target_date ? format(new Date(m.target_date), 'dd/MM/yyyy') : 'Não definido',
+        completed: m.completed,
+        type: m.milestone_type || undefined,
+      })),
+      indicators: project.indicators.map(i => ({
+        name: i.name,
+        current: i.current_state,
+        target: i.target_state,
+        unit: i.unit || undefined,
+      })),
+      tasks: (tasks || []).map(t => ({
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        dueDate: t.due_date ? format(new Date(t.due_date), 'dd/MM/yyyy') : undefined,
+      })),
+      pendingActions: pendingTasks.length,
+      completedActions: completedTasks.length,
+    };
+  }, [project, tasks]);
 
   return (
     <AppLayout
@@ -716,6 +752,12 @@ const ProjectExecution = () => {
         indicators={project.indicators}
         situations={situations}
         reportData={reportData}
+      />
+
+      {/* AI Chat */}
+      <ManagementChatPanel
+        contextType="execution"
+        projectDetails={chatProjectDetails}
       />
       </div>
     </AppLayout>
