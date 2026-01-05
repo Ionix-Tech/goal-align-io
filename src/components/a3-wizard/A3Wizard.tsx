@@ -220,8 +220,9 @@ export function A3Wizard() {
             project_id: currentProjectId,
             title: action.description,
             assigned_to: action.responsibleId || null,
+            start_date: action.startDate || null,
             due_date: action.dueDate || null,
-            status: 'not_started',
+            status: action.status || 'not_started',
             priority: 'medium',
             created_by: userId
           })

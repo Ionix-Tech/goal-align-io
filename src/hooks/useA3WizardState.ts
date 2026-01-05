@@ -16,7 +16,9 @@ export interface WizardAction {
   id: string;
   description: string;
   responsibleId: string;
+  startDate: string;
   dueDate: string;
+  status: string;
   linkedRequirements: string[];
 }
 
@@ -254,7 +256,9 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
             id: task.id,
             description: task.title || '',
             responsibleId: task.assigned_to || '',
+            startDate: task.start_date || '',
             dueDate: task.due_date || '',
+            status: task.status || 'not_started',
             linkedRequirements: linkedReqs
           };
         });
@@ -392,7 +396,9 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           id: crypto.randomUUID(),
           description: "",
           responsibleId: "",
+          startDate: "",
           dueDate: "",
+          status: "not_started",
           linkedRequirements: []
         }
       ]
@@ -500,8 +506,17 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         return data.targetSituationDescription.trim() !== "";
       },
       6: () => {
-        // Step 5 complete: handled at component level (tasks with requirement links)
-        return true;
+        // Step 5 complete: cada requisito deve ter pelo menos 1 ação vinculada
+        const actionsWithContent = data.actions.filter(a => a.description.trim() !== "");
+        
+        // Verificar se todos os requisitos estão cobertos
+        const allRequirementsCovered = data.requirements.every(req => 
+          actionsWithContent.some(action => 
+            action.linkedRequirements.includes(req.code)
+          )
+        );
+        
+        return actionsWithContent.length > 0 && allRequirementsCovered;
       },
       submit: () => {
         // Step 6 complete: M1 date set (M2 and M3 auto-calculated)

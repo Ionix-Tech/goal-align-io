@@ -205,7 +205,7 @@ export function A3ReviewView() {
           </TabsTrigger>
           <TabsTrigger value="execution" className="flex items-center gap-2 py-3">
             <Calendar className="w-4 h-4" />
-            <span className="hidden sm:inline">Execução</span>
+            <span className="hidden sm:inline">Plano de Ação</span>
           </TabsTrigger>
           <TabsTrigger value="control" className="flex items-center gap-2 py-3">
             <BarChart3 className="w-4 h-4" />

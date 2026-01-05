@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { A3WizardData, WizardAction, WizardWhyLink } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink } from "lucide-react";
@@ -19,6 +20,13 @@ interface Step5ExecutionProps {
   updateWhyLink: (id: string, updates: Partial<WizardWhyLink>) => void;
   removeWhyLink: (id: string) => void;
 }
+
+const statusOptions = [
+  { value: "not_started", label: "Não Iniciada" },
+  { value: "in_progress", label: "Em Andamento" },
+  { value: "blocked", label: "Bloqueada" },
+  { value: "completed", label: "Concluída" },
+];
 
 export function Step5Execution({ 
   data, 
@@ -48,6 +56,7 @@ export function Step5Execution({
     );
     return {
       code: req.code,
+      description: req.description,
       indicator: req.indicator_name,
       actionCount: linkedActions.length,
       covered: linkedActions.length > 0
@@ -55,6 +64,12 @@ export function Step5Execution({
   });
 
   const uncoveredCount = coverage.filter(c => !c.covered).length;
+
+  // Get requirement description by code
+  const getRequirementDescription = (code: string) => {
+    const req = data.requirements.find(r => r.code === code);
+    return req?.description || "Sem descrição";
+  };
 
   return (
     <div className="space-y-6">
@@ -65,7 +80,7 @@ export function Step5Execution({
             <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
               5
             </span>
-            Execução
+            Plano de Ação
           </CardTitle>
           <CardDescription>
             O que vamos fazer? Defina as ações e vincule aos requisitos que serão impactados.
@@ -130,6 +145,36 @@ export function Step5Execution({
                     </div>
 
                     <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select
+                        value={action.status}
+                        onValueChange={(value) => updateAction(action.id, { status: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Data de Início</Label>
+                      <Input
+                        type="date"
+                        value={action.startDate}
+                        onChange={(e) => updateAction(action.id, { startDate: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
                       <Label>Prazo</Label>
                       <Input
                         type="date"
@@ -142,23 +187,32 @@ export function Step5Execution({
                   <div className="space-y-2">
                     <Label>Requisitos Impactados *</Label>
                     <div className="flex flex-wrap gap-2">
-                      {data.requirements.map((req) => (
-                        <label
-                          key={req.code}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
-                            action.linkedRequirements.includes(req.code)
-                              ? "bg-accent/20 border-accent text-accent"
-                              : "bg-muted/50 border-border hover:bg-muted"
-                          )}
-                        >
-                          <Checkbox
-                            checked={action.linkedRequirements.includes(req.code)}
-                            onCheckedChange={() => toggleRequirementLink(action.id, req.code)}
-                          />
-                          <span className="text-sm font-medium">{req.code}</span>
-                        </label>
-                      ))}
+                      <TooltipProvider>
+                        {data.requirements.map((req) => (
+                          <Tooltip key={req.code}>
+                            <TooltipTrigger asChild>
+                              <label
+                                className={cn(
+                                  "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
+                                  action.linkedRequirements.includes(req.code)
+                                    ? "bg-accent/20 border-accent text-accent"
+                                    : "bg-muted/50 border-border hover:bg-muted"
+                                )}
+                              >
+                                <Checkbox
+                                  checked={action.linkedRequirements.includes(req.code)}
+                                  onCheckedChange={() => toggleRequirementLink(action.id, req.code)}
+                                />
+                                <span className="text-sm font-medium">{req.code}</span>
+                              </label>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="font-medium">{req.code}</p>
+                              <p className="text-sm">{req.description || "Sem descrição"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </TooltipProvider>
                     </div>
                     {action.description.trim() !== "" && action.linkedRequirements.length === 0 && (
                       <p className="text-xs text-destructive">
@@ -180,38 +234,47 @@ export function Step5Execution({
           <div className="bg-muted/30 rounded-lg p-4 border">
             <h4 className="font-medium text-sm mb-3">Cobertura por Requisito</h4>
             <div className="grid gap-2">
-              {coverage.map((c) => (
-                <div
-                  key={c.code}
-                  className={cn(
-                    "flex items-center justify-between px-3 py-2 rounded-lg",
-                    c.covered ? "bg-success/10" : "bg-destructive/10"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm">{c.code}</span>
-                    <span className="text-sm text-muted-foreground">{c.indicator}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {c.covered ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 text-success" />
-                        <span className="text-xs text-success">{c.actionCount} ação(ões)</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-4 h-4 text-destructive" />
-                        <span className="text-xs text-destructive">Descoberto!</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
+              <TooltipProvider>
+                {coverage.map((c) => (
+                  <Tooltip key={c.code}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "flex items-center justify-between px-3 py-2 rounded-lg cursor-help",
+                          c.covered ? "bg-success/10" : "bg-destructive/10"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm">{c.code}</span>
+                          <span className="text-sm text-muted-foreground truncate max-w-[200px]">{c.indicator}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {c.covered ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 text-success" />
+                              <span className="text-xs text-success">{c.actionCount} ação(ões)</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-4 h-4 text-destructive" />
+                              <span className="text-xs text-destructive">Descoberto!</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="font-medium">{c.code}</p>
+                      <p className="text-sm">{c.description || "Sem descrição"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </TooltipProvider>
             </div>
 
             {uncoveredCount > 0 && (
               <p className="text-sm text-destructive mt-3">
-                ⚠️ {uncoveredCount} requisito(s) sem ações vinculadas
+                ⚠️ {uncoveredCount} requisito(s) sem ações vinculadas - obrigatório para continuar
               </p>
             )}
           </div>
