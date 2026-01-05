@@ -184,8 +184,9 @@ export default function ThesisDetail() {
   return (
     <AppLayout
       customBreadcrumbs={[
-        { label: "Objetivos Estratégicos", href: "/theses" },
-        { label: thesis.name || "Carregando..." }
+        { label: "Estratégia" },
+        { label: "Objetivos", href: "/theses" },
+        { label: thesis.name }
       ]}
     >
       <div className="container mx-auto p-6 space-y-6">

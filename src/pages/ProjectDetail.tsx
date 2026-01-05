@@ -625,6 +625,7 @@ const ProjectDetail = () => {
   return (
     <AppLayout
       customBreadcrumbs={[
+        { label: "Estratégia" },
         { label: "Priorização", href: "/prioritization" },
         { label: project.name }
       ]}

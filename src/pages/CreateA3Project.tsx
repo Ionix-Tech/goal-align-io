@@ -14,6 +14,7 @@ const CreateA3Project = () => {
   return (
     <AppLayout
       customBreadcrumbs={[
+        { label: "Estratégia" },
         { label: "Priorização", href: "/prioritization" },
         { label: breadcrumbLabel }
       ]}
