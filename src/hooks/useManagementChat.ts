@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 export interface ChatMessage {
@@ -61,9 +61,49 @@ type ChatContext = ManagementContext | ExecutionContext;
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/management-chat`;
 
+// Generate storage key based on context
+function getStorageKey(context: ChatContext): string {
+  if (context.type === 'management') {
+    return 'chat_history_management';
+  }
+  return `chat_history_project_${context.project.name.replace(/\s+/g, '_').toLowerCase()}`;
+}
+
+// Load messages from localStorage
+function loadMessages(key: string): ChatMessage[] {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp),
+      }));
+    }
+  } catch (e) {
+    console.error('Error loading chat history:', e);
+  }
+  return [];
+}
+
+// Save messages to localStorage
+function saveMessages(key: string, messages: ChatMessage[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(messages));
+  } catch (e) {
+    console.error('Error saving chat history:', e);
+  }
+}
+
 export function useManagementChat(context: ChatContext) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const storageKey = getStorageKey(context);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(storageKey));
   const [isLoading, setIsLoading] = useState(false);
+
+  // Save to localStorage whenever messages change
+  useEffect(() => {
+    saveMessages(storageKey, messages);
+  }, [messages, storageKey]);
 
   const sendMessage = useCallback(async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
@@ -179,7 +219,8 @@ export function useManagementChat(context: ChatContext) {
 
   const clearChat = useCallback(() => {
     setMessages([]);
-  }, []);
+    localStorage.removeItem(storageKey);
+  }, [storageKey]);
 
   return {
     messages,
