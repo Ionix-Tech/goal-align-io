@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { A3WizardData, WizardIndicator, WizardMilestone, StrategicKPI } from "@/hooks/useA3WizardState";
-import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target, Crosshair, X } from "lucide-react";
+import { Plane, PlaneTakeoff, Rocket, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target, Crosshair, X } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
@@ -320,7 +320,7 @@ export function Step6Control({
               <TooltipProvider>
                 <div className="border rounded-lg p-4 bg-card space-y-3">
                   <div className="flex items-center gap-2 text-success">
-                    <PlaneLanding className="w-5 h-5" />
+                    <Rocket className="w-5 h-5" />
                     <span className="font-semibold">M3 - Escala</span>
                   </div>
                   <Tooltip>
