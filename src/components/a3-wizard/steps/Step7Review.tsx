@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { A3WizardData, StrategicKPI } from "@/hooks/useA3WizardState";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { A3WizardData, WizardAction, StrategicKPI } from "@/hooks/useA3WizardState";
 import { 
   FileText, Target, Search, Lightbulb, ClipboardList, Shield, Send, 
   Pencil, Calendar, BarChart3, Crosshair, Link, PlaneTakeoff, Plane, Rocket,
-  CheckCircle2, AlertCircle, User
+  CheckCircle2, AlertCircle, User, LayoutGrid
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,12 +17,14 @@ import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { ActionMatrixTab } from "./ActionMatrixTab";
 
 interface Step7ReviewProps {
   data: A3WizardData;
   goToStep: (step: number) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  updateAction: (id: string, updates: Partial<WizardAction>) => void;
 }
 
 const checklistItems = [
@@ -37,12 +40,14 @@ export function Step7Review({
   data, 
   goToStep, 
   onSubmit, 
-  isSubmitting 
+  isSubmitting,
+  updateAction
 }: Step7ReviewProps) {
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
   const [openSections, setOpenSections] = useState<string[]>([
     "context", "okr", "requirements", "current", "target", "actions", "indicators", "milestones"
   ]);
+  const [activeTab, setActiveTab] = useState("review");
   
   const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
   const { data: teamMembers } = useTeamMembers();
@@ -128,19 +133,32 @@ export function Step7Review({
 
   return (
     <div className="space-y-4">
-      <Card className="border-primary/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-              7
-            </span>
-            Revisão Final do A3
-          </CardTitle>
-          <CardDescription>
-            Revise todos os itens do projeto antes de enviar para aprovação. Clique em "Editar" para voltar a qualquer etapa.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="review" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Revisão Geral
+          </TabsTrigger>
+          <TabsTrigger value="matrix" className="gap-2">
+            <LayoutGrid className="w-4 h-4" />
+            Matriz de Ações
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="review" className="mt-4 space-y-4">
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                  7
+                </span>
+                Revisão Final do A3
+              </CardTitle>
+              <CardDescription>
+                Revise todos os itens do projeto antes de enviar para aprovação. Clique em "Editar" para voltar a qualquer etapa.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
           {/* Section 1: Contexto */}
           <Collapsible open={openSections.includes("context")} onOpenChange={() => toggleSection("context")}>
             <div className="border rounded-lg p-4 bg-card">
@@ -482,79 +500,88 @@ export function Step7Review({
               </CollapsibleContent>
             </div>
           </Collapsible>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Checklist de Qualidade */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
-            Checklist de Qualidade
-          </CardTitle>
-          <CardDescription>
-            Confirme que todos os itens estão completos antes de enviar para aprovação.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-            {checklistItems.map((item) => (
-              <label
-                key={item.id}
-                className={cn(
-                  "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
-                  checkedItems.includes(item.id) 
-                    ? "bg-success/10" 
-                    : "hover:bg-muted"
-                )}
+          {/* Checklist de Qualidade */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                Checklist de Qualidade
+              </CardTitle>
+              <CardDescription>
+                Confirme que todos os itens estão completos antes de enviar para aprovação.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                {checklistItems.map((item) => (
+                  <label
+                    key={item.id}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
+                      checkedItems.includes(item.id) 
+                        ? "bg-success/10" 
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    <Checkbox
+                      checked={checkedItems.includes(item.id)}
+                      onCheckedChange={() => toggleChecklistItem(item.id)}
+                    />
+                    <span className={cn(
+                      "text-sm",
+                      checkedItems.includes(item.id) && "line-through text-muted-foreground"
+                    )}>
+                      {item.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              <p className="text-sm text-muted-foreground text-center">
+                {checkedItems.length} de {checklistItems.length} itens verificados
+              </p>
+
+              {/* Submit Button */}
+              <Button
+                onClick={onSubmit}
+                disabled={!canSubmit || isSubmitting}
+                className="w-full gap-2"
+                size="lg"
               >
-                <Checkbox
-                  checked={checkedItems.includes(item.id)}
-                  onCheckedChange={() => toggleChecklistItem(item.id)}
-                />
-                <span className={cn(
-                  "text-sm",
-                  checkedItems.includes(item.id) && "line-through text-muted-foreground"
-                )}>
-                  {item.label}
-                </span>
-              </label>
-            ))}
-          </div>
+                <Send className="w-4 h-4" />
+                {isSubmitting ? "Enviando..." : "Enviar para Aprovação"}
+              </Button>
 
-          <p className="text-sm text-muted-foreground text-center">
-            {checkedItems.length} de {checklistItems.length} itens verificados
-          </p>
+              {!canSubmit && (
+                <p className="text-sm text-center text-muted-foreground">
+                  {!data.m1Date 
+                    ? "Defina a data de início (M1) no Step 6 para enviar."
+                    : "Complete o checklist acima para enviar."}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* Submit Button */}
-          <Button
-            onClick={onSubmit}
-            disabled={!canSubmit || isSubmitting}
-            className="w-full gap-2"
-            size="lg"
-          >
-            <Send className="w-4 h-4" />
-            {isSubmitting ? "Enviando..." : "Enviar para Aprovação"}
-          </Button>
-
-          {!canSubmit && (
-            <p className="text-sm text-center text-muted-foreground">
-              {!data.m1Date 
-                ? "Defina a data de início (M1) no Step 6 para enviar."
-                : "Complete o checklist acima para enviar."}
+          <div className="bg-muted/50 rounded-lg p-4 border border-border">
+            <h4 className="font-medium text-sm text-muted-foreground mb-2">
+              💡 Próximos Passos
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              Após enviar para aprovação, o projeto será revisado. Se aprovado, você poderá iniciar a execução e acompanhar o progresso nos milestones M1, M2 e M3.
             </p>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        </TabsContent>
 
-      <div className="bg-muted/50 rounded-lg p-4 border border-border">
-        <h4 className="font-medium text-sm text-muted-foreground mb-2">
-          💡 Próximos Passos
-        </h4>
-        <p className="text-sm text-muted-foreground">
-          Após enviar para aprovação, o projeto será revisado. Se aprovado, você poderá iniciar a execução e acompanhar o progresso nos milestones M1, M2 e M3.
-        </p>
-      </div>
+        <TabsContent value="matrix" className="mt-4">
+          <ActionMatrixTab 
+            data={data} 
+            updateAction={updateAction} 
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
