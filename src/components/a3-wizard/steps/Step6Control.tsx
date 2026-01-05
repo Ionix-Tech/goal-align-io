@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { A3WizardData, WizardIndicator, WizardMilestone } from "@/hooks/useA3WizardState";
-import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target, Crosshair } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { A3WizardData, WizardIndicator, WizardMilestone, StrategicKPI } from "@/hooks/useA3WizardState";
+import { Plane, PlaneTakeoff, PlaneLanding, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target, Crosshair, X } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
@@ -46,6 +47,35 @@ export function Step6Control({
 }: Step6ControlProps) {
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
   const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
+
+  // KPIs disponíveis para adicionar (não selecionados ainda)
+  const availableKPIs = thesisDetails?.kpis?.filter(
+    kpi => !data.strategicKpis.some(selected => selected.kpiId === kpi.id)
+  ) || [];
+
+  const handleAddKPI = (kpiId: string) => {
+    const kpi = thesisDetails?.kpis?.find(k => k.id === kpiId);
+    if (!kpi) return;
+    
+    const newKPI: StrategicKPI = {
+      id: crypto.randomUUID(),
+      kpiId: kpi.id,
+      kpiName: kpi.name
+    };
+    
+    updateData({ 
+      strategicKpis: [...data.strategicKpis, newKPI],
+      strategicIndicator: data.strategicKpis.length === 0 ? kpi.name : data.strategicIndicator
+    });
+  };
+
+  const handleRemoveKPI = (kpiId: string) => {
+    const updatedKpis = data.strategicKpis.filter(k => k.kpiId !== kpiId);
+    updateData({ 
+      strategicKpis: updatedKpis,
+      strategicIndicator: updatedKpis.length > 0 ? updatedKpis[0].kpiName : ""
+    });
+  };
 
   // Calculate suggested dates for M2 and M3 based on M1
   const suggestedDates = useMemo(() => {
@@ -128,16 +158,21 @@ export function Step6Control({
             )}
 
             {/* KPIs Estratégicos Selecionados */}
-            {data.strategicKpis.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">
-                  Indicadores Estratégicos (KRs) Impactados
-                </Label>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">
+                Indicadores Estratégicos (KRs) Impactados
+              </Label>
+              
+              {data.strategicKpis.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {data.strategicKpis.map((kpi) => {
                     const kpiDetails = thesisDetails?.kpis?.find(k => k.id === kpi.kpiId);
                     return (
-                      <Badge key={kpi.kpiId} variant="secondary" className="gap-1">
+                      <Badge 
+                        key={kpi.kpiId} 
+                        variant="secondary" 
+                        className="flex items-center gap-1 pr-1"
+                      >
                         {kpi.kpiName}
                         {kpiDetails?.unit && (
                           <span className="text-muted-foreground">({kpiDetails.unit})</span>
@@ -147,19 +182,42 @@ export function Step6Control({
                             → Meta: {kpiDetails.target_value}
                           </span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveKPI(kpi.kpiId)}
+                          className="ml-1 rounded-full hover:bg-muted p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </Badge>
                     );
                   })}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Mensagem se não houver KPIs mas tiver tese */}
-            {data.thesisId && data.strategicKpis.length === 0 && (
-              <p className="text-sm text-muted-foreground italic">
-                Nenhum indicador estratégico selecionado. Volte ao passo 1 para vincular.
-              </p>
-            )}
+              {/* Dropdown para adicionar mais KPIs */}
+              {data.thesisId && availableKPIs.length > 0 && (
+                <Select onValueChange={handleAddKPI}>
+                  <SelectTrigger className="w-full md:w-auto">
+                    <SelectValue placeholder="Adicionar indicador..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableKPIs.map((kpi) => (
+                      <SelectItem key={kpi.id} value={kpi.id}>
+                        {kpi.name} {kpi.unit && `(${kpi.unit})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Mensagem se não houver KPIs e nem disponíveis */}
+              {data.strategicKpis.length === 0 && availableKPIs.length === 0 && data.thesisId && (
+                <p className="text-sm text-muted-foreground italic">
+                  Não há indicadores estratégicos cadastrados neste objetivo.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
