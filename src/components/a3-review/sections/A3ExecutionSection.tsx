@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { A3Milestone, A3WhyLink, A3Task } from "@/hooks/useA3ReviewData";
-import { Calendar, ExternalLink, Link, PlaneTakeoff, Plane, PlaneLanding, ClipboardList, User, Clock } from "lucide-react";
+import { A3Milestone, A3WhyLink, A3Task, A3Indicator } from "@/hooks/useA3ReviewData";
+import { Calendar, ExternalLink, Link, PlaneTakeoff, Plane, PlaneLanding, ClipboardList, User, Clock, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -9,6 +9,7 @@ interface A3ExecutionSectionProps {
   milestones: A3Milestone[];
   whyLinks: A3WhyLink[];
   tasks: A3Task[];
+  indicators: A3Indicator[];
 }
 
 const getMilestoneIcon = (type: string | null) => {
@@ -38,7 +39,11 @@ const getMilestoneLabel = (type: string | null) => {
   }
 };
 
-export function A3ExecutionSection({ milestones, whyLinks, tasks }: A3ExecutionSectionProps) {
+export function A3ExecutionSection({ milestones, whyLinks, tasks, indicators }: A3ExecutionSectionProps) {
+  // Create maps for quick lookup
+  const milestonesMap = new Map(milestones.map(m => [m.id, m]));
+  const indicatorsMap = new Map(indicators.map(i => [i.id, i]));
+
   return (
     <div className="space-y-4">
       {/* Tasks/Actions */}
@@ -55,37 +60,67 @@ export function A3ExecutionSection({ milestones, whyLinks, tasks }: A3ExecutionS
         <CardContent>
           {tasks.length > 0 ? (
             <div className="space-y-3">
-              {tasks.map((task) => (
-                <div 
-                  key={task.id}
-                  className="border rounded-lg p-4 bg-card space-y-2"
-                >
-                  <p className="font-medium">{task.title}</p>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    {task.assigneeName && (
-                      <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {task.assigneeName}
-                      </span>
+              {tasks.map((task) => {
+                const milestone = task.milestoneId ? milestonesMap.get(task.milestoneId) : null;
+                
+                return (
+                  <div 
+                    key={task.id}
+                    className="border rounded-lg p-4 bg-card space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium">{task.title}</p>
+                      {milestone && (
+                        <Badge 
+                          variant="outline" 
+                          className={`shrink-0 gap-1 ${getMilestoneColor(milestone.milestone_type)}`}
+                        >
+                          {getMilestoneIcon(milestone.milestone_type)}
+                          {getMilestoneLabel(milestone.milestone_type)}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      {task.assigneeName && (
+                        <span className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {task.assigneeName}
+                        </span>
+                      )}
+                      {task.dueDate && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {format(new Date(task.dueDate), "dd/MM/yyyy")}
+                        </span>
+                      )}
+                    </div>
+                    {/* Requirements */}
+                    {task.linkedRequirements.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {task.linkedRequirements.map(code => (
+                          <Badge key={code} variant="secondary" className="text-xs">
+                            {code}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
-                    {task.dueDate && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {format(new Date(task.dueDate), "dd/MM/yyyy")}
-                      </span>
+                    {/* Indicators */}
+                    {task.linkedIndicatorIds.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {task.linkedIndicatorIds.map(indId => {
+                          const ind = indicatorsMap.get(indId);
+                          return ind ? (
+                            <Badge key={indId} variant="outline" className="text-xs gap-1 text-primary">
+                              <BarChart3 className="w-3 h-3" />
+                              {ind.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
                     )}
                   </div>
-                  {task.linkedRequirements.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {task.linkedRequirements.map(code => (
-                        <Badge key={code} variant="secondary" className="text-xs">
-                          {code}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">
