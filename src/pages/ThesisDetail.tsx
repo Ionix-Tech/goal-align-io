@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Edit, Calendar, TrendingUp, Lightbulb, Briefcase, Heart, Brain, Zap, Plus } from "lucide-react";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -181,13 +182,19 @@ export default function ThesisDetail() {
   const projectsCount = initiatives?.projects.length || 0;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate("/theses")} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Button>
+    <AppLayout
+      customBreadcrumbs={[
+        { label: "Objetivos Estratégicos", href: "/theses" },
+        { label: thesis.name || "Carregando..." }
+      ]}
+    >
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate("/theses")} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
         
         {canManage && (
           <Button variant="outline" className="gap-2" onClick={() => setEditDialogOpen(true)}>
@@ -375,6 +382,7 @@ export default function ThesisDetail() {
           />
         </>
       )}
-    </div>
+      </div>
+    </AppLayout>
   );
 }
