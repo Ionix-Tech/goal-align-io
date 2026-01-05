@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, Plus, Lightbulb, LayoutGrid, BarChart3, Columns } from "lucide-react";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,17 +82,21 @@ const ProjectExecution = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Carregando projeto...</p>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-muted-foreground">Carregando projeto...</p>
+        </div>
+      </AppLayout>
     );
   }
 
   if (!project) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Projeto não encontrado</p>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-muted-foreground">Projeto não encontrado</p>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -104,9 +109,15 @@ const ProjectExecution = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-background sticky top-0 z-10">
+    <AppLayout
+      customBreadcrumbs={[
+        { label: "Gestão", href: "/management" },
+        { label: project.name }
+      ]}
+    >
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="border-b bg-background sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -700,7 +711,8 @@ const ProjectExecution = () => {
         situations={situations}
         reportData={reportData}
       />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

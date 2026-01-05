@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus, X, Users, CheckCircle2, XCircle, Archive, FileText, Trash2, Lightbulb, Save, Send } from "lucide-react";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -598,17 +599,21 @@ const ProjectDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Carregando projeto...</p>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-muted-foreground">Carregando projeto...</p>
+        </div>
+      </AppLayout>
     );
   }
 
   if (!project) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Projeto não encontrado</p>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-muted-foreground">Projeto não encontrado</p>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -618,9 +623,15 @@ const ProjectDetail = () => {
   const canApprove = isReviewMode && role === 'ceo';
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-background sticky top-0 z-10">
+    <AppLayout
+      customBreadcrumbs={[
+        { label: "Priorização", href: "/prioritization" },
+        { label: project.name }
+      ]}
+    >
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="border-b bg-background sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1437,7 +1448,8 @@ const ProjectDetail = () => {
         onClose={() => setShowConvertDialog(false)}
         idea={project ? { id: project.id, name: project.name, description: project.description } : null}
       />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
