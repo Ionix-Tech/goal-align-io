@@ -6,7 +6,7 @@ import { A3WizardData, StrategicKPI } from "@/hooks/useA3WizardState";
 import { 
   FileText, Target, Search, Lightbulb, ClipboardList, Shield, Send, 
   Pencil, Calendar, BarChart3, Crosshair, Link, PlaneTakeoff, Plane, Rocket,
-  CheckCircle2, AlertCircle
+  CheckCircle2, AlertCircle, User
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -154,7 +154,7 @@ export function Step7Review({
                   isComplete={hasContext}
                 />
               </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4 space-y-2">
+              <CollapsibleContent className="pt-4 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Nome do Projeto:</span>
@@ -168,6 +168,29 @@ export function Step7Review({
                 <div className="text-sm">
                   <span className="text-muted-foreground">Objetivo:</span>
                   <p className="font-medium">{data.objective || <span className="text-destructive">Não definido</span>}</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-2 border-t">
+                  <div>
+                    <span className="text-muted-foreground">Líder do Projeto:</span>
+                    <p className="font-medium flex items-center gap-2 mt-1">
+                      <User className="w-4 h-4" />
+                      {getResponsibleName(data.assignedTo) || <span className="text-destructive">Não definido</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Equipe:</span>
+                    {data.members.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {data.members.map(memberId => (
+                          <Badge key={memberId} variant="secondary" className="text-xs">
+                            {getResponsibleName(memberId)}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-xs mt-1">Nenhum membro adicionado</p>
+                    )}
+                  </div>
                 </div>
               </CollapsibleContent>
             </div>
