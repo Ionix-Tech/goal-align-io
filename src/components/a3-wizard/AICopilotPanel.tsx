@@ -200,32 +200,113 @@ export function AICopilotPanel({
     });
   };
 
+  const handleAskKeyQuestions = async (stepQuestions: string) => {
+    setChatMessages(prev => [...prev, { role: "assistant", content: stepQuestions }]);
+  };
+
   const getQuickActions = () => {
     switch (currentStep) {
       case 1:
         return [
-          { label: "Sugerir Nome", action: handleSuggestName, icon: <Wand2 className="w-4 h-4" /> },
-          { label: "Expandir Objetivo", action: handleExpandObjective, icon: <Lightbulb className="w-4 h-4" /> }
+          { label: "Refinar Objetivo", action: handleExpandObjective, icon: <Lightbulb className="w-4 h-4" /> },
+          { label: "Sugerir Nome", action: handleSuggestName, icon: <Wand2 className="w-4 h-4" /> }
         ];
       case 2:
         return [
-          { label: "Gerar Requisitos", action: handleGenerateRequirements, icon: <Wand2 className="w-4 h-4" /> }
+          { 
+            label: "Perguntas Chave", 
+            action: () => handleAskKeyQuestions(
+              "🤔 **Para definir seus requisitos, reflita:**\n\n" +
+              "1. O que seria um DESASTRE se não acontecesse neste projeto?\n" +
+              "2. Como seu cliente vai perceber que o projeto foi bem-sucedido?\n" +
+              "3. Que número ou métrica você quer mover com este projeto?"
+            ), 
+            icon: <MessageCircle className="w-4 h-4" /> 
+          },
+          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
+            "📌 **Exemplo de bom requisito:**\n\n" +
+            "\"Reduzir tempo médio de atendimento de 15min para 8min até março\"\n\n" +
+            "✓ Mensurável (tempo em minutos)\n" +
+            "✓ Específico (atendimento)\n" +
+            "✓ Com prazo (março)"
+          ), icon: <FileText className="w-4 h-4" /> }
         ];
       case 3:
         return [
-          { label: "Expandir Descrição", action: handleExpandCurrentSituation, icon: <Wand2 className="w-4 h-4" /> }
+          { 
+            label: "Perguntas para Descrever", 
+            action: () => handleAskKeyQuestions(
+              "🔍 **Para descrever a situação atual, pense:**\n\n" +
+              "1. Se alguém de fora olhasse, o que veria hoje?\n" +
+              "2. Que dados/números comprovam o problema?\n" +
+              "3. Há quanto tempo isso acontece?"
+            ), 
+            icon: <MessageCircle className="w-4 h-4" /> 
+          },
+          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
+            "📌 **Exemplo de situação atual:**\n\n" +
+            "\"Tempo médio de atendimento atual: 15 minutos. " +
+            "60% dos clientes reclamam da demora. " +
+            "Última pesquisa NPS: 6.2 (meta: 8.0).\""
+          ), icon: <FileText className="w-4 h-4" /> }
         ];
       case 4:
         return [
-          { label: "Gerar Situação Alvo", action: handleGenerateTargetSituation, icon: <Wand2 className="w-4 h-4" /> }
+          { 
+            label: "Perguntas para Visualizar", 
+            action: () => handleAskKeyQuestions(
+              "🎯 **Para definir a situação alvo, imagine:**\n\n" +
+              "1. Como será o dia seguinte quando o projeto terminar?\n" +
+              "2. Que números você vai mostrar para provar sucesso?\n" +
+              "3. O que o cliente vai perceber de diferente?"
+            ), 
+            icon: <MessageCircle className="w-4 h-4" /> 
+          },
+          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
+            "📌 **Exemplo de situação alvo:**\n\n" +
+            "\"Tempo médio de atendimento: 8 minutos. " +
+            "NPS acima de 8.0. " +
+            "Reclamações por demora reduzidas em 70%.\""
+          ), icon: <FileText className="w-4 h-4" /> }
         ];
       case 5:
         return [
+          { 
+            label: "Perguntas para Planejar", 
+            action: () => handleAskKeyQuestions(
+              "📋 **Para cada requisito, pergunte-se:**\n\n" +
+              "1. Qual a PRIMEIRA ação para atacar este requisito?\n" +
+              "2. Quem é a pessoa certa para liderar esta ação?\n" +
+              "3. Em quantos dias consigo a primeira entrega?"
+            ), 
+            icon: <MessageCircle className="w-4 h-4" /> 
+          },
           { label: "Sugerir Ações", action: handleSuggestActions, icon: <Wand2 className="w-4 h-4" /> }
         ];
       case 6:
         return [
-          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Wand2 className="w-4 h-4" /> }
+          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Target className="w-4 h-4" /> },
+          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
+            "📌 **Exemplo de indicador:**\n\n" +
+            "Nome: Tempo Médio de Atendimento\n" +
+            "Estado Atual: 15 min\n" +
+            "Meta: 8 min\n" +
+            "Unidade: minutos"
+          ), icon: <FileText className="w-4 h-4" /> }
+        ];
+      case 7:
+        return [
+          { 
+            label: "Checklist Final", 
+            action: () => handleAskKeyQuestions(
+              "✅ **Revise seu A3:**\n\n" +
+              "• O objetivo é claro e mensurável?\n" +
+              "• Cada requisito tem indicador vinculado?\n" +
+              "• As ações cobrem todos os requisitos?\n" +
+              "• Uma pessoa de fora entenderia em 5 min?"
+            ), 
+            icon: <CheckCircle className="w-4 h-4" /> 
+          }
         ];
       default:
         return [];
