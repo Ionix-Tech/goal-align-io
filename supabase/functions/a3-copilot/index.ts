@@ -26,95 +26,58 @@ interface CopilotRequest {
 }
 
 const stepGuidance: Record<number, string> = {
-  1: `No Step 1 (Contexto), o usuário precisa definir:
-- Nome claro e objetivo do projeto
-- Objetivo estratégico que o projeto atende
-- Categoria/área do projeto
-- Líder responsável e equipe
-- Vinculação com tese estratégica (OKR)
+  1: `**O que é o Contexto?**
+O contexto define o "porquê" do projeto. Um bom objetivo responde: qual problema resolve e qual resultado espera?
 
-Dicas importantes:
-- O nome deve ser curto mas descritivo
-- O objetivo deve explicar o "porquê" do projeto
-- A vinculação com OKR garante alinhamento estratégico`,
+💡 Pergunte-se: "Se eu não fizer este projeto, o que acontece?"`,
 
-  2: `No Step 2 (Requisitos), o usuário define "O Que Precisa Dar Certo" para o projeto ter sucesso.
+  2: `**O que são Requisitos?**
+Requisitos são critérios de sucesso — o que PRECISA dar certo para o projeto ter êxito. Não são tarefas.
 
-Requisitos são critérios de sucesso, não tarefas. Exemplos:
-- "Reduzir tempo de ciclo de 10 para 5 dias"
-- "Aumentar satisfação do cliente de 7 para 9"
-- "Eliminar retrabalho em 90%"
+💡 Pergunte-se: "Como vou saber que este projeto foi bem-sucedido?"`,
 
-Cada requisito deve ser:
-- Mensurável (com indicador)
-- Específico (sem ambiguidade)
-- Relevante para o objetivo`,
+  3: `**O que é a Situação Atual?**
+Descreva onde você está HOJE com dados e fatos. Evite achismos — use evidências.
 
-  3: `No Step 3 (Situação Atual), o usuário descreve onde estamos hoje.
+💡 Pergunte-se: "Se alguém de fora olhasse, o que veria?"`,
 
-Elementos importantes:
-- Descrição clara do estado atual
-- Evidências e dados que suportam
-- Problemas identificados
-- Links de referência (relatórios, dashboards)
+  4: `**O que é a Situação Alvo?**
+O futuro desejado. Deve ser específico e mensurável, conectado aos requisitos.
 
-Dica: Use dados concretos, não apenas percepções.`,
+💡 Pergunte-se: "Como será o dia seguinte quando este projeto terminar?"`,
 
-  4: `No Step 4 (Situação Alvo), o usuário descreve onde queremos chegar.
+  5: `**O que é o Plano de Ação?**
+Ações concretas para sair do HOJE e chegar no ALVO. Cada ação deve atacar pelo menos um requisito.
 
-A situação alvo deve:
-- Ser alcançável dentro do prazo
-- Ter metas quantificadas para cada requisito
-- Estar alinhada com o objetivo
-- Representar um estado futuro claro`,
+💡 Pergunte-se: "Qual a PRIMEIRA coisa que preciso fazer amanhã?"`,
 
-  5: `No Step 5 (Plano de Ação), o usuário define as ações para alcançar a situação alvo.
+  6: `**O que é o Controle?**
+Como você vai acompanhar o progresso? Defina indicadores e marcos de verificação.
 
-Cada ação deve ter:
-- Descrição clara do que fazer
-- Responsável definido
-- Datas de início e fim
-- Vinculação com requisitos (qual requisito essa ação atende?)
-- Vinculação com milestone (M1, M2 ou M3)`,
+💡 Pergunte-se: "Como vou saber se estou no caminho certo antes de terminar?"`,
 
-  6: `No Step 6 (Controle), o usuário define como acompanhar o progresso.
+  7: `**Revisão Final**
+Releia o A3 de cima a baixo. Ele conta uma história lógica do problema à solução?
 
-Elementos:
-- Indicadores vinculados aos requisitos
-- Datas dos milestones (M1, M2, M3)
-- M1 (Decolagem): Primeiras entregas
-- M2 (Voo): Entregas intermediárias
-- M3 (Escala): Conclusão do projeto`,
-
-  7: `No Step 7 (Revisão), o usuário revisa todo o A3 antes de submeter.
-
-Verificações finais:
-- Todos os campos preenchidos
-- Requisitos têm indicadores
-- Ações cobrem todos os requisitos
-- Datas são realistas
-- Qualidade geral do documento`
+💡 Pergunte-se: "Uma pessoa que nunca viu isso entenderia em 5 minutos?"`
 };
 
-const systemPrompt = `Você é um especialista em metodologia A3 Thinking e atua como copiloto guiando usuários na criação de projetos A3 de excelência.
+const systemPrompt = `Você é um FACILITADOR DE PENSAMENTO para projetos A3.
 
-Seja conciso, prático e acionável nas suas respostas.
-Use linguagem acessível, evitando jargões excessivos.
-Sempre forneça exemplos quando possível.
+REGRAS FUNDAMENTAIS:
+1. **NUNCA dê respostas prontas** — faça perguntas que ajudem o usuário a descobrir sozinho
+2. **Seja CONCISO** — máximo 3-4 frases por resposta
+3. **Traga exemplos concretos** quando explicar conceitos
+4. **Faça perguntas provocativas** que destravem a criatividade
 
-Contexto dos Steps:
-- Step 1 (Contexto): Nome, objetivo, vinculação estratégica, equipe
-- Step 2 (Requisitos): O que precisa dar certo (1-15 itens mensuráveis)
-- Step 3 (Situação Atual): Onde estamos, evidências, problemas
-- Step 4 (Situação Alvo): Onde queremos chegar, metas quantificadas
-- Step 5 (Plano de Ação): Ações vinculadas aos requisitos e milestones
-- Step 6 (Controle): Indicadores e milestones de acompanhamento
+Você ajuda o usuário a PENSAR MELHOR, não a escrever por ele.
 
-Regras:
-- Respostas em português brasileiro
-- Máximo 3 parágrafos por resposta
-- Sempre inclua sugestões acionáveis
-- Se gerar conteúdo, retorne no formato estruturado solicitado`;
+Formato ideal de resposta:
+- 1 frase de contexto/conceito
+- 1-2 perguntas reflexivas
+- 1 exemplo curto (se necessário)
+
+Respostas em português brasileiro. Seja direto e prático.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -135,15 +98,19 @@ serve(async (req) => {
 
     switch (action) {
       case "get_guidance":
-        userPrompt = `O usuário está no Step ${currentStep} do wizard A3.
-        
-Dados atuais do projeto:
-${JSON.stringify(projectData, null, 2)}
+        userPrompt = `Step ${currentStep} do A3.
 
-Forneça orientação contextual para este step, considerando o que já foi preenchido.
 ${stepGuidance[currentStep] || ''}
 
-Identifique campos vazios ou incompletos e sugira próximos passos.`;
+Dados do projeto:
+- Nome: ${projectData.name || "(não definido)"}
+- Objetivo: ${projectData.objective || "(não definido)"}
+
+INSTRUÇÕES:
+- Responda em NO MÁXIMO 4 linhas
+- Comece explicando o conceito do step em 1 frase
+- Termine com 1-2 perguntas reflexivas para o usuário
+- NÃO dê respostas prontas, ajude o usuário a PENSAR`;
         break;
 
       case "suggest_name":
@@ -412,18 +379,16 @@ Identifique:
         break;
 
       case "ask_question":
-        userPrompt = `Contexto do projeto A3:
-Nome: ${projectData.name}
-Objetivo: ${projectData.objective}
-Step atual: ${currentStep}
+        userPrompt = `Pergunta do usuário: ${specificInput}
 
-Pergunta do usuário: ${specificInput}
+Contexto: Projeto "${projectData.name || 'sem nome'}", Step ${currentStep}.
 
-IMPORTANTE: Responda de forma CONCISA e estruturada:
-- Máximo 5 linhas ou 5 bullet points
-- Foco na resposta direta, sem introduções longas
-- Se precisar detalhar, use tópicos curtos
-- Sempre relacione com a metodologia A3`;
+REGRAS DA RESPOSTA:
+- Máximo 4 linhas
+- Não dê a resposta pronta
+- Faça perguntas que ajudem o usuário a descobrir sozinho
+- Se explicar um conceito, dê 1 exemplo curto
+- Termine com uma pergunta reflexiva`;
         break;
 
       default:
