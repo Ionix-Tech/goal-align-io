@@ -55,6 +55,20 @@ interface ManagementChatProps {
   };
 }
 
+const managementSuggestions = [
+  { icon: '🚨', text: 'Quais projetos precisam de atenção?' },
+  { icon: '📊', text: 'Qual o resumo do portfólio?' },
+  { icon: '🔴', text: 'Liste os projetos críticos' },
+  { icon: '📈', text: 'Qual projeto tem mais progresso?' },
+];
+
+const executionSuggestions = [
+  { icon: '📅', text: 'O que devo fazer essa semana?' },
+  { icon: '🎯', text: 'Quais milestones estão atrasados?' },
+  { icon: '📊', text: 'Como estão os indicadores?' },
+  { icon: '⚠️', text: 'Quais são os riscos do projeto?' },
+];
+
 export function ManagementChatPanel({
   contextType,
   projectsSummary,
@@ -103,9 +117,10 @@ export function ManagementChatPanel({
     }
   }, [isOpen]);
 
-  const handleSend = () => {
-    if (inputValue.trim() && !isLoading) {
-      sendMessage(inputValue);
+  const handleSend = (text?: string) => {
+    const messageToSend = text || inputValue;
+    if (messageToSend.trim() && !isLoading) {
+      sendMessage(messageToSend.trim());
       setInputValue('');
     }
   };
@@ -117,13 +132,19 @@ export function ManagementChatPanel({
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    handleSend(suggestion);
+  };
+
+  const suggestions = contextType === 'management' ? managementSuggestions : executionSuggestions;
+
   const placeholderText = contextType === 'management'
     ? 'Ex: Quais projetos precisam de atenção?'
     : 'Ex: Quais milestones estão atrasados?';
 
   const welcomeMessage = contextType === 'management'
-    ? 'Olá! 👋 Posso te ajudar a entender o status dos seus projetos. Pergunte sobre projetos em risco, tarefas pendentes ou prioridades.'
-    : 'Olá! 👋 Posso te ajudar com este projeto. Pergunte sobre milestones, indicadores, tarefas ou próximos passos.';
+    ? 'Olá! 👋 Posso te ajudar a entender o status dos seus projetos.'
+    : 'Olá! 👋 Posso te ajudar com este projeto.';
 
   return (
     <>
@@ -181,15 +202,25 @@ export function ManagementChatPanel({
                       <Bot className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 bg-muted rounded-lg p-3">
-                      <p className="text-sm">{welcomeMessage}</p>
+                      <p className="text-sm mb-3">{welcomeMessage}</p>
+                      
+                      {/* Suggestion buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        {suggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSuggestionClick(suggestion.text)}
+                            disabled={isLoading}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-background border border-border hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
+                          >
+                            <span>{suggestion.icon}</span>
+                            <span>{suggestion.text}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
-
-                {/* Chat messages */}
-                {messages.map((message, index) => (
-                  <MessageBubble key={index} message={message} />
-                ))}
 
                 {/* Loading indicator */}
                 {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
@@ -222,7 +253,7 @@ export function ManagementChatPanel({
                   className="flex-1"
                 />
                 <Button
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   disabled={!inputValue.trim() || isLoading}
                   size="icon"
                 >
