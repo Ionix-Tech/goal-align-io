@@ -9,12 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { FreitasLogo } from "@/components/icons/FreitasLogo";
 import { CommandPalette, CommandPaletteTrigger } from "./CommandPalette";
+import { Breadcrumbs } from "./Breadcrumbs";
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  customBreadcrumbs?: { label: string; href?: string }[];
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, customBreadcrumbs }: AppLayoutProps) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -63,6 +65,9 @@ export function AppLayout({ children }: AppLayoutProps) {
               </div>
             </div>
           </header>
+          <div className="px-4 py-2 border-b bg-muted/30">
+            <Breadcrumbs customSegments={customBreadcrumbs} />
+          </div>
           <main className="flex-1">{children}</main>
         </div>
       </div>
