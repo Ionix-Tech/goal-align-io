@@ -60,6 +60,7 @@ export function AICopilotPanel({
   const [isGuidanceExpanded, setIsGuidanceExpanded] = useState(false);
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [currentTip, setCurrentTip] = useState<string | null>(null);
   
   const {
     isLoading,
@@ -200,112 +201,111 @@ export function AICopilotPanel({
     });
   };
 
-  const handleAskKeyQuestions = async (stepQuestions: string) => {
-    setChatMessages(prev => [...prev, { role: "assistant", content: stepQuestions }]);
+  const handleShowTip = (tip: string) => {
+    setCurrentTip(tip);
+  };
+
+  const handleCloseTip = () => {
+    setCurrentTip(null);
   };
 
   const getQuickActions = () => {
     switch (currentStep) {
       case 1:
         return [
-          { label: "Refinar Objetivo", action: handleExpandObjective, icon: <Lightbulb className="w-4 h-4" /> },
-          { label: "Sugerir Nome", action: handleSuggestName, icon: <Wand2 className="w-4 h-4" /> }
+          { label: "Refinar Objetivo", action: handleExpandObjective, icon: <Lightbulb className="w-4 h-4" />, isTip: false },
+          { label: "Sugerir Nome", action: handleSuggestName, icon: <Wand2 className="w-4 h-4" />, isTip: false }
         ];
       case 2:
         return [
           { 
             label: "Perguntas Chave", 
-            action: () => handleAskKeyQuestions(
-              "🤔 **Para definir seus requisitos, reflita:**\n\n" +
-              "1. O que seria um DESASTRE se não acontecesse neste projeto?\n" +
-              "2. Como seu cliente vai perceber que o projeto foi bem-sucedido?\n" +
-              "3. Que número ou métrica você quer mover com este projeto?"
+            action: () => handleShowTip(
+              "🤔 Para definir seus requisitos, reflita:\n\n• O que seria um DESASTRE se não acontecesse?\n• Como seu cliente vai perceber o sucesso?\n• Que métrica você quer mover?"
             ), 
-            icon: <MessageCircle className="w-4 h-4" /> 
+            icon: <MessageCircle className="w-4 h-4" />,
+            isTip: true
           },
-          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
-            "📌 **Exemplo de bom requisito:**\n\n" +
-            "\"Reduzir tempo médio de atendimento de 15min para 8min até março\"\n\n" +
-            "✓ Mensurável (tempo em minutos)\n" +
-            "✓ Específico (atendimento)\n" +
-            "✓ Com prazo (março)"
-          ), icon: <FileText className="w-4 h-4" /> }
+          { 
+            label: "Ver Exemplo", 
+            action: () => handleShowTip(
+              "📌 Exemplo de bom requisito:\n\n\"Reduzir tempo de atendimento de 15min para 8min até março\"\n\n✓ Mensurável\n✓ Específico\n✓ Com prazo"
+            ), 
+            icon: <FileText className="w-4 h-4" />,
+            isTip: true
+          }
         ];
       case 3:
         return [
           { 
             label: "Perguntas para Descrever", 
-            action: () => handleAskKeyQuestions(
-              "🔍 **Para descrever a situação atual, pense:**\n\n" +
-              "1. Se alguém de fora olhasse, o que veria hoje?\n" +
-              "2. Que dados/números comprovam o problema?\n" +
-              "3. Há quanto tempo isso acontece?"
+            action: () => handleShowTip(
+              "🔍 Para descrever a situação atual:\n\n• Se alguém de fora olhasse, o que veria?\n• Que dados comprovam o problema?\n• Há quanto tempo isso acontece?"
             ), 
-            icon: <MessageCircle className="w-4 h-4" /> 
+            icon: <MessageCircle className="w-4 h-4" />,
+            isTip: true
           },
-          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
-            "📌 **Exemplo de situação atual:**\n\n" +
-            "\"Tempo médio de atendimento atual: 15 minutos. " +
-            "60% dos clientes reclamam da demora. " +
-            "Última pesquisa NPS: 6.2 (meta: 8.0).\""
-          ), icon: <FileText className="w-4 h-4" /> }
+          { 
+            label: "Ver Exemplo", 
+            action: () => handleShowTip(
+              "📌 Exemplo:\n\n\"Tempo de atendimento: 15 min. 60% reclamam da demora. NPS: 6.2 (meta: 8.0).\""
+            ), 
+            icon: <FileText className="w-4 h-4" />,
+            isTip: true
+          }
         ];
       case 4:
         return [
           { 
             label: "Perguntas para Visualizar", 
-            action: () => handleAskKeyQuestions(
-              "🎯 **Para definir a situação alvo, imagine:**\n\n" +
-              "1. Como será o dia seguinte quando o projeto terminar?\n" +
-              "2. Que números você vai mostrar para provar sucesso?\n" +
-              "3. O que o cliente vai perceber de diferente?"
+            action: () => handleShowTip(
+              "🎯 Para definir a situação alvo:\n\n• Como será o dia seguinte quando terminar?\n• Que números vão provar sucesso?\n• O que o cliente vai perceber?"
             ), 
-            icon: <MessageCircle className="w-4 h-4" /> 
+            icon: <MessageCircle className="w-4 h-4" />,
+            isTip: true
           },
-          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
-            "📌 **Exemplo de situação alvo:**\n\n" +
-            "\"Tempo médio de atendimento: 8 minutos. " +
-            "NPS acima de 8.0. " +
-            "Reclamações por demora reduzidas em 70%.\""
-          ), icon: <FileText className="w-4 h-4" /> }
+          { 
+            label: "Ver Exemplo", 
+            action: () => handleShowTip(
+              "📌 Exemplo:\n\n\"Tempo de atendimento: 8 min. NPS > 8.0. Reclamações -70%.\""
+            ), 
+            icon: <FileText className="w-4 h-4" />,
+            isTip: true
+          }
         ];
       case 5:
         return [
           { 
             label: "Perguntas para Planejar", 
-            action: () => handleAskKeyQuestions(
-              "📋 **Para cada requisito, pergunte-se:**\n\n" +
-              "1. Qual a PRIMEIRA ação para atacar este requisito?\n" +
-              "2. Quem é a pessoa certa para liderar esta ação?\n" +
-              "3. Em quantos dias consigo a primeira entrega?"
+            action: () => handleShowTip(
+              "📋 Para cada requisito:\n\n• Qual a PRIMEIRA ação?\n• Quem vai liderar?\n• Em quantos dias a primeira entrega?"
             ), 
-            icon: <MessageCircle className="w-4 h-4" /> 
+            icon: <MessageCircle className="w-4 h-4" />,
+            isTip: true
           },
-          { label: "Sugerir Ações", action: handleSuggestActions, icon: <Wand2 className="w-4 h-4" /> }
+          { label: "Sugerir Ações", action: handleSuggestActions, icon: <Wand2 className="w-4 h-4" />, isTip: false }
         ];
       case 6:
         return [
-          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Target className="w-4 h-4" /> },
-          { label: "Ver Exemplo", action: () => handleAskKeyQuestions(
-            "📌 **Exemplo de indicador:**\n\n" +
-            "Nome: Tempo Médio de Atendimento\n" +
-            "Estado Atual: 15 min\n" +
-            "Meta: 8 min\n" +
-            "Unidade: minutos"
-          ), icon: <FileText className="w-4 h-4" /> }
+          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Target className="w-4 h-4" />, isTip: false },
+          { 
+            label: "Ver Exemplo", 
+            action: () => handleShowTip(
+              "📌 Exemplo de indicador:\n\nNome: Tempo Médio de Atendimento\nAtual: 15 min | Meta: 8 min"
+            ), 
+            icon: <FileText className="w-4 h-4" />,
+            isTip: true
+          }
         ];
       case 7:
         return [
           { 
             label: "Checklist Final", 
-            action: () => handleAskKeyQuestions(
-              "✅ **Revise seu A3:**\n\n" +
-              "• O objetivo é claro e mensurável?\n" +
-              "• Cada requisito tem indicador vinculado?\n" +
-              "• As ações cobrem todos os requisitos?\n" +
-              "• Uma pessoa de fora entenderia em 5 min?"
+            action: () => handleShowTip(
+              "✅ Revise seu A3:\n\n• Objetivo claro e mensurável?\n• Requisitos têm indicadores?\n• Ações cobrem requisitos?\n• Alguém de fora entenderia?"
             ), 
-            icon: <CheckCircle className="w-4 h-4" /> 
+            icon: <CheckCircle className="w-4 h-4" />,
+            isTip: true
           }
         ];
       default:
@@ -445,6 +445,23 @@ export function AICopilotPanel({
                     {name}
                   </Button>
                 ))}
+              </div>
+            )}
+
+            {/* Current Tip */}
+            {currentTip && (
+              <div className="relative bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1 right-1 h-5 w-5"
+                  onClick={handleCloseTip}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+                <p className="text-sm text-foreground whitespace-pre-wrap pr-4">
+                  {currentTip}
+                </p>
               </div>
             )}
 
