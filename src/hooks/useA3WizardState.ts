@@ -20,6 +20,8 @@ export interface WizardAction {
   dueDate: string;
   status: string;
   linkedRequirements: string[];
+  linkedMilestone: string | null; // 'm1', 'm2', 'm3', or extra milestone ID
+  linkedIndicators: string[]; // Array of indicator IDs
 }
 
 export interface WizardWhyLink {
@@ -245,12 +247,34 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
             targetDate: m.target_date
           }));
 
+        // Load task-indicator links
+        const { data: taskIndicatorLinks } = await supabase
+          .from('task_indicator_links')
+          .select('task_id, indicator_id');
+
         // Map tasks to actions
         const actions: WizardAction[] = (tasks || []).map(task => {
           const linkedReqs = (taskLinks || [])
             .filter(link => link.task_id === task.id)
             .map(link => reqCodeMap.get(link.requirement_id) || '')
             .filter(Boolean);
+
+          const linkedInds = (taskIndicatorLinks || [])
+            .filter(link => link.task_id === task.id)
+            .map(link => link.indicator_id);
+
+          // Determine milestone type from milestone_id
+          let linkedMilestone: string | null = null;
+          if (task.milestone_id) {
+            const ms = milestones?.find(m => m.id === task.milestone_id);
+            if (ms?.milestone_type) {
+              linkedMilestone = ms.milestone_type === 'decolagem' ? 'm1' 
+                : ms.milestone_type === 'voo' ? 'm2' 
+                : ms.milestone_type === 'escala' ? 'm3' : ms.id;
+            } else if (ms) {
+              linkedMilestone = ms.id; // Extra milestone
+            }
+          }
 
           return {
             id: task.id,
@@ -259,7 +283,9 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
             startDate: task.start_date || '',
             dueDate: task.due_date || '',
             status: task.status || 'not_started',
-            linkedRequirements: linkedReqs
+            linkedRequirements: linkedReqs,
+            linkedMilestone,
+            linkedIndicators: linkedInds
           };
         });
 
@@ -399,7 +425,9 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           startDate: "",
           dueDate: "",
           status: "not_started",
-          linkedRequirements: []
+          linkedRequirements: [],
+          linkedMilestone: null,
+          linkedIndicators: []
         }
       ]
     }));

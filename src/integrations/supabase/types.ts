@@ -1350,6 +1350,42 @@ export type Database = {
           },
         ]
       }
+      task_indicator_links: {
+        Row: {
+          created_at: string | null
+          id: string
+          indicator_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          indicator_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          indicator_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_indicator_links_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "project_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_indicator_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_status_history: {
         Row: {
           changed_at: string

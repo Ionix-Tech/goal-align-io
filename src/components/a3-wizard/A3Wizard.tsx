@@ -206,14 +206,44 @@ export function A3Wizard() {
           .delete()
           .in('task_id', taskIds);
         await supabase
+          .from('task_indicator_links')
+          .delete()
+          .in('task_id', taskIds);
+        await supabase
           .from('project_tasks')
           .delete()
           .eq('project_id', currentProjectId);
       }
 
+      // Load milestones to get IDs for linking
+      const { data: milestonesData } = await supabase
+        .from('project_milestones')
+        .select('id, milestone_type')
+        .eq('project_id', currentProjectId);
+
+      const getMilestoneId = (linkedMilestone: string | null): string | null => {
+        if (!linkedMilestone) return null;
+        
+        // Check fixed milestones
+        if (linkedMilestone === 'm1') {
+          return milestonesData?.find(m => m.milestone_type === 'decolagem')?.id || null;
+        }
+        if (linkedMilestone === 'm2') {
+          return milestonesData?.find(m => m.milestone_type === 'voo')?.id || null;
+        }
+        if (linkedMilestone === 'm3') {
+          return milestonesData?.find(m => m.milestone_type === 'escala')?.id || null;
+        }
+        
+        // It's an extra milestone ID
+        return linkedMilestone;
+      };
+
       // Insert new tasks
       for (const action of data.actions) {
         if (!action.description.trim()) continue;
+
+        const milestoneId = getMilestoneId(action.linkedMilestone);
 
         const { data: newTask, error: taskError } = await supabase
           .from('project_tasks')
@@ -225,7 +255,8 @@ export function A3Wizard() {
             due_date: action.dueDate || null,
             status: action.status || 'not_started',
             priority: 'medium',
-            created_by: userId
+            created_by: userId,
+            milestone_id: milestoneId
           })
           .select()
           .single();
@@ -243,6 +274,16 @@ export function A3Wizard() {
                 requirement_id: reqId
               });
           }
+        }
+
+        // Insert indicator links
+        for (const indicatorId of action.linkedIndicators) {
+          await supabase
+            .from('task_indicator_links')
+            .insert({
+              task_id: newTask.id,
+              indicator_id: indicatorId
+            });
         }
       }
 
@@ -476,6 +517,7 @@ export function A3Wizard() {
             goToStep={goToStep}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
+            updateAction={updateAction}
           />
         );
       default:
