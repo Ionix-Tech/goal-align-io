@@ -13,6 +13,7 @@ import { Step3Diagnosis } from "./steps/Step3Diagnosis";
 import { Step4Strategy } from "./steps/Step4Strategy";
 import { Step5Execution } from "./steps/Step5Execution";
 import { Step6Control } from "./steps/Step6Control";
+import { Step7Review } from "./steps/Step7Review";
 
 export function A3Wizard() {
   const navigate = useNavigate();
@@ -466,6 +467,13 @@ export function A3Wizard() {
             addExtraMilestone={addExtraMilestone}
             updateExtraMilestone={updateExtraMilestone}
             removeExtraMilestone={removeExtraMilestone}
+          />
+        );
+      case 7:
+        return (
+          <Step7Review
+            data={data}
+            goToStep={goToStep}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
           />
@@ -497,7 +505,7 @@ export function A3Wizard() {
         <p className="text-muted-foreground">
           {isEditingExisting 
             ? "Continue o detalhamento do projeto A3"
-            : "Siga as 6 etapas para criar um projeto A3 completo"
+            : "Siga as 7 etapas para criar um projeto A3 completo"
           }
         </p>
       </div>
@@ -539,15 +547,15 @@ export function A3Wizard() {
           {isSaving ? "Salvando..." : "Salvar Rascunho"}
         </Button>
 
-        {currentStep < 6 && (
+        {currentStep < 7 && (
           <Button onClick={handleNext} className="gap-2">
             Próximo
             <ArrowRight className="w-4 h-4" />
           </Button>
         )}
 
-        {currentStep === 6 && (
-          <div /> // Spacer - submit is in Step6
+        {currentStep === 7 && (
+          <div /> // Spacer - submit is in Step7
         )}
       </div>
     </div>

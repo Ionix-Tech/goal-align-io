@@ -1,16 +1,14 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { A3WizardData, WizardIndicator, WizardMilestone, StrategicKPI } from "@/hooks/useA3WizardState";
-import { Plane, PlaneTakeoff, Rocket, Calendar, FileText, Send, BarChart3, Plus, Trash2, Target, Crosshair, X } from "lucide-react";
+import { Plane, PlaneTakeoff, Rocket, Calendar, BarChart3, Plus, Trash2, Target, Crosshair, X } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import { WizardIndicatorManager } from "./WizardIndicatorManager";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
@@ -22,18 +20,7 @@ interface Step6ControlProps {
   addExtraMilestone: () => void;
   updateExtraMilestone: (id: string, updates: Partial<WizardMilestone>) => void;
   removeExtraMilestone: (id: string) => void;
-  onSubmit: () => void;
-  isSubmitting: boolean;
 }
-
-const checklistItems = [
-  { id: "context", label: "Contexto e objetivo claramente definidos" },
-  { id: "requirements", label: "Requisitos do projeto estão descritos" },
-  { id: "indicators", label: "Indicadores definidos e correlacionados aos requisitos" },
-  { id: "diagnosis", label: "Situação atual documentada com evidências" },
-  { id: "targets", label: "Metas são desafiadoras mas alcançáveis em 90 dias" },
-  { id: "actions", label: "Ações planejadas com responsáveis e prazos" },
-];
 
 export function Step6Control({ 
   data, 
@@ -41,11 +28,8 @@ export function Step6Control({
   setIndicators, 
   addExtraMilestone,
   updateExtraMilestone,
-  removeExtraMilestone,
-  onSubmit, 
-  isSubmitting 
+  removeExtraMilestone
 }: Step6ControlProps) {
-  const [checkedItems, setCheckedItems] = useState<string[]>([]);
   const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
 
   // KPIs disponíveis para adicionar (não selecionados ainda)
@@ -113,15 +97,6 @@ export function Step6Control({
       updateData({ m1Date: date });
     }
   };
-
-  const toggleChecklistItem = (id: string) => {
-    setCheckedItems(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const checklistComplete = checkedItems.length === checklistItems.length;
-  const canSubmit = data.m1Date && checklistComplete;
 
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -404,95 +379,15 @@ export function Step6Control({
               </Button>
             </div>
           </div>
-
-          {/* Checklist */}
-          <div className="space-y-4">
-            <Label className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Checklist de Qualidade
-            </Label>
-            
-            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-              {checklistItems.map((item) => (
-                <label
-                  key={item.id}
-                  className={cn(
-                    "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
-                    checkedItems.includes(item.id) 
-                      ? "bg-success/10" 
-                      : "hover:bg-muted"
-                  )}
-                >
-                  <Checkbox
-                    checked={checkedItems.includes(item.id)}
-                    onCheckedChange={() => toggleChecklistItem(item.id)}
-                  />
-                  <span className={cn(
-                    "text-sm",
-                    checkedItems.includes(item.id) && "line-through text-muted-foreground"
-                  )}>
-                    {item.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-
-            <p className="text-sm text-muted-foreground text-center">
-              {checkedItems.length} de {checklistItems.length} itens verificados
-            </p>
-          </div>
-
-          {/* A3 Preview Summary */}
-          <div className="border rounded-lg p-4 bg-primary/5">
-            <h4 className="font-medium mb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Resumo do A3
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Projeto:</span>
-                <p className="font-medium truncate">{data.name || "-"}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Requisitos:</span>
-                <p className="font-medium">{data.requirements.length}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Indicadores:</span>
-                <p className="font-medium">{data.indicators.length}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Ações:</span>
-                <p className="font-medium">{data.actions.length}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            onClick={onSubmit}
-            disabled={!canSubmit || isSubmitting}
-            className="w-full gap-2"
-            size="lg"
-          >
-            <Send className="w-4 h-4" />
-            {isSubmitting ? "Enviando..." : "Enviar para Aprovação"}
-          </Button>
-
-          {!canSubmit && (
-            <p className="text-sm text-center text-muted-foreground">
-              Complete o checklist e defina a data de início (M1) para enviar.
-            </p>
-          )}
         </CardContent>
       </Card>
 
       <div className="bg-muted/50 rounded-lg p-4 border border-border">
         <h4 className="font-medium text-sm text-muted-foreground mb-2">
-          💡 Próximos Passos
+          💡 Próximo Passo
         </h4>
         <p className="text-sm text-muted-foreground">
-          Após enviar para aprovação, o projeto será revisado. Se aprovado, você poderá iniciar a execução e acompanhar o progresso nos milestones M1, M2 e M3.
+          Avance para o Step 7 (Fechamento) para revisar todos os itens do A3 e enviar para aprovação.
         </p>
       </div>
     </div>

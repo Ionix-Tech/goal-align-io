@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Check, FileText, Target, Search, Lightbulb, ClipboardList, Shield } from "lucide-react";
+import { Check, FileText, Target, Search, Lightbulb, ClipboardList, Shield, CheckCircle } from "lucide-react";
 
 interface A3WizardProgressProps {
   currentStep: number;
@@ -14,6 +14,7 @@ const steps = [
   { number: 4, label: "Situação Alvo", sublabel: "Onde queremos chegar?", icon: Lightbulb },
   { number: 5, label: "Plano de Ação", sublabel: "O que vamos fazer?", icon: ClipboardList },
   { number: 6, label: "Controle", sublabel: "Quando vamos verificar?", icon: Shield },
+  { number: 7, label: "Fechamento", sublabel: "Revisão final", icon: CheckCircle },
 ];
 
 export function A3WizardProgress({ currentStep, onStepClick, canNavigateTo }: A3WizardProgressProps) {
