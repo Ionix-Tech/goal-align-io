@@ -49,3 +49,36 @@ export function useThesesByPillar(pillarId: string | undefined) {
     enabled: !!pillarId,
   });
 }
+
+export interface ThesisWithPillar {
+  id: string;
+  name: string;
+  pillar_id: string | null;
+  pillar: {
+    id: string;
+    name: string;
+    pillar_type: 'corpo' | 'alma' | 'mente';
+  } | null;
+}
+
+export function useAllTheses() {
+  return useQuery({
+    queryKey: ["all-theses-with-pillar"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("strategic_theses")
+        .select(`
+          id,
+          name,
+          pillar_id,
+          pillar:strategic_pillars(id, name, pillar_type)
+        `)
+        .eq("is_active", true)
+        .eq("is_archived", false)
+        .order("name");
+
+      if (error) throw error;
+      return data as ThesisWithPillar[];
+    },
+  });
+}

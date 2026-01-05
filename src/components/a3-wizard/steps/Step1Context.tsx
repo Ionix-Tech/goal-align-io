@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { A3WizardData, StrategicKPI } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { usePillars, useThesesByPillar } from "@/hooks/usePillars";
+import { useAllTheses } from "@/hooks/usePillars";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { PROJECT_CATEGORIES } from "@/config/categories";
 import { Heart, Brain, Zap, X } from "lucide-react";
@@ -30,28 +30,20 @@ const PILLAR_COLORS: Record<string, string> = {
 
 export function Step1Context({ data, updateData }: Step1ContextProps) {
   const { data: teamMembers = [] } = useTeamMembers();
-  const { data: pillars = [] } = usePillars();
-  const { data: objectives = [] } = useThesesByPillar(data.pillarId || undefined);
+  const { data: allTheses = [] } = useAllTheses();
   const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
 
   const availableKPIs = thesisDetails?.kpis?.filter(
     kpi => !data.strategicKpis.some(selected => selected.kpiId === kpi.id)
   ) || [];
 
-  const handlePillarChange = (value: string) => {
-    updateData({ 
-      pillarId: value,
-      thesisId: "", // Clear objective when pillar changes
-      strategicIndicator: "",
-      strategicKpis: [] // Clear KPIs when pillar changes
-    });
-  };
-
   const handleObjectiveChange = (value: string) => {
+    const selectedThesis = allTheses.find(t => t.id === value);
     updateData({ 
       thesisId: value,
+      pillarId: selectedThesis?.pillar_id || "",
       strategicIndicator: "",
-      strategicKpis: [] // Clear KPIs when objective changes
+      strategicKpis: []
     });
   };
 
@@ -136,48 +128,30 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
           <div className="rounded-lg border p-4 space-y-4 bg-muted/30">
             <h4 className="font-medium text-sm">Vinculação Estratégica</h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="pillar">Pilar (CMA)</Label>
-                <Select
-                  value={data.pillarId}
-                  onValueChange={handlePillarChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o pilar..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pillars.map((pillar) => (
-                      <SelectItem key={pillar.id} value={pillar.id}>
-                        <div className="flex items-center gap-2">
-                          {PILLAR_ICONS[pillar.pillar_type]}
-                          {pillar.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="objective-select">Objetivo</Label>
-                <Select
-                  value={data.thesisId}
-                  onValueChange={handleObjectiveChange}
-                  disabled={!data.pillarId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={data.pillarId ? "Selecione o objetivo..." : "Selecione um pilar primeiro"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {objectives.map((obj) => (
-                      <SelectItem key={obj.id} value={obj.id}>
-                        {obj.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="objective-select">Objetivo Estratégico</Label>
+              <Select
+                value={data.thesisId}
+                onValueChange={handleObjectiveChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o objetivo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allTheses.map((obj) => (
+                    <SelectItem key={obj.id} value={obj.id}>
+                      <div className="flex items-center gap-2">
+                        {obj.pillar && PILLAR_ICONS[obj.pillar.pillar_type]}
+                        <span className="text-muted-foreground text-xs">
+                          {obj.pillar?.name}
+                        </span>
+                        <span className="text-muted-foreground">›</span>
+                        <span>{obj.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
