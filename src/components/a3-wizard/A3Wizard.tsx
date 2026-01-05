@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Save, Loader2, Check, Cloud } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useA3WizardState } from "@/hooks/useA3WizardState";
+import { useA3WizardState, WizardAction, WizardIndicator } from "@/hooks/useA3WizardState";
 import { useDebounce } from "@/hooks/useDebounce";
 import { A3WizardProgress } from "./A3WizardProgress";
 import { WizardFeedbackPanel } from "./WizardFeedbackPanel";
+import { AICopilotPanel } from "./AICopilotPanel";
 import { Step1Context } from "./steps/Step1Context";
 import { Step2Requirements } from "./steps/Step2Requirements";
 import { Step3Diagnosis } from "./steps/Step3Diagnosis";
@@ -664,90 +665,155 @@ export function A3Wizard() {
 
   const isEditingExisting = !!urlProjectId;
 
+  // Copilot handlers
+  const handleApplySuggestion = (field: string, value: any) => {
+    updateData({ [field]: value });
+  };
+
+  const handleApplyRequirements = (requirements: { description: string }[]) => {
+    requirements.forEach(() => {
+      addRequirement();
+    });
+    // Update the last N requirements with the generated content
+    const startIndex = data.requirements.length;
+    requirements.forEach((req, i) => {
+      setTimeout(() => {
+        updateRequirement(startIndex + i, { description: req.description });
+      }, 50 * i);
+    });
+  };
+
+  const handleApplyActions = (actions: { description: string; linkedRequirements: string[] }[]) => {
+    actions.forEach((action) => {
+      addAction();
+    });
+    // Update the actions after they're added
+    setTimeout(() => {
+      const startIndex = data.actions.length;
+      actions.forEach((action, i) => {
+        const actionId = data.actions[startIndex + i]?.id;
+        if (actionId) {
+          updateAction(actionId, {
+            description: action.description,
+            linkedRequirements: action.linkedRequirements
+          });
+        }
+      });
+    }, 100);
+  };
+
+  const handleApplyIndicators = (indicators: { name: string; unit: string; linkedRequirements: string[] }[]) => {
+    const newIndicators: WizardIndicator[] = indicators.map(ind => ({
+      id: crypto.randomUUID(),
+      name: ind.name,
+      unit: ind.unit,
+      currentValue: "",
+      targetValue: "",
+      linkedRequirementCodes: ind.linkedRequirements
+    }));
+    setIndicators([...data.indicators, ...newIndicators]);
+  };
+
   return (
-    <div className="container max-w-4xl mx-auto py-6 px-4">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              {isEditingExisting ? "Detalhar Projeto A3" : "Novo Projeto A3"}
-            </h1>
-            <p className="text-muted-foreground">
-              {isEditingExisting 
-                ? "Continue o detalhamento do projeto A3"
-                : "Siga as 7 etapas para criar um projeto A3 completo"
-              }
-            </p>
+    <div className="container max-w-6xl mx-auto py-6 px-4">
+      <div className="flex gap-6">
+        <div className="flex-1 min-w-0">
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold">
+                  {isEditingExisting ? "Detalhar Projeto A3" : "Novo Projeto A3"}
+                </h1>
+                <p className="text-muted-foreground">
+                  {isEditingExisting 
+                    ? "Continue o detalhamento do projeto A3"
+                    : "Siga as 7 etapas para criar um projeto A3 completo"
+                  }
+                </p>
+              </div>
+              
+              {/* Auto-save status indicator */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {autoSaveStatus === 'saving' && (
+                  <>
+                    <Cloud className="w-4 h-4 animate-pulse" />
+                    <span>Salvando...</span>
+                  </>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <>
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span className="text-green-600">Salvo</span>
+                  </>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <span className="text-destructive">Erro ao salvar</span>
+                )}
+              </div>
+            </div>
           </div>
-          
-          {/* Auto-save status indicator */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {autoSaveStatus === 'saving' && (
-              <>
-                <Cloud className="w-4 h-4 animate-pulse" />
-                <span>Salvando...</span>
-              </>
+
+          {comments.length > 0 && (
+            <div className="mb-4">
+              <WizardFeedbackPanel comments={comments} />
+            </div>
+          )}
+
+          <A3WizardProgress
+            currentStep={currentStep}
+            onStepClick={goToStep}
+            canNavigateTo={canNavigateTo}
+          />
+
+          <div className="mt-6">
+            {renderStep()}
+          </div>
+
+          <div className="flex items-center justify-between mt-8 pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Anterior
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={saveProgress}
+              disabled={isSaving}
+              className="gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? "Salvando..." : "Salvar Rascunho"}
+            </Button>
+
+            {currentStep < 7 && (
+              <Button onClick={handleNext} className="gap-2">
+                Próximo
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             )}
-            {autoSaveStatus === 'saved' && (
-              <>
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-green-600">Salvo</span>
-              </>
-            )}
-            {autoSaveStatus === 'error' && (
-              <span className="text-destructive">Erro ao salvar</span>
+
+            {currentStep === 7 && (
+              <div /> // Spacer - submit is in Step7
             )}
           </div>
         </div>
-      </div>
 
-      {comments.length > 0 && (
-        <div className="mb-4">
-          <WizardFeedbackPanel comments={comments} />
+        {/* AI Copilot Panel */}
+        <div className="hidden lg:block">
+          <AICopilotPanel
+            currentStep={currentStep}
+            data={data}
+            onApplySuggestion={handleApplySuggestion}
+            onApplyRequirements={handleApplyRequirements}
+            onApplyActions={handleApplyActions}
+            onApplyIndicators={handleApplyIndicators}
+          />
         </div>
-      )}
-
-      <A3WizardProgress
-        currentStep={currentStep}
-        onStepClick={goToStep}
-        canNavigateTo={canNavigateTo}
-      />
-
-      <div className="mt-6">
-        {renderStep()}
-      </div>
-
-      <div className="flex items-center justify-between mt-8 pt-6 border-t">
-        <Button
-          variant="outline"
-          onClick={prevStep}
-          disabled={currentStep === 1}
-          className="gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Anterior
-        </Button>
-
-        <Button
-          variant="ghost"
-          onClick={saveProgress}
-          disabled={isSaving}
-          className="gap-2"
-        >
-          <Save className="w-4 h-4" />
-          {isSaving ? "Salvando..." : "Salvar Rascunho"}
-        </Button>
-
-        {currentStep < 7 && (
-          <Button onClick={handleNext} className="gap-2">
-            Próximo
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        )}
-
-        {currentStep === 7 && (
-          <div /> // Spacer - submit is in Step7
-        )}
       </div>
     </div>
   );

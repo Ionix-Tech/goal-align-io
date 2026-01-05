@@ -1,0 +1,410 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useA3Copilot } from "@/hooks/useA3Copilot";
+import { A3WizardData, WizardAction } from "@/hooks/useA3WizardState";
+import { 
+  Sparkles, ChevronDown, ChevronUp, Send, 
+  Lightbulb, FileText, Target, Search, 
+  ClipboardList, Shield, AlertCircle, CheckCircle,
+  Wand2, MessageCircle, X, Bot
+} from "lucide-react";
+import { toast } from "sonner";
+
+interface AICopilotPanelProps {
+  currentStep: number;
+  data: A3WizardData;
+  onApplySuggestion: (field: string, value: any) => void;
+  onApplyRequirements: (requirements: { description: string }[]) => void;
+  onApplyActions: (actions: { description: string; linkedRequirements: string[] }[]) => void;
+  onApplyIndicators: (indicators: { name: string; unit: string; linkedRequirements: string[] }[]) => void;
+}
+
+const stepIcons: Record<number, React.ReactNode> = {
+  1: <FileText className="w-4 h-4" />,
+  2: <Target className="w-4 h-4" />,
+  3: <Search className="w-4 h-4" />,
+  4: <Lightbulb className="w-4 h-4" />,
+  5: <ClipboardList className="w-4 h-4" />,
+  6: <Shield className="w-4 h-4" />,
+  7: <CheckCircle className="w-4 h-4" />
+};
+
+const stepNames: Record<number, string> = {
+  1: "Contexto",
+  2: "Requisitos",
+  3: "Situação Atual",
+  4: "Situação Alvo",
+  5: "Plano de Ação",
+  6: "Controle",
+  7: "Revisão"
+};
+
+export function AICopilotPanel({
+  currentStep,
+  data,
+  onApplySuggestion,
+  onApplyRequirements,
+  onApplyActions,
+  onApplyIndicators
+}: AICopilotPanelProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+  
+  const {
+    isLoading,
+    guidance,
+    error,
+    getGuidance,
+    suggestName,
+    expandObjective,
+    generateRequirements,
+    expandCurrentSituation,
+    generateTargetSituation,
+    suggestActions,
+    suggestIndicators,
+    askQuestion,
+    reset
+  } = useA3Copilot();
+
+  // Load guidance when step changes
+  useEffect(() => {
+    if (!isCollapsed) {
+      getGuidance(currentStep, data);
+    }
+  }, [currentStep, isCollapsed]);
+
+  const handleSuggestName = async () => {
+    if (!data.objective?.trim()) {
+      toast.error("Preencha o objetivo primeiro para sugerir nomes.");
+      return;
+    }
+    const suggestions = await suggestName(data.objective, data);
+    if (suggestions.length > 0) {
+      setNameSuggestions(suggestions);
+      toast.success("Sugestões de nome geradas!");
+    }
+  };
+
+  const handleApplyName = (name: string) => {
+    onApplySuggestion("name", name);
+    setNameSuggestions([]);
+    toast.success("Nome aplicado!");
+  };
+
+  const handleExpandObjective = async () => {
+    if (!data.objective?.trim()) {
+      toast.error("Preencha o objetivo primeiro.");
+      return;
+    }
+    const expanded = await expandObjective(data.objective, data);
+    if (expanded) {
+      onApplySuggestion("objective", expanded);
+      toast.success("Objetivo expandido!");
+    }
+  };
+
+  const handleGenerateRequirements = async () => {
+    if (!data.objective?.trim()) {
+      toast.error("Preencha o objetivo primeiro.");
+      return;
+    }
+    const requirements = await generateRequirements(data);
+    if (requirements.length > 0) {
+      onApplyRequirements(requirements);
+      toast.success(`${requirements.length} requisitos gerados!`);
+    }
+  };
+
+  const handleExpandCurrentSituation = async () => {
+    const expanded = await expandCurrentSituation(data.currentSituationDescription || "", data);
+    if (expanded) {
+      onApplySuggestion("currentSituationDescription", expanded);
+      toast.success("Situação atual expandida!");
+    }
+  };
+
+  const handleGenerateTargetSituation = async () => {
+    if (!data.currentSituationDescription?.trim()) {
+      toast.error("Preencha a situação atual primeiro.");
+      return;
+    }
+    const target = await generateTargetSituation(data);
+    if (target) {
+      onApplySuggestion("targetSituationDescription", target);
+      toast.success("Situação alvo gerada!");
+    }
+  };
+
+  const handleSuggestActions = async () => {
+    if (data.requirements.length === 0) {
+      toast.error("Defina requisitos primeiro.");
+      return;
+    }
+    const actions = await suggestActions(data);
+    if (actions.length > 0) {
+      onApplyActions(actions);
+      toast.success(`${actions.length} ações sugeridas!`);
+    }
+  };
+
+  const handleSuggestIndicators = async () => {
+    if (data.requirements.length === 0) {
+      toast.error("Defina requisitos primeiro.");
+      return;
+    }
+    const indicators = await suggestIndicators(data);
+    if (indicators.length > 0) {
+      onApplyIndicators(indicators);
+      toast.success(`${indicators.length} indicadores sugeridos!`);
+    }
+  };
+
+  const handleAskQuestion = async () => {
+    if (!question.trim()) return;
+    
+    const userMessage = question;
+    setQuestion("");
+    setChatMessages(prev => [...prev, { role: "user", content: userMessage }]);
+    
+    const answer = await askQuestion(userMessage, currentStep, data);
+    if (answer) {
+      setChatMessages(prev => [...prev, { role: "assistant", content: answer }]);
+    }
+  };
+
+  const getQuickActions = () => {
+    switch (currentStep) {
+      case 1:
+        return [
+          { label: "Sugerir Nome", action: handleSuggestName, icon: <Wand2 className="w-3 h-3" /> },
+          { label: "Expandir Objetivo", action: handleExpandObjective, icon: <Lightbulb className="w-3 h-3" /> }
+        ];
+      case 2:
+        return [
+          { label: "Gerar Requisitos", action: handleGenerateRequirements, icon: <Wand2 className="w-3 h-3" /> }
+        ];
+      case 3:
+        return [
+          { label: "Expandir Descrição", action: handleExpandCurrentSituation, icon: <Wand2 className="w-3 h-3" /> }
+        ];
+      case 4:
+        return [
+          { label: "Gerar Situação Alvo", action: handleGenerateTargetSituation, icon: <Wand2 className="w-3 h-3" /> }
+        ];
+      case 5:
+        return [
+          { label: "Sugerir Ações", action: handleSuggestActions, icon: <Wand2 className="w-3 h-3" /> }
+        ];
+      case 6:
+        return [
+          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Wand2 className="w-3 h-3" /> }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const getStepWarnings = () => {
+    const warnings: string[] = [];
+    
+    switch (currentStep) {
+      case 1:
+        if (!data.name?.trim()) warnings.push("Nome do projeto não definido");
+        if (!data.objective?.trim()) warnings.push("Objetivo não preenchido");
+        if (!data.thesisId) warnings.push("Tese estratégica não vinculada");
+        break;
+      case 2:
+        if (data.requirements.length === 0) warnings.push("Nenhum requisito definido");
+        const emptyReqs = data.requirements.filter(r => !r.description?.trim());
+        if (emptyReqs.length > 0) warnings.push(`${emptyReqs.length} requisito(s) sem descrição`);
+        break;
+      case 3:
+        if (!data.currentSituationDescription?.trim()) warnings.push("Situação atual não descrita");
+        break;
+      case 4:
+        if (!data.targetSituationDescription?.trim()) warnings.push("Situação alvo não descrita");
+        break;
+      case 5:
+        if (data.actions.length === 0) warnings.push("Nenhuma ação definida");
+        const unlinkedActions = data.actions.filter(a => a.linkedRequirements.length === 0);
+        if (unlinkedActions.length > 0) warnings.push(`${unlinkedActions.length} ação(ões) sem vínculo com requisitos`);
+        break;
+      case 6:
+        if (!data.m1Date) warnings.push("Data M1 não definida");
+        if (data.indicators.length === 0) warnings.push("Nenhum indicador definido");
+        break;
+    }
+    
+    return warnings;
+  };
+
+  const quickActions = getQuickActions();
+  const warnings = getStepWarnings();
+
+  if (isCollapsed) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsCollapsed(false)}
+        className="fixed bottom-4 right-4 gap-2 shadow-lg z-50"
+      >
+        <Sparkles className="w-4 h-4 text-yellow-500" />
+        Assistente IA
+      </Button>
+    );
+  }
+
+  return (
+    <Card className="w-80 flex-shrink-0 h-fit sticky top-4 border-primary/20 bg-card/50 backdrop-blur">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-medium">Assistente A3</CardTitle>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                {stepIcons[currentStep]}
+                <span>{stepNames[currentStep]}</span>
+              </div>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsCollapsed(true)}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Guidance Message */}
+        <div className="space-y-2">
+          {isLoading && !guidance ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ) : guidance ? (
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {guidance.slice(0, 300)}{guidance.length > 300 ? "..." : ""}
+            </p>
+          ) : null}
+        </div>
+
+        {/* Warnings */}
+        {warnings.length > 0 && (
+          <div className="space-y-1">
+            {warnings.map((warning, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-500">
+                <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                <span>{warning}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Name Suggestions */}
+        {nameSuggestions.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Sugestões de Nome:</p>
+            {nameSuggestions.map((name, i) => (
+              <Button
+                key={i}
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-left h-auto py-2 text-xs"
+                onClick={() => handleApplyName(name)}
+              >
+                {name}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        {quickActions.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Ações Rápidas:</p>
+            <div className="flex flex-wrap gap-1">
+              {quickActions.map((action, i) => (
+                <Button
+                  key={i}
+                  variant="secondary"
+                  size="sm"
+                  className="gap-1 text-xs h-7"
+                  onClick={action.action}
+                  disabled={isLoading}
+                >
+                  {action.icon}
+                  {action.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Chat Messages */}
+        {chatMessages.length > 0 && (
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-muted-foreground w-full">
+              <MessageCircle className="w-3 h-3" />
+              Conversa
+              <ChevronDown className="w-3 h-3 ml-auto" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ScrollArea className="h-32 mt-2">
+                <div className="space-y-2">
+                  {chatMessages.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`text-xs p-2 rounded ${
+                        msg.role === "user" 
+                          ? "bg-primary/10 ml-4" 
+                          : "bg-muted mr-4"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* Question Input */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Faça uma pergunta..."
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAskQuestion()}
+            className="text-xs h-8"
+            disabled={isLoading}
+          />
+          <Button
+            size="icon"
+            className="h-8 w-8 flex-shrink-0"
+            onClick={handleAskQuestion}
+            disabled={isLoading || !question.trim()}
+          >
+            <Send className="w-3 h-3" />
+          </Button>
+        </div>
+
+        {error && (
+          <p className="text-xs text-destructive">{error}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

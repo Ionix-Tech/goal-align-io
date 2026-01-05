@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.analyze-a3]
 verify_jwt = true
+
+[functions.a3-copilot]
+verify_jwt = true
