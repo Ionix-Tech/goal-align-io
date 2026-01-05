@@ -15,7 +15,7 @@ export function A3StrategySection({ description, requirements }: A3StrategySecti
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Rocket className="w-5 h-5 text-primary" />
-            Estratégia - Situação Alvo
+            Situação Alvo
           </CardTitle>
           <CardDescription>
             Onde queremos chegar ao final dos 90 dias

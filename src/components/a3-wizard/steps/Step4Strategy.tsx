@@ -124,7 +124,7 @@ export function Step4Strategy({ data, updateData }: Step4StrategyProps) {
           💡 Dica
         </h4>
         <p className="text-sm text-muted-foreground">
-          Seja específico sobre os resultados esperados. Uma boa descrição da situação alvo facilita o alinhamento da equipe e a medição do sucesso do projeto.
+          São as metas traçadas para cada problema identificado na situação atual. Deste modo, cada Situação Atual identificada com um número deve ter uma respectiva Situação Alvo. Aqui também é preciso quantificar cada meta, colocando de preferência o valor real que se pretende atingir. Seguindo o exemplo anterior, ao invés de determinar "reduzir o consumo de água", descrever "reduzir de XX para YY o consumo de água". Prefira também esta última descrição ao invés de colocar "reduzir em 10%", se a meta é 10%, descreva o patamar atual e a meta do valor em questão.
         </p>
       </div>
     </div>
