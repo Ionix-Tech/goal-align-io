@@ -145,7 +145,7 @@ export function A3ReviewView() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/prioritization")}
             className="gap-2 -ml-2"
           >
             <ArrowLeft className="w-4 h-4" />
