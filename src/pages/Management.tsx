@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings2, Filter, Database as DatabaseIcon, FileText } from "lucide-react";
+import { Settings2, Filter, Database as DatabaseIcon, FileText, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectExecutionCard } from "@/components/management/ProjectExecutionCard";
+import { WorkloadDashboard } from "@/components/management/WorkloadDashboard";
 import { useApprovedProjects } from "@/hooks/useApprovedProjects";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -30,7 +32,6 @@ const Management = () => {
       
       if (data.success) {
         toast.success(data.message || 'Projeto de teste criado com sucesso!');
-        // Refresh the page to show the new project
         window.location.reload();
       } else {
         throw new Error(data.error || 'Erro ao criar projeto de teste');
@@ -90,175 +91,195 @@ const Management = () => {
           )}
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
+        {/* Tabs */}
+        <Tabs defaultValue="projects" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="projects" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Projetos
+            </TabsTrigger>
+            <TabsTrigger value="workload" className="gap-2">
+              <Users className="h-4 w-4" />
+              Carga de Trabalho
+            </TabsTrigger>
+          </TabsList>
 
-          <Card className="ring-2 ring-blue-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <FileText className="h-3 w-3 text-blue-600" />
-                Projetos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-700">{stats.projects}</div>
-            </CardContent>
-          </Card>
+          <TabsContent value="projects" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Total
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.total}</div>
+                </CardContent>
+              </Card>
 
-          <Card className="ring-2 ring-green-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-500" />
-                Saudáveis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-700">{stats.green}</div>
-            </CardContent>
-          </Card>
+              <Card className="ring-2 ring-blue-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <FileText className="h-3 w-3 text-blue-600" />
+                    Projetos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-700">{stats.projects}</div>
+                </CardContent>
+              </Card>
 
-          <Card className="ring-2 ring-yellow-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                Atenção
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-700">{stats.yellow}</div>
-            </CardContent>
-          </Card>
+              <Card className="ring-2 ring-green-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-green-500" />
+                    Saudáveis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-700">{stats.green}</div>
+                </CardContent>
+              </Card>
 
-          <Card className="ring-2 ring-red-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-red-500" />
-                Críticos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-700">{stats.red}</div>
-            </CardContent>
-          </Card>
+              <Card className="ring-2 ring-yellow-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                    Atenção
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-700">{stats.yellow}</div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Sem Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-500">{stats.noStatus}</div>
-            </CardContent>
-          </Card>
-        </div>
+              <Card className="ring-2 ring-red-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-red-500" />
+                    Críticos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-700">{stats.red}</div>
+                </CardContent>
+              </Card>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-
-              <Select
-                value={selectedPillar || 'all'}
-                onValueChange={(value) => setSelectedPillar(value === 'all' ? null : value as StrategicPillar)}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Todos os pilares" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os pilares</SelectItem>
-                  <SelectItem value="operational_efficiency">⚙️ Eficiência Operacional</SelectItem>
-                  <SelectItem value="sales_expansion">📈 Expansão de Vendas</SelectItem>
-                  <SelectItem value="new_business">🚀 Novos Negócios</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={selectedHealth}
-                onValueChange={(value) => setSelectedHealth(value as HealthStatus | 'all')}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="green">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-green-500" />
-                      Saudáveis
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="yellow">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                      Atenção
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="red">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-red-500" />
-                      Críticos
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              {(selectedPillar || selectedHealth !== 'all') && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedPillar(null);
-                    setSelectedHealth('all');
-                  }}
-                >
-                  Limpar filtros
-                </Button>
-              )}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Sem Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-500">{stats.noStatus}</div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Projects Grid */}
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            Carregando projetos...
-          </div>
-        ) : filteredProjects.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center text-muted-foreground">
-                <p className="text-lg font-medium">Nenhum projeto aprovado encontrado</p>
-                <p className="text-sm mt-2">
-                  {selectedPillar || selectedHealth !== 'all'
-                    ? 'Tente ajustar os filtros'
-                    : 'Aprove projetos na tela de Priorização para vê-los aqui'}
-                </p>
+            {/* Filters */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+
+                  <Select
+                    value={selectedPillar || 'all'}
+                    onValueChange={(value) => setSelectedPillar(value === 'all' ? null : value as StrategicPillar)}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Todos os pilares" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os pilares</SelectItem>
+                      <SelectItem value="operational_efficiency">⚙️ Eficiência Operacional</SelectItem>
+                      <SelectItem value="sales_expansion">📈 Expansão de Vendas</SelectItem>
+                      <SelectItem value="new_business">🚀 Novos Negócios</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={selectedHealth}
+                    onValueChange={(value) => setSelectedHealth(value as HealthStatus | 'all')}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Todos os status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os status</SelectItem>
+                      <SelectItem value="green">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full bg-green-500" />
+                          Saudáveis
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="yellow">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                          Atenção
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="red">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full bg-red-500" />
+                          Críticos
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {(selectedPillar || selectedHealth !== 'all') && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPillar(null);
+                        setSelectedHealth('all');
+                      }}
+                    >
+                      Limpar filtros
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Projects Grid */}
+            {isLoading ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Carregando projetos...
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProjects.map((project) => (
-              <ProjectExecutionCard
-                key={project.id}
-                project={project}
-                onClick={() => navigate(`/management/${project.id}`)}
-              />
-            ))}
-          </div>
-        )}
+            ) : filteredProjects.length === 0 ? (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="text-center text-muted-foreground">
+                    <p className="text-lg font-medium">Nenhum projeto aprovado encontrado</p>
+                    <p className="text-sm mt-2">
+                      {selectedPillar || selectedHealth !== 'all'
+                        ? 'Tente ajustar os filtros'
+                        : 'Aprove projetos na tela de Priorização para vê-los aqui'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProjects.map((project) => (
+                  <ProjectExecutionCard
+                    key={project.id}
+                    project={project}
+                    onClick={() => navigate(`/management/${project.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="workload">
+            <WorkloadDashboard />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
