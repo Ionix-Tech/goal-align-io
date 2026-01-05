@@ -671,35 +671,42 @@ export function A3Wizard() {
   };
 
   const handleApplyRequirements = (requirements: { description: string }[]) => {
+    // Capture startIndex BEFORE adding new requirements
+    const startIndex = data.requirements.length;
     requirements.forEach(() => {
       addRequirement();
     });
-    // Update the last N requirements with the generated content
-    const startIndex = data.requirements.length;
+    // Update the requirements after they're added with staggered timeouts
     requirements.forEach((req, i) => {
       setTimeout(() => {
         updateRequirement(startIndex + i, { description: req.description });
-      }, 50 * i);
+      }, 100 + (50 * i));
     });
   };
 
   const handleApplyActions = (actions: { description: string; linkedRequirements: string[] }[]) => {
-    actions.forEach((action) => {
+    // Capture the IDs we'll need to update AFTER adding
+    const startIndex = data.actions.length;
+    
+    // First, add all empty actions
+    actions.forEach(() => {
       addAction();
     });
-    // Update the actions after they're added
-    setTimeout(() => {
-      const startIndex = data.actions.length;
-      actions.forEach((action, i) => {
-        const actionId = data.actions[startIndex + i]?.id;
-        if (actionId) {
-          updateAction(actionId, {
+    
+    // Then update each action with generated content using staggered timeouts
+    actions.forEach((action, i) => {
+      setTimeout(() => {
+        // Get the current state of actions to find the correct ID
+        // The action at startIndex + i should be the one we just created
+        const targetAction = data.actions[startIndex + i];
+        if (targetAction) {
+          updateAction(targetAction.id, {
             description: action.description,
             linkedRequirements: action.linkedRequirements
           });
         }
-      });
-    }, 100);
+      }, 150 + (50 * i));
+    });
   };
 
   const handleApplyIndicators = (indicators: { name: string; unit: string; linkedRequirements: string[] }[]) => {
