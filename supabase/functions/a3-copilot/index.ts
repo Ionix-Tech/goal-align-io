@@ -419,7 +419,11 @@ Step atual: ${currentStep}
 
 Pergunta do usuário: ${specificInput}
 
-Responda de forma clara e acionável, sempre relacionando com a metodologia A3.`;
+IMPORTANTE: Responda de forma CONCISA e estruturada:
+- Máximo 5 linhas ou 5 bullet points
+- Foco na resposta direta, sem introduções longas
+- Se precisar detalhar, use tópicos curtos
+- Sempre relacione com a metodologia A3`;
         break;
 
       default:

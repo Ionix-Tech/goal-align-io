@@ -12,7 +12,7 @@ import {
   Sparkles, ChevronDown, ChevronUp, Send, 
   Lightbulb, FileText, Target, Search, 
   ClipboardList, Shield, AlertCircle, CheckCircle,
-  Wand2, MessageCircle, X, Bot
+  Wand2, MessageCircle, X, Bot, Trash2, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +57,9 @@ export function AICopilotPanel({
   const [question, setQuestion] = useState("");
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+  const [isGuidanceExpanded, setIsGuidanceExpanded] = useState(false);
+  const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
+  const [isChatOpen, setIsChatOpen] = useState(true);
   
   const {
     isLoading,
@@ -180,32 +183,49 @@ export function AICopilotPanel({
     }
   };
 
+  const handleClearChat = () => {
+    setChatMessages([]);
+    setExpandedMessages(new Set());
+  };
+
+  const toggleMessageExpand = (index: number) => {
+    setExpandedMessages(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
   const getQuickActions = () => {
     switch (currentStep) {
       case 1:
         return [
-          { label: "Sugerir Nome", action: handleSuggestName, icon: <Wand2 className="w-3 h-3" /> },
-          { label: "Expandir Objetivo", action: handleExpandObjective, icon: <Lightbulb className="w-3 h-3" /> }
+          { label: "Sugerir Nome", action: handleSuggestName, icon: <Wand2 className="w-4 h-4" /> },
+          { label: "Expandir Objetivo", action: handleExpandObjective, icon: <Lightbulb className="w-4 h-4" /> }
         ];
       case 2:
         return [
-          { label: "Gerar Requisitos", action: handleGenerateRequirements, icon: <Wand2 className="w-3 h-3" /> }
+          { label: "Gerar Requisitos", action: handleGenerateRequirements, icon: <Wand2 className="w-4 h-4" /> }
         ];
       case 3:
         return [
-          { label: "Expandir Descrição", action: handleExpandCurrentSituation, icon: <Wand2 className="w-3 h-3" /> }
+          { label: "Expandir Descrição", action: handleExpandCurrentSituation, icon: <Wand2 className="w-4 h-4" /> }
         ];
       case 4:
         return [
-          { label: "Gerar Situação Alvo", action: handleGenerateTargetSituation, icon: <Wand2 className="w-3 h-3" /> }
+          { label: "Gerar Situação Alvo", action: handleGenerateTargetSituation, icon: <Wand2 className="w-4 h-4" /> }
         ];
       case 5:
         return [
-          { label: "Sugerir Ações", action: handleSuggestActions, icon: <Wand2 className="w-3 h-3" /> }
+          { label: "Sugerir Ações", action: handleSuggestActions, icon: <Wand2 className="w-4 h-4" /> }
         ];
       case 6:
         return [
-          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Wand2 className="w-3 h-3" /> }
+          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Wand2 className="w-4 h-4" /> }
         ];
       default:
         return [];
@@ -264,8 +284,8 @@ export function AICopilotPanel({
   }
 
   return (
-    <Card className="w-80 flex-shrink-0 h-fit sticky top-4 border-primary/20 bg-card/50 backdrop-blur">
-      <CardHeader className="pb-3">
+    <Card className="w-80 flex-shrink-0 sticky top-4 border-primary/20 bg-card/50 backdrop-blur h-[calc(100vh-2rem)] flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -285,125 +305,184 @@ export function AICopilotPanel({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Guidance Message */}
-        <div className="space-y-2">
-          {isLoading && !guidance ? (
+      <CardContent className="flex-1 flex flex-col overflow-hidden p-4 pt-0">
+        {/* Scrollable Content Area */}
+        <ScrollArea className="flex-1 pr-2">
+          <div className="space-y-4">
+            {/* Guidance Message */}
             <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          ) : guidance ? (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {guidance.slice(0, 300)}{guidance.length > 300 ? "..." : ""}
-            </p>
-          ) : null}
-        </div>
-
-        {/* Warnings */}
-        {warnings.length > 0 && (
-          <div className="space-y-1">
-            {warnings.map((warning, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-500">
-                <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                <span>{warning}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Name Suggestions */}
-        {nameSuggestions.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Sugestões de Nome:</p>
-            {nameSuggestions.map((name, i) => (
-              <Button
-                key={i}
-                variant="outline"
-                size="sm"
-                className="w-full justify-start text-left h-auto py-2 text-xs"
-                onClick={() => handleApplyName(name)}
-              >
-                {name}
-              </Button>
-            ))}
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        {quickActions.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Ações Rápidas:</p>
-            <div className="flex flex-wrap gap-1">
-              {quickActions.map((action, i) => (
-                <Button
-                  key={i}
-                  variant="secondary"
-                  size="sm"
-                  className="gap-1 text-xs h-7"
-                  onClick={action.action}
-                  disabled={isLoading}
-                >
-                  {action.icon}
-                  {action.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Chat Messages */}
-        {chatMessages.length > 0 && (
-          <Collapsible defaultOpen>
-            <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-muted-foreground w-full">
-              <MessageCircle className="w-3 h-3" />
-              Conversa
-              <ChevronDown className="w-3 h-3 ml-auto" />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <ScrollArea className="h-32 mt-2">
+              {isLoading && !guidance ? (
                 <div className="space-y-2">
-                  {chatMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`text-xs p-2 rounded ${
-                        msg.role === "user" 
-                          ? "bg-primary/10 ml-4" 
-                          : "bg-muted mr-4"
-                      }`}
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : guidance ? (
+                <div className="space-y-2">
+                  <p className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap break-words ${
+                    !isGuidanceExpanded ? "line-clamp-4" : ""
+                  }`}>
+                    {guidance}
+                  </p>
+                  {guidance.length > 200 && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-xs text-primary"
+                      onClick={() => setIsGuidanceExpanded(!isGuidanceExpanded)}
                     >
-                      {msg.content}
-                    </div>
+                      {isGuidanceExpanded ? "Ver menos" : "Ver mais"}
+                    </Button>
+                  )}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Warnings */}
+            {warnings.length > 0 && (
+              <div className="space-y-1">
+                {warnings.map((warning, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-500">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    <span>{warning}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Name Suggestions */}
+            {nameSuggestions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Sugestões de Nome:</p>
+                {nameSuggestions.map((name, i) => (
+                  <Button
+                    key={i}
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-left h-auto py-2 text-xs"
+                    onClick={() => handleApplyName(name)}
+                  >
+                    {name}
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {/* Quick Actions - Reorganized as stacked buttons */}
+            {quickActions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Ações Rápidas:</p>
+                <div className="flex flex-col gap-2">
+                  {quickActions.map((action, i) => (
+                    <Button
+                      key={i}
+                      variant="secondary"
+                      size="sm"
+                      className="w-full justify-start gap-2 h-9"
+                      onClick={action.action}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        action.icon
+                      )}
+                      {action.label}
+                    </Button>
                   ))}
                 </div>
-              </ScrollArea>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+              </div>
+            )}
 
-        {/* Question Input */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="Faça uma pergunta..."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAskQuestion()}
-            className="text-xs h-8"
-            disabled={isLoading}
-          />
-          <Button
-            size="icon"
-            className="h-8 w-8 flex-shrink-0"
-            onClick={handleAskQuestion}
-            disabled={isLoading || !question.trim()}
-          >
-            <Send className="w-3 h-3" />
-          </Button>
+            {/* Chat Messages */}
+            {chatMessages.length > 0 && (
+              <Collapsible open={isChatOpen} onOpenChange={setIsChatOpen}>
+                <div className="flex items-center justify-between">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <MessageCircle className="w-3 h-3" />
+                    Conversa ({chatMessages.length})
+                    {isChatOpen ? (
+                      <ChevronUp className="w-3 h-3" />
+                    ) : (
+                      <ChevronDown className="w-3 h-3" />
+                    )}
+                  </CollapsibleTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleClearChat}
+                    title="Limpar conversa"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+                <CollapsibleContent>
+                  <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                    {chatMessages.map((msg, i) => {
+                      const isExpanded = expandedMessages.has(i);
+                      const isLong = msg.content.length > 300;
+                      
+                      return (
+                        <div
+                          key={i}
+                          className={`text-xs p-2 rounded whitespace-pre-wrap break-words ${
+                            msg.role === "user" 
+                              ? "bg-primary/10 ml-4" 
+                              : "bg-muted mr-4"
+                          }`}
+                        >
+                          <div className={!isExpanded && isLong ? "line-clamp-6" : ""}>
+                            {msg.content}
+                          </div>
+                          {isLong && (
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto p-0 mt-1 text-xs text-primary"
+                              onClick={() => toggleMessageExpand(i)}
+                            >
+                              {isExpanded ? "Ver menos" : "Ver mais"}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Fixed Question Input at Bottom */}
+        <div className="flex-shrink-0 pt-4 border-t mt-4">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Faça uma pergunta..."
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAskQuestion()}
+              className="text-xs h-9"
+              disabled={isLoading}
+            />
+            <Button
+              size="icon"
+              className="h-9 w-9 flex-shrink-0"
+              onClick={handleAskQuestion}
+              disabled={isLoading || !question.trim()}
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+
+          {error && (
+            <p className="text-xs text-destructive mt-2">{error}</p>
+          )}
         </div>
-
-        {error && (
-          <p className="text-xs text-destructive">{error}</p>
-        )}
       </CardContent>
     </Card>
   );
