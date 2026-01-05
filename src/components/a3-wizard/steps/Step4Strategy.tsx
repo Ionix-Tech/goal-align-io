@@ -112,9 +112,6 @@ export function Step4Strategy({ data, updateData }: Step4StrategyProps) {
                 </div>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              São as metas traçadas para cada problema identificado na situação atual. Deste modo, cada Situação Atual identificada com um número deve ter uma respectiva Situação Alvo. Aqui também é preciso quantificar cada meta, colocando de preferência o valor real que se pretende atingir. Seguindo o exemplo anterior, ao invés de determinar "reduzir o consumo de água", descrever "reduzir de XX para YY o consumo de água". Prefira também esta última descrição ao invés de colocar "reduzir em 10%", se a meta é 10%, descreva o patamar atual e a meta do valor em questão.
-            </p>
           </div>
         </CardContent>
       </Card>
