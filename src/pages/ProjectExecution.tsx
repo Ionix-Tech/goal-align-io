@@ -630,6 +630,7 @@ const ProjectExecution = () => {
               milestones={project.milestones.map(m => ({ id: m.id, title: m.title }))}
               indicators={project.indicators.map(i => ({ id: i.id, name: i.name }))}
               members={project.members.map(m => ({ user_id: m.user.id, user: { full_name: m.user.full_name } }))}
+              requirements={requirements || []}
             />
           </TabsContent>
         </Tabs>
