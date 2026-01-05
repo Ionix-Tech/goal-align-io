@@ -7,7 +7,7 @@ import { A3WizardData, WizardAction, StrategicKPI } from "@/hooks/useA3WizardSta
 import { 
   FileText, Target, Search, Lightbulb, ClipboardList, Shield, Send, 
   Pencil, Calendar, BarChart3, Crosshair, Link, PlaneTakeoff, Plane, Rocket,
-  CheckCircle2, AlertCircle, User, LayoutGrid
+  CheckCircle2, AlertCircle, User, LayoutGrid, Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,6 +18,7 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { ActionMatrixTab } from "./ActionMatrixTab";
+import { AIAnalysisTab } from "./AIAnalysisTab";
 
 interface Step7ReviewProps {
   data: A3WizardData;
@@ -134,7 +135,7 @@ export function Step7Review({
   return (
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="review" className="gap-2">
             <FileText className="w-4 h-4" />
             Revisão Geral
@@ -142,6 +143,10 @@ export function Step7Review({
           <TabsTrigger value="matrix" className="gap-2">
             <LayoutGrid className="w-4 h-4" />
             Matriz de Ações
+          </TabsTrigger>
+          <TabsTrigger value="ai-analysis" className="gap-2">
+            <Sparkles className="w-4 h-4" />
+            Análise IA
           </TabsTrigger>
         </TabsList>
 
@@ -579,6 +584,13 @@ export function Step7Review({
           <ActionMatrixTab 
             data={data} 
             updateAction={updateAction} 
+          />
+        </TabsContent>
+
+        <TabsContent value="ai-analysis" className="mt-4">
+          <AIAnalysisTab 
+            data={data} 
+            goToStep={goToStep}
           />
         </TabsContent>
       </Tabs>
