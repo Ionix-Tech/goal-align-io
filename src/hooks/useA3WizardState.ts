@@ -332,7 +332,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         setProjectId(options.initialProjectId);
         
         // Set to the step the project was on
-        if (project.current_step && project.current_step >= 1 && project.current_step <= 6) {
+        if (project.current_step && project.current_step >= 1 && project.current_step <= 7) {
           setCurrentStep(project.current_step);
         }
       } catch (error) {
@@ -518,15 +518,19 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
         
         return actionsWithContent.length > 0 && allRequirementsCovered;
       },
-      submit: () => {
+      7: () => {
         // Step 6 complete: M1 date set (M2 and M3 auto-calculated)
+        return data.m1Date !== "";
+      },
+      submit: () => {
+        // Step 7: ready to submit (M1 set)
         return data.m1Date !== "";
       }
     };
   }, [data]);
 
   const goToStep = useCallback((step: number) => {
-    if (step < 1 || step > 6) return;
+    if (step < 1 || step > 7) return;
     
     // Going backwards is always allowed
     if (step < currentStep) {
