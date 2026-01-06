@@ -9,6 +9,7 @@ export interface ApprovedProject {
   assigned_to: string | null;
   approved_at: string | null;
   updated_at: string | null;
+  is_critical: boolean;
   assigned_to_profile?: {
     full_name: string;
     avatar_url: string | null;
@@ -35,6 +36,7 @@ export function useApprovedProjects(pillar?: string | null) {
           assigned_to,
           approved_at,
           updated_at,
+          is_critical,
           assigned_to_profile:profiles!projects_assigned_to_fkey(full_name, avatar_url)
         `)
         .in('status', ['approved', 'completed'])

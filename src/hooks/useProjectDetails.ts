@@ -21,6 +21,7 @@ export interface ProjectDetails {
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
   strategic_indicator: string | null;
   status: 'idea' | 'draft' | 'review' | 'approved' | 'archived';
+  is_critical: boolean;
   created_at: string;
   created_by: string;
   assigned_to: string | null;

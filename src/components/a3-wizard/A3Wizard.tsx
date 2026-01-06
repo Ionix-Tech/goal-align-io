@@ -98,6 +98,7 @@ export function A3Wizard() {
             current_situation_description: dataRef.current.currentSituationDescription,
             target_situation_description: dataRef.current.targetSituationDescription,
             current_step: currentStep,
+            is_critical: dataRef.current.isCritical,
             updated_at: new Date().toISOString()
           })
           .eq('id', currentProjectId);
@@ -156,6 +157,7 @@ export function A3Wizard() {
             current_situation_description: dataRef.current.currentSituationDescription,
             target_situation_description: dataRef.current.targetSituationDescription,
             current_step: currentStep,
+            is_critical: dataRef.current.isCritical,
             status: 'draft',
             initiative_type: 'project',
             created_by: userId
@@ -216,6 +218,7 @@ export function A3Wizard() {
             current_situation_description: data.currentSituationDescription,
             target_situation_description: data.targetSituationDescription,
             current_step: currentStep,
+            is_critical: data.isCritical,
             updated_at: new Date().toISOString()
           })
           .eq('id', currentProjectId);
@@ -275,6 +278,7 @@ export function A3Wizard() {
             current_situation_description: data.currentSituationDescription,
             target_situation_description: data.targetSituationDescription,
             current_step: currentStep,
+            is_critical: data.isCritical,
             status: 'draft',
             initiative_type: 'project',
             created_by: userId
