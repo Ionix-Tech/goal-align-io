@@ -16,6 +16,20 @@ interface ImpactEffortEvaluation {
   summary: string;
 }
 
+interface SimilarIdea {
+  id: string;
+  name: string;
+  similarity_score: number;
+  reason: string;
+}
+
+interface StrategicSuggestion {
+  thesis_id: string;
+  thesis_name: string;
+  alignment_score: number;
+  reason: string;
+}
+
 interface UseAIIdeaAssistantReturn {
   // Category suggestion
   categorySuggestion: CategorySuggestion | null;
@@ -34,6 +48,18 @@ interface UseAIIdeaAssistantReturn {
   isLoadingEvaluation: boolean;
   evaluateIdea: (title: string, description: string) => Promise<void>;
   clearEvaluation: () => void;
+
+  // Similar ideas detection
+  similarIdeas: SimilarIdea[];
+  isLoadingSimilar: boolean;
+  findSimilarIdeas: (title: string, description: string) => Promise<void>;
+  clearSimilarIdeas: () => void;
+
+  // Strategic alignment suggestions
+  strategicSuggestions: StrategicSuggestion[];
+  isLoadingStrategic: boolean;
+  suggestStrategicAlignment: (title: string, description: string) => Promise<void>;
+  clearStrategicSuggestions: () => void;
 }
 
 export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
@@ -45,6 +71,12 @@ export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
 
   const [evaluation, setEvaluation] = useState<ImpactEffortEvaluation | null>(null);
   const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(false);
+
+  const [similarIdeas, setSimilarIdeas] = useState<SimilarIdea[]>([]);
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState(false);
+
+  const [strategicSuggestions, setStrategicSuggestions] = useState<StrategicSuggestion[]>([]);
+  const [isLoadingStrategic, setIsLoadingStrategic] = useState(false);
 
   const suggestCategory = useCallback(async (title: string, description: string) => {
     if (!title.trim() || !description.trim()) {
@@ -185,6 +217,80 @@ export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
     setEvaluation(null);
   }, []);
 
+  const findSimilarIdeas = useCallback(async (title: string, description: string) => {
+    if (!title.trim() || !description.trim()) {
+      return;
+    }
+
+    setIsLoadingSimilar(true);
+    setSimilarIdeas([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-idea-assistant', {
+        body: {
+          action: 'find_similar',
+          title,
+          description,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.similar_ideas && Array.isArray(data.similar_ideas)) {
+        setSimilarIdeas(data.similar_ideas);
+        if (data.similar_ideas.length > 0) {
+          toast.info(`Encontrada(s) ${data.similar_ideas.length} ideia(s) similar(es)`);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error finding similar ideas:', error);
+      // Don't show error toast for similarity - it's a nice-to-have feature
+    } finally {
+      setIsLoadingSimilar(false);
+    }
+  }, []);
+
+  const clearSimilarIdeas = useCallback(() => {
+    setSimilarIdeas([]);
+  }, []);
+
+  const suggestStrategicAlignment = useCallback(async (title: string, description: string) => {
+    if (!title.trim() || !description.trim()) {
+      return;
+    }
+
+    setIsLoadingStrategic(true);
+    setStrategicSuggestions([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-idea-assistant', {
+        body: {
+          action: 'suggest_strategic',
+          title,
+          description,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.suggestions && Array.isArray(data.suggestions)) {
+        setStrategicSuggestions(data.suggestions);
+        if (data.suggestions.length > 0) {
+          toast.success(`${data.suggestions.length} objetivo(s) estratégico(s) sugerido(s)`);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error suggesting strategic alignment:', error);
+      // Don't show error toast - it's a nice-to-have feature
+    } finally {
+      setIsLoadingStrategic(false);
+    }
+  }, []);
+
+  const clearStrategicSuggestions = useCallback(() => {
+    setStrategicSuggestions([]);
+  }, []);
+
   return {
     categorySuggestion,
     isLoadingCategory,
@@ -200,5 +306,15 @@ export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
     isLoadingEvaluation,
     evaluateIdea,
     clearEvaluation,
+
+    similarIdeas,
+    isLoadingSimilar,
+    findSimilarIdeas,
+    clearSimilarIdeas,
+
+    strategicSuggestions,
+    isLoadingStrategic,
+    suggestStrategicAlignment,
+    clearStrategicSuggestions,
   };
 }
