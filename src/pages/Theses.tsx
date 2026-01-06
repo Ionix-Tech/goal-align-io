@@ -41,9 +41,8 @@ export default function Theses() {
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedThesis, setSelectedThesis] = useState<Thesis | null>(null);
-  // Default to next year since product focus is future planning
-  const nextYear = new Date().getFullYear() + 1;
-  const [selectedYear, setSelectedYear] = useState<number>(nextYear);
+  // Default to 2026 as the current planning year
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
   const { role, loading: roleLoading } = useUserRole();
 
   const { data: theses, isLoading } = useTheses({ 
