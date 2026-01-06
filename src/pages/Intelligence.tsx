@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Brain, List, FolderTree, AlertCircle } from "lucide-react";
+import { Brain, List, FolderTree, AlertCircle, Users } from "lucide-react";
 import ActivityFeedFilters from "@/components/intelligence/ActivityFeedFilters";
 import ActivityFeedItem from "@/components/intelligence/ActivityFeedItem";
 import CascadeView from "@/components/intelligence/CascadeView";
 import AttentionPointsView from "@/components/intelligence/AttentionPointsView";
+import { WorkloadDashboard } from "@/components/management/WorkloadDashboard";
 import { useActivityFeed, ActivityFeedFilters as Filters } from "@/hooks/useActivityFeed";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,7 +41,7 @@ const Intelligence = () => {
 
         {/* Tabs para alternar entre Feed, Cascata e Pontos de Atenção */}
         <Tabs defaultValue="feed" className="w-full mt-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="feed" className="gap-2">
               <List className="h-4 w-4" />
               Feed Cronológico
@@ -52,6 +53,10 @@ const Intelligence = () => {
             <TabsTrigger value="attention" className="gap-2">
               <AlertCircle className="h-4 w-4" />
               Pontos de Atenção
+            </TabsTrigger>
+            <TabsTrigger value="workload" className="gap-2">
+              <Users className="h-4 w-4" />
+              Carga de Trabalho
             </TabsTrigger>
           </TabsList>
 
@@ -79,6 +84,10 @@ const Intelligence = () => {
 
           <TabsContent value="attention" className="mt-6">
             <AttentionPointsView />
+          </TabsContent>
+
+          <TabsContent value="workload" className="mt-6">
+            <WorkloadDashboard />
           </TabsContent>
         </Tabs>
       </div>
