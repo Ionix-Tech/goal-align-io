@@ -270,6 +270,11 @@ export function ManagementChatPanel({
                   </div>
                 )}
 
+                {/* Chat messages */}
+                {messages.map((message, idx) => (
+                  <MessageBubble key={idx} message={message} />
+                ))}
+
                 {/* Loading indicator */}
                 {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
                   <div className="flex gap-3">
