@@ -3,10 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Sparkles, ChevronDown, ChevronUp, AlertTriangle, Users, FolderKanban, Loader2 } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp, AlertTriangle, Loader2 } from "lucide-react";
 import type { WorkloadData } from "@/hooks/useWorkloadData";
 import type { ProjectLeadershipData } from "@/hooks/useProjectLeadershipData";
-import { supabase } from "@/integrations/supabase/client";
 
 interface WorkloadAIInsightsProps {
   workloadData: WorkloadData | undefined;
@@ -127,20 +126,76 @@ export function WorkloadAIInsights({ workloadData, leadershipData }: WorkloadAII
         } : null,
       };
 
-      const { data, error } = await supabase.functions.invoke("management-chat", {
-        body: {
-          message: "Analise a carga de trabalho da equipe e sugira ações para equilibrar melhor a distribuição de tarefas e projetos. Seja objetivo e direto.",
-          context: {
-            type: "management",
-            projects: [],
-            projectsSummary: [],
-            workloadAnalysis: context,
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/management-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-        },
-      });
+          body: JSON.stringify({
+            messages: [
+              { role: "user", content: "Analise a carga de trabalho da equipe e sugira ações para equilibrar melhor a distribuição de tarefas e projetos. Seja objetivo e direto." }
+            ],
+            context: {
+              type: "management",
+              projects: [],
+              workloadAnalysis: context,
+            },
+          }),
+        }
+      );
 
-      if (error) throw error;
-      setAiInsights(data?.response || "Não foi possível gerar análise.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao analisar");
+      }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+      
+      const decoder = new TextDecoder();
+      let fullResponse = "";
+      let textBuffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        textBuffer += decoder.decode(value, { stream: true });
+        
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+          
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+          
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              fullResponse += content;
+              setAiInsights(fullResponse);
+            }
+          } catch {
+            // Incomplete JSON, wait for more data
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      if (!fullResponse) {
+        setAiInsights("Não foi possível gerar análise.");
+      }
     } catch (error) {
       console.error("Error analyzing workload:", error);
       setAiInsights("Erro ao analisar carga de trabalho. Tente novamente.");

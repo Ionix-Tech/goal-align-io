@@ -22,7 +22,7 @@ interface ProjectSummary {
 
 interface ManagementContext {
   type: 'management';
-  summary: {
+  summary?: {
     total: number;
     healthy: number;
     attention: number;
@@ -30,6 +30,22 @@ interface ManagementContext {
     noStatus: number;
   };
   projects: ProjectSummary[];
+  projectsSummary?: ProjectSummary[];
+  workloadAnalysis?: {
+    workload?: {
+      totalTasks: number;
+      unassignedTasks: number;
+      overdueTasks: number;
+      overloadedMembers: Array<{ name: string; activeTasks: number; overdue: number }>;
+      highWorkloadMembers: Array<{ name: string; activeTasks: number }>;
+    } | null;
+    leadership?: {
+      totalProjects: number;
+      criticalProjects: number;
+      unassignedProjects: number;
+      overloadedLeaders: Array<{ name: string; totalProjects: number; critical: number }>;
+    } | null;
+  };
 }
 
 interface ExecutionContext {
@@ -99,29 +115,77 @@ REGRAS IMPORTANTES:
 `;
 
     if (context.type === 'management') {
-      systemPrompt += `
+      // Check if this is a workload analysis request
+      if (context.workloadAnalysis) {
+        const wa = context.workloadAnalysis;
+        systemPrompt += `
+CONTEXTO ATUAL: Análise de Carga de Trabalho
+
+`;
+        if (wa.workload) {
+          systemPrompt += `CARGA DE TAREFAS:
+- Total de tarefas: ${wa.workload.totalTasks}
+- Tarefas sem responsável: ${wa.workload.unassignedTasks}
+- Tarefas atrasadas: ${wa.workload.overdueTasks}
+
+MEMBROS SOBRECARREGADOS (${wa.workload.overloadedMembers.length}):
+${wa.workload.overloadedMembers.map(m => 
+  `• ${m.name}: ${m.activeTasks} tarefas ativas, ${m.overdue} atrasadas`
+).join('\n') || 'Nenhum membro sobrecarregado'}
+
+MEMBROS COM ALTA CARGA (${wa.workload.highWorkloadMembers.length}):
+${wa.workload.highWorkloadMembers.map(m => 
+  `• ${m.name}: ${m.activeTasks} tarefas ativas`
+).join('\n') || 'Nenhum membro com alta carga'}
+
+`;
+        }
+        if (wa.leadership) {
+          systemPrompt += `LIDERANÇA DE PROJETOS:
+- Total de projetos ativos: ${wa.leadership.totalProjects}
+- Projetos críticos: ${wa.leadership.criticalProjects}
+- Projetos sem líder: ${wa.leadership.unassignedProjects}
+
+LÍDERES SOBRECARREGADOS (${wa.leadership.overloadedLeaders.length}):
+${wa.leadership.overloadedLeaders.map(l => 
+  `• ${l.name}: ${l.totalProjects} projetos, ${l.critical} críticos`
+).join('\n') || 'Nenhum líder sobrecarregado'}
+
+`;
+        }
+        systemPrompt += `Sugira ações concretas para:
+- Redistribuir tarefas de membros sobrecarregados
+- Resolver projetos críticos
+- Equilibrar carga de trabalho
+- Atribuir responsáveis a itens sem dono`;
+      } else {
+        // Original management context with summary
+        const summary = context.summary || { total: 0, healthy: 0, attention: 0, critical: 0, noStatus: 0 };
+        const projects = context.projects || context.projectsSummary || [];
+        
+        systemPrompt += `
 CONTEXTO ATUAL: Tela de Gestão de Projetos
 
 RESUMO DO PORTFÓLIO:
-- Total de projetos: ${context.summary.total}
-- Saudáveis (verde): ${context.summary.healthy}
-- Atenção (amarelo): ${context.summary.attention}
-- Críticos (vermelho): ${context.summary.critical}
-- Sem status: ${context.summary.noStatus}
+- Total de projetos: ${summary.total}
+- Saudáveis (verde): ${summary.healthy}
+- Atenção (amarelo): ${summary.attention}
+- Críticos (vermelho): ${summary.critical}
+- Sem status: ${summary.noStatus}
 
 LISTA DE PROJETOS:
-${context.projects.map(p => 
+${projects.map(p => 
   `• ${p.name} - Responsável: ${p.assignee || 'Não atribuído'} - Saúde: ${p.health || 'Não definida'} - Progresso: ${p.progress}%${p.pendingTasks ? ` - ${p.pendingTasks} tarefas pendentes` : ''}`
 ).join('\n')}
 
 PROJETOS POR RESPONSÁVEL:
 ${Object.entries(
-  context.projects.reduce((acc, p) => {
+  projects.reduce((acc, p) => {
     const assignee = p.assignee || 'Não atribuído';
     if (!acc[assignee]) acc[assignee] = [];
     acc[assignee].push(p);
     return acc;
-  }, {} as Record<string, typeof context.projects>)
+  }, {} as Record<string, typeof projects>)
 ).map(([assignee, projs]) => 
   `• ${assignee}: ${projs.length} projeto(s) - ${projs.filter(p => p.health === 'red').length} crítico(s)`
 ).join('\n')}
@@ -133,6 +197,7 @@ Você pode responder perguntas sobre:
 - Sugestões de priorização
 - Carga de trabalho por responsável
 - Projetos de um responsável específico`;
+      }
     } else {
       // Group tasks by status
       const tasksByStatus: Record<string, number> = {};
