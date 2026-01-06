@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, FileText, Plus, Lightbulb, LayoutGrid, BarChart3, Columns } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -49,13 +49,26 @@ const strategicPillars = [
 const ProjectExecution = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: project, isLoading } = useProjectDetails(projectId || null);
   const { data: situations } = useProjectSituations(projectId || null);
   const { data: requirements } = useRequirements(projectId || null);
   const { data: reportData } = useA3ReportData(projectId || null);
   const { data: tasks } = useProjectTasks(projectId || null);
   const deleteMilestone = useDeleteMilestone();
-  const [activeTab, setActiveTab] = useState("overview");
+  
+  // Get initial tab from URL parameter
+  const getInitialTab = () => {
+    const tabParam = searchParams.get('tab');
+    if (!tabParam) return 'overview';
+    
+    const validTabs = ['overview', 'thesis', 'progress', 'indicators', 'visualization', 'updates'];
+    if (validTabs.includes(tabParam)) return tabParam;
+    
+    return 'overview';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab);
 
   // Dialog states
   const [showMilestoneUpdateDialog, setShowMilestoneUpdateDialog] = useState(false);
