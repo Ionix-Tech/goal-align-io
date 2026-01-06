@@ -117,26 +117,26 @@ export default function ActivityTimelineCard({ activity, isFirst, isLast }: Acti
   const Icon = config.icon;
 
   const handleClick = () => {
-    let tab = 'indicadores';
+    let tab = 'indicators';
     switch (activity.type) {
       case 'indicator':
-        tab = 'indicadores';
+        tab = 'indicators';
         break;
       case 'milestone':
       case 'milestone_date':
-        tab = 'marcos';
+        tab = 'progress';
         break;
       case 'task_status':
       case 'task_date':
-        tab = 'tarefas';
+        tab = 'updates';
         break;
       case 'situation':
-        tab = 'situacoes';
+        tab = 'overview';
         break;
       default:
-        tab = 'geral';
+        tab = 'overview';
     }
-    navigate(`/project-execution/${activity.projectId}?tab=${tab}`);
+    navigate(`/management/${activity.projectId}?tab=${tab}`);
   };
 
   const getTrendIcon = () => {

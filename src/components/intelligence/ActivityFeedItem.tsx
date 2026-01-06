@@ -16,8 +16,8 @@ export default function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    const tab = activity.type === 'indicator' ? 'indicadores' : 'marcos';
-    navigate(`/project-execution/${activity.projectId}?tab=${tab}`);
+    const tab = activity.type === 'indicator' ? 'indicators' : 'progress';
+    navigate(`/management/${activity.projectId}?tab=${tab}`);
   };
 
   const getTrendIcon = () => {
