@@ -1,4 +1,6 @@
+import { X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { useTheses } from "@/hooks/useTheses";
 import { useProjects } from "@/hooks/useProjects";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -24,22 +26,16 @@ const AttentionPointsFilters = ({
   const { data: projects } = useProjects();
   const { data: teamMembers } = useTeamMembers();
 
+  const hasActiveFilters = selectedThesis !== "all" || selectedProject !== "all" || selectedAssignee !== "all";
+
+  const handleClearFilters = () => {
+    onThesisChange("all");
+    onProjectChange("all");
+    onAssigneeChange("all");
+  };
+
   return (
     <div className="flex flex-col sm:flex-row gap-3 mb-6">
-      <Select value={selectedThesis} onValueChange={onThesisChange}>
-        <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder="Todos os Objetivos" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos os Objetivos</SelectItem>
-          {theses?.map((thesis) => (
-            <SelectItem key={thesis.id} value={thesis.id}>
-              {thesis.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
       <Select value={selectedProject} onValueChange={onProjectChange}>
         <SelectTrigger className="w-full sm:w-[200px]">
           <SelectValue placeholder="Todos os Projetos" />
@@ -49,6 +45,20 @@ const AttentionPointsFilters = ({
           {projects?.all?.map((project) => (
             <SelectItem key={project.id} value={project.id}>
               {project.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={selectedThesis} onValueChange={onThesisChange}>
+        <SelectTrigger className="w-full sm:w-[200px]">
+          <SelectValue placeholder="Todas as Teses" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todas as Teses</SelectItem>
+          {theses?.map((thesis) => (
+            <SelectItem key={thesis.id} value={thesis.id}>
+              {thesis.name}
             </SelectItem>
           ))}
         </SelectContent>
@@ -67,6 +77,18 @@ const AttentionPointsFilters = ({
           ))}
         </SelectContent>
       </Select>
+
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClearFilters}
+          className="shrink-0"
+          title="Limpar filtros"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 };
