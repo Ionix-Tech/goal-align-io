@@ -70,6 +70,7 @@ export interface A3WizardData {
   pillarId: string;
   thesisId: string;
   isCritical: boolean;
+  criticalReason: string;
   
   // Step 2: Requisitos
   requirements: Omit<ProjectRequirement, 'id' | 'project_id' | 'created_at' | 'updated_at'>[];
@@ -105,6 +106,7 @@ const initialData: A3WizardData = {
   pillarId: "",
   thesisId: "",
   isCritical: false,
+  criticalReason: "",
   requirements: [],
   currentSituationDescription: "",
   targetSituationDescription: "",
@@ -344,6 +346,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           pillarId: "", // Will be populated from thesis relation if needed
           thesisId: project.thesis_id || "",
           isCritical: project.is_critical || false,
+          criticalReason: (project as any).critical_reason || "",
           requirements: (requirements || []).map(r => ({
             code: r.code,
             description: r.description,
