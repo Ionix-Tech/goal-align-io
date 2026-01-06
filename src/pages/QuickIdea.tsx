@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PROJECT_CATEGORIES, ProjectCategory } from "@/config/categories";
+import { useAIIdeaAssistant } from "@/hooks/useAIIdeaAssistant";
+import { AICategorySuggestion } from "@/components/ideas/AICategorySuggestion";
+import { AIExpandDescriptionButton } from "@/components/ideas/AIExpandDescriptionButton";
+import { AIExpandedDescriptionPreview } from "@/components/ideas/AIExpandedDescriptionPreview";
+import { useDebouncedValue } from "@/hooks/useDebounce";
 
 const QuickIdea = () => {
   const navigate = useNavigate();
@@ -19,6 +24,44 @@ const QuickIdea = () => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<ProjectCategory | "">("");
   const [submitting, setSubmitting] = useState(false);
+
+  const {
+    categorySuggestion,
+    isLoadingCategory,
+    suggestCategory,
+    clearCategorySuggestion,
+    expandedDescription,
+    isLoadingExpansion,
+    expandDescription,
+    clearExpandedDescription,
+  } = useAIIdeaAssistant();
+
+  // Debounce para sugestão de categoria
+  const debouncedTitle = useDebouncedValue(title, 800);
+  const debouncedDescription = useDebouncedValue(description, 800);
+
+  // Auto-sugerir categoria quando título e descrição mudarem
+  useEffect(() => {
+    if (debouncedTitle.trim().length >= 5 && debouncedDescription.trim().length >= 10 && !category) {
+      suggestCategory(debouncedTitle, debouncedDescription);
+    }
+  }, [debouncedTitle, debouncedDescription, category, suggestCategory]);
+
+  const handleAcceptCategory = useCallback((suggestedCategory: ProjectCategory) => {
+    setCategory(suggestedCategory);
+    clearCategorySuggestion();
+  }, [clearCategorySuggestion]);
+
+  const handleExpandDescription = useCallback(() => {
+    expandDescription(title, description);
+  }, [title, description, expandDescription]);
+
+  const handleAcceptExpandedDescription = useCallback(() => {
+    if (expandedDescription) {
+      setDescription(expandedDescription);
+      clearExpandedDescription();
+    }
+  }, [expandedDescription, clearExpandedDescription]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +162,7 @@ const QuickIdea = () => {
           <CardHeader>
             <CardTitle>Detalhes da Ideia</CardTitle>
             <CardDescription>
-              Compartilhe sua visão de forma simples. Os detalhes serão estruturados posteriormente.
+              Compartilhe sua visão de forma simples. A IA irá ajudar a estruturar sua ideia.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -136,7 +179,14 @@ const QuickIdea = () => {
 
             {/* Descrição da Ideia */}
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">Descrição *</Label>
+                <AIExpandDescriptionButton
+                  isLoading={isLoadingExpansion}
+                  disabled={!title.trim() || description.length < 10}
+                  onClick={handleExpandDescription}
+                />
+              </div>
               <Textarea
                 id="description"
                 placeholder="Descreva a ideia, o problema que resolve ou a oportunidade que identifica..."
@@ -145,6 +195,15 @@ const QuickIdea = () => {
                 className="min-h-[120px]"
               />
             </div>
+
+            {/* Preview da descrição expandida */}
+            {expandedDescription && (
+              <AIExpandedDescriptionPreview
+                expandedDescription={expandedDescription}
+                onAccept={handleAcceptExpandedDescription}
+                onDismiss={clearExpandedDescription}
+              />
+            )}
 
             {/* Categoria (Opcional) */}
             <div className="space-y-2">
@@ -167,6 +226,16 @@ const QuickIdea = () => {
                   })}
                 </SelectContent>
               </Select>
+
+              {/* Sugestão de categoria pela IA */}
+              {!category && (
+                <AICategorySuggestion
+                  suggestion={categorySuggestion}
+                  isLoading={isLoadingCategory}
+                  onAccept={handleAcceptCategory}
+                  onDismiss={clearCategorySuggestion}
+                />
+              )}
             </div>
           </CardContent>
         </Card>
