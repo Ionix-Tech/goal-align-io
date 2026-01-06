@@ -14,6 +14,7 @@ interface ProjectSummary {
   progress: number;
   nextMilestone?: string;
   pendingTasks?: number;
+  assignee?: string | null;
 }
 
 interface ManagementChatProps {

@@ -17,6 +17,7 @@ interface ProjectSummary {
   progress: number;
   nextMilestone?: string;
   pendingTasks?: number;
+  assignee?: string | null;
 }
 
 interface ManagementContext {
@@ -110,14 +111,28 @@ RESUMO DO PORTFÓLIO:
 
 LISTA DE PROJETOS:
 ${context.projects.map(p => 
-  `• ${p.name} - Saúde: ${p.health || 'Não definida'} - Progresso: ${p.progress}%${p.pendingTasks ? ` - ${p.pendingTasks} tarefas pendentes` : ''}`
+  `• ${p.name} - Responsável: ${p.assignee || 'Não atribuído'} - Saúde: ${p.health || 'Não definida'} - Progresso: ${p.progress}%${p.pendingTasks ? ` - ${p.pendingTasks} tarefas pendentes` : ''}`
+).join('\n')}
+
+PROJETOS POR RESPONSÁVEL:
+${Object.entries(
+  context.projects.reduce((acc, p) => {
+    const assignee = p.assignee || 'Não atribuído';
+    if (!acc[assignee]) acc[assignee] = [];
+    acc[assignee].push(p);
+    return acc;
+  }, {} as Record<string, typeof context.projects>)
+).map(([assignee, projs]) => 
+  `• ${assignee}: ${projs.length} projeto(s) - ${projs.filter(p => p.health === 'red').length} crítico(s)`
 ).join('\n')}
 
 Você pode responder perguntas sobre:
 - Quais projetos precisam de atenção
 - Status geral do portfólio
 - Comparativos entre projetos
-- Sugestões de priorização`;
+- Sugestões de priorização
+- Carga de trabalho por responsável
+- Projetos de um responsável específico`;
     } else {
       // Group tasks by status
       const tasksByStatus: Record<string, number> = {};
