@@ -36,7 +36,7 @@ const Intelligence = () => {
 
         {/* Tabs para alternar entre Feed, Pontos de Atenção e Carga de Trabalho */}
         <Tabs defaultValue="feed" className="w-full">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="feed" className="gap-2">
               <Activity className="h-4 w-4" />
               Feed de Atividades
