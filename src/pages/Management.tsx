@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings2, Filter, FileText, Target } from "lucide-react";
+import { Settings2, Filter, FileText, Target, Heart, Brain, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,15 @@ import { useApprovedProjects } from "@/hooks/useApprovedProjects";
 import { useTheses } from "@/hooks/useTheses";
 
 type HealthStatus = 'green' | 'yellow' | 'red';
+
+// Configuração visual dos pilares baseada no nome
+const getPillarIcon = (name: string) => {
+  const upper = name.toUpperCase();
+  if (upper.includes('ALMA')) return <Heart className="h-4 w-4 text-rose-600" />;
+  if (upper.includes('MENTE')) return <Brain className="h-4 w-4 text-violet-600" />;
+  if (upper.includes('CORPO')) return <Zap className="h-4 w-4 text-green-600" />;
+  return <Target className="h-4 w-4 text-primary" />;
+};
 
 const Management = () => {
   const navigate = useNavigate();
@@ -173,7 +182,7 @@ const Management = () => {
                   {activeTheses.map((thesis) => (
                     <SelectItem key={thesis.id} value={thesis.id}>
                       <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4 text-primary" />
+                        {getPillarIcon(thesis.name)}
                         <span className="truncate max-w-[200px]">{thesis.name}</span>
                       </div>
                     </SelectItem>
