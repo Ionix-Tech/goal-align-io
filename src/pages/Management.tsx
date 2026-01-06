@@ -98,20 +98,7 @@ const Management = () => {
               </p>
             </div>
           </div>
-          
-          {import.meta.env.DEV && (
-            <Button
-              onClick={handleGenerateTestData}
-              disabled={isGeneratingTestData}
-              variant="outline"
-              size="sm"
-            >
-              <DatabaseIcon className="h-4 w-4 mr-2" />
-              {isGeneratingTestData ? 'Gerando...' : 'Gerar Projeto A3 de Teste'}
-            </Button>
-          )}
         </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <Card>
