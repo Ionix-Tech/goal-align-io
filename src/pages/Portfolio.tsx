@@ -6,6 +6,9 @@ import { HealthStatusChart } from "@/components/portfolio/HealthStatusChart";
 import { AttentionRequiredCard } from "@/components/portfolio/AttentionRequiredCard";
 import { PipelineFunnelChart } from "@/components/portfolio/PipelineFunnelChart";
 import { ApprovalTimelineChart } from "@/components/portfolio/ApprovalTimelineChart";
+import { StrategicAlignmentScorecard } from "@/components/portfolio/StrategicAlignmentScorecard";
+import { StrategicGapsCard } from "@/components/portfolio/StrategicGapsCard";
+import { useStrategicAlignment } from "@/hooks/useStrategicAlignment";
 import { 
   FolderKanban, 
   DollarSign, 
@@ -19,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Portfolio() {
   const { data: metrics, isLoading } = usePortfolioMetrics();
+  const { data: alignmentData } = useStrategicAlignment();
 
   if (isLoading) {
     return (
@@ -103,6 +107,14 @@ export default function Portfolio() {
         <HealthStatusChart data={metrics.healthDistribution} />
         <PipelineFunnelChart />
         <ApprovalTimelineChart />
+      </div>
+
+      {/* Strategic Alignment Section */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <StrategicAlignmentScorecard />
+        </div>
+        <StrategicGapsCard gaps={alignmentData?.gaps || []} />
       </div>
 
       {/* Attention Required Section */}
