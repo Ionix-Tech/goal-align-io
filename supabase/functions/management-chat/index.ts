@@ -54,9 +54,15 @@ interface ExecutionContext {
       status: string;
       priority: string;
       dueDate?: string;
+      assigneeName?: string;
     }>;
     pendingActions: number;
     completedActions: number;
+    assignee?: string;
+    members?: Array<{
+      id: string;
+      name: string;
+    }>;
   };
 }
 
@@ -113,16 +119,68 @@ Você pode responder perguntas sobre:
 - Comparativos entre projetos
 - Sugestões de priorização`;
     } else {
+      // Group tasks by status
+      const tasksByStatus: Record<string, number> = {};
+      const tasksByAssignee: Record<string, { pending: number; completed: number; overdue: number }> = {};
+      const today = new Date().toISOString().split('T')[0];
+      
+      context.project.tasks.forEach(task => {
+        // Count by status
+        tasksByStatus[task.status] = (tasksByStatus[task.status] || 0) + 1;
+        
+        // Count by assignee
+        const assignee = task.assigneeName || 'Não atribuído';
+        if (!tasksByAssignee[assignee]) {
+          tasksByAssignee[assignee] = { pending: 0, completed: 0, overdue: 0 };
+        }
+        
+        if (task.status === 'done') {
+          tasksByAssignee[assignee].completed++;
+        } else {
+          tasksByAssignee[assignee].pending++;
+          if (task.dueDate && task.dueDate < today) {
+            tasksByAssignee[assignee].overdue++;
+          }
+        }
+      });
+      
+      // Calculate milestone progress
+      const milestoneDetails = context.project.milestones.map(m => {
+        const milestoneTasks = context.project.tasks.filter(t => 
+          t.title.toLowerCase().includes(m.title.toLowerCase().split(' ')[0])
+        );
+        const completedMilestoneTasks = milestoneTasks.filter(t => t.status === 'done').length;
+        const isOverdue = !m.completed && new Date(m.targetDate) < new Date();
+        
+        return {
+          title: m.title,
+          targetDate: m.targetDate,
+          completed: m.completed,
+          type: m.type,
+          progress: milestoneTasks.length > 0 ? Math.round((completedMilestoneTasks / milestoneTasks.length) * 100) : null,
+          isOverdue
+        };
+      });
+
       systemPrompt += `
 CONTEXTO ATUAL: Tela de Execução de Projeto
 
 PROJETO: ${context.project.name}
 ${context.project.objective ? `OBJETIVO: ${context.project.objective}` : ''}
 SAÚDE: ${context.project.health || 'Não definida'}
+${context.project.assignee ? `RESPONSÁVEL PRINCIPAL: ${context.project.assignee}` : ''}
+
+TAREFAS POR STATUS:
+${Object.entries(tasksByStatus).map(([status, count]) => `• ${status}: ${count}`).join('\n') || '• Nenhuma tarefa'}
+
+TAREFAS POR RESPONSÁVEL:
+${Object.entries(tasksByAssignee).map(([name, counts]) => 
+  `• ${name}: ${counts.pending} pendentes${counts.overdue > 0 ? ` (${counts.overdue} atrasadas)` : ''}, ${counts.completed} concluídas`
+).join('\n') || '• Nenhuma tarefa atribuída'}
 
 MILESTONES (${context.project.milestones.length} total):
-${context.project.milestones.map(m => 
-  `• ${m.title} - ${m.completed ? '✅ Concluído' : `📅 ${m.targetDate}`}${m.type ? ` (${m.type})` : ''}`
+${milestoneDetails.map(m => 
+  `• ${m.title} - ${m.completed ? '✅ Concluído' : `📅 ${m.targetDate}${m.isOverdue ? ' ⚠️ ATRASADO' : ''}`}${m.type ? ` (${m.type})` : ''}${m.progress !== null ? ` - ${m.progress}% progresso` : ''}`
 ).join('\n') || 'Nenhum milestone cadastrado'}
 
 INDICADORES (${context.project.indicators.length} total):
@@ -130,21 +188,24 @@ ${context.project.indicators.map(i =>
   `• ${i.name}: ${i.current}/${i.target}${i.unit ? ` ${i.unit}` : ''}`
 ).join('\n') || 'Nenhum indicador cadastrado'}
 
-TAREFAS (${context.project.tasks.length} total):
-${context.project.tasks.slice(0, 10).map(t => 
-  `• ${t.title} - ${t.status} - Prioridade: ${t.priority}${t.dueDate ? ` - Prazo: ${t.dueDate}` : ''}`
+TAREFAS DETALHADAS (${context.project.tasks.length} total):
+${context.project.tasks.slice(0, 15).map(t => 
+  `• ${t.title} - ${t.status} - ${t.assigneeName || 'Sem responsável'}${t.dueDate ? ` - Prazo: ${t.dueDate}${t.dueDate < today && t.status !== 'done' ? ' ⚠️' : ''}` : ''}`
 ).join('\n') || 'Nenhuma tarefa cadastrada'}
-${context.project.tasks.length > 10 ? `... e mais ${context.project.tasks.length - 10} tarefas` : ''}
+${context.project.tasks.length > 15 ? `... e mais ${context.project.tasks.length - 15} tarefas` : ''}
+
+${context.project.members?.length ? `MEMBROS DA EQUIPE: ${context.project.members.map(m => m.name).join(', ')}` : ''}
 
 RESUMO DE AÇÕES:
 - Ações pendentes: ${context.project.pendingActions}
 - Ações concluídas: ${context.project.completedActions}
 
 Você pode responder perguntas sobre:
-- Status dos milestones e próximos passos
-- Evolução dos indicadores
-- Tarefas prioritárias
-- Riscos e pontos de atenção`;
+- Status de tarefas de pessoas específicas (ex: "Tarefas do João")
+- Tarefas atrasadas ou bloqueadas
+- Status detalhado de milestones específicos
+- Carga de trabalho por responsável
+- Comparação entre membros da equipe`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

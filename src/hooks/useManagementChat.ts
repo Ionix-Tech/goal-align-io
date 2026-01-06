@@ -51,9 +51,15 @@ interface ExecutionContext {
       status: string;
       priority: string;
       dueDate?: string;
+      assigneeName?: string;
     }>;
     pendingActions: number;
     completedActions: number;
+    assignee?: string;
+    members?: Array<{
+      id: string;
+      name: string;
+    }>;
   };
 }
 
