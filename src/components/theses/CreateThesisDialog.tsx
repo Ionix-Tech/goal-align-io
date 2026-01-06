@@ -43,14 +43,14 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
     is_active: boolean;
     is_archived: boolean;
   }>(() => {
-    const nextYear = new Date().getFullYear() + 1;
+    const defaultYear = 2026;
     return {
       name: "",
       description: "",
       objective: "",
-      year: nextYear,
-      period_start: `${nextYear}-01-01`,
-      period_end: `${nextYear}-12-31`,
+      year: defaultYear,
+      period_start: `${defaultYear}-01-01`,
+      period_end: `${defaultYear}-12-31`,
       thesis_type: "custom",
       pillar_id: "",
       is_active: true,
@@ -92,14 +92,14 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
       }
 
       // Reset e fechar
-      const nextYear = new Date().getFullYear() + 1;
+      const defaultYear = 2026;
       setFormData({
         name: "",
         description: "",
         objective: "",
-        year: nextYear,
-        period_start: `${nextYear}-01-01`,
-        period_end: `${nextYear}-12-31`,
+        year: defaultYear,
+        period_start: `${defaultYear}-01-01`,
+        period_end: `${defaultYear}-12-31`,
         thesis_type: "custom",
         pillar_id: "",
         is_active: true,
