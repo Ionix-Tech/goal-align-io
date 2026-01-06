@@ -20,7 +20,7 @@ interface Insight {
 }
 
 export function WorkloadAIInsights({ workloadData, leadershipData }: WorkloadAIInsightsProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
 
