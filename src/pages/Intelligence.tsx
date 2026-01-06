@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Brain, List, FolderTree, AlertCircle, Users } from "lucide-react";
 import ActivityFeedFilters from "@/components/intelligence/ActivityFeedFilters";
-import ActivityFeedItem from "@/components/intelligence/ActivityFeedItem";
+import ActivityTimeline from "@/components/intelligence/ActivityTimeline";
 import CascadeView from "@/components/intelligence/CascadeView";
 import AttentionPointsView from "@/components/intelligence/AttentionPointsView";
 import { WorkloadDashboard } from "@/components/management/WorkloadDashboard";
 import { useActivityFeed, ActivityFeedFilters as Filters } from "@/hooks/useActivityFeed";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 const Intelligence = () => {
   const [filters, setFilters] = useState<Filters>({
     period: 'week',
@@ -61,21 +59,7 @@ const Intelligence = () => {
           </TabsList>
 
           <TabsContent value="feed" className="mt-6">
-            <div className="space-y-4">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-32 w-full" />
-                ))
-              ) : activities?.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  Nenhuma atividade encontrada para os filtros selecionados
-                </div>
-              ) : (
-                activities?.map((activity) => (
-                  <ActivityFeedItem key={activity.id} activity={activity} />
-                ))
-              )}
-            </div>
+            <ActivityTimeline activities={activities} isLoading={isLoading} />
           </TabsContent>
 
           <TabsContent value="cascade" className="mt-6">
