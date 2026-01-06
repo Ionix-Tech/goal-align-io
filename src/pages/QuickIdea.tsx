@@ -16,6 +16,8 @@ import { AICategorySuggestion } from "@/components/ideas/AICategorySuggestion";
 import { AIExpandDescriptionButton } from "@/components/ideas/AIExpandDescriptionButton";
 import { AIExpandedDescriptionPreview } from "@/components/ideas/AIExpandedDescriptionPreview";
 import { AIImpactEffortCard } from "@/components/ideas/AIImpactEffortCard";
+import { AISimilarIdeasCard } from "@/components/ideas/AISimilarIdeasCard";
+import { AIStrategicAlignmentCard } from "@/components/ideas/AIStrategicAlignmentCard";
 import { useDebouncedValue } from "@/hooks/useDebounce";
 
 const QuickIdea = () => {
@@ -24,6 +26,7 @@ const QuickIdea = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<ProjectCategory | "">("");
+  const [selectedThesisId, setSelectedThesisId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -39,6 +42,14 @@ const QuickIdea = () => {
     isLoadingEvaluation,
     evaluateIdea,
     clearEvaluation,
+    similarIdeas,
+    isLoadingSimilar,
+    findSimilarIdeas,
+    clearSimilarIdeas,
+    strategicSuggestions,
+    isLoadingStrategic,
+    suggestStrategicAlignment,
+    clearStrategicSuggestions,
   } = useAIIdeaAssistant();
 
   // Debounce para sugestão de categoria
@@ -52,10 +63,17 @@ const QuickIdea = () => {
     }
   }, [debouncedTitle, debouncedDescription, category, suggestCategory]);
 
-  // Clear evaluation when title or description changes significantly
+  // Clear evaluations when title or description changes significantly
   useEffect(() => {
     if (evaluation) {
       clearEvaluation();
+    }
+    if (similarIdeas.length > 0) {
+      clearSimilarIdeas();
+    }
+    if (strategicSuggestions.length > 0) {
+      clearStrategicSuggestions();
+      setSelectedThesisId(null);
     }
   }, [title, description]);
 
@@ -78,6 +96,18 @@ const QuickIdea = () => {
   const handleEvaluateIdea = useCallback(() => {
     evaluateIdea(title, description);
   }, [title, description, evaluateIdea]);
+
+  const handleFindSimilar = useCallback(() => {
+    findSimilarIdeas(title, description);
+  }, [title, description, findSimilarIdeas]);
+
+  const handleSuggestStrategic = useCallback(() => {
+    suggestStrategicAlignment(title, description);
+  }, [title, description, suggestStrategicAlignment]);
+
+  const handleSelectThesis = useCallback((thesisId: string) => {
+    setSelectedThesisId(prev => prev === thesisId ? null : thesisId);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +153,11 @@ const QuickIdea = () => {
         ideaData.ai_category_suggestion = categorySuggestion.category;
       }
 
+      // Include selected strategic thesis
+      if (selectedThesisId) {
+        ideaData.thesis_id = selectedThesisId;
+      }
+
       console.log('Creating idea with data:', ideaData);
 
       const { data, error } = await supabase
@@ -134,7 +169,9 @@ const QuickIdea = () => {
       if (error) throw error;
 
       toast.success("Ideia criada com sucesso!", {
-        description: "Ela será priorizada em breve"
+        description: selectedThesisId 
+          ? "Vinculada ao objetivo estratégico selecionado" 
+          : "Ela será priorizada em breve"
       });
       navigate('/prioritization');
     } catch (error: any) {
@@ -161,6 +198,8 @@ const QuickIdea = () => {
       </div>
     );
   }
+
+  const canUseAIFeatures = title.trim().length >= 5 && description.trim().length >= 20;
 
   return (
     <div className="container max-w-3xl py-8 px-4">
@@ -272,7 +311,41 @@ const QuickIdea = () => {
               isLoading={isLoadingEvaluation}
               onEvaluate={handleEvaluateIdea}
               onDismiss={clearEvaluation}
-              disabled={!title.trim() || description.length < 20}
+              disabled={!canUseAIFeatures}
+            />
+          </CardContent>
+        </Card>
+
+        {/* AI Assistants Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Assistentes de IA</CardTitle>
+            <CardDescription>
+              Ferramentas inteligentes para validar e enriquecer sua ideia
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Similar Ideas Detection */}
+            <AISimilarIdeasCard
+              similarIdeas={similarIdeas}
+              isLoading={isLoadingSimilar}
+              onSearch={handleFindSimilar}
+              onDismiss={clearSimilarIdeas}
+              disabled={!canUseAIFeatures}
+            />
+
+            {/* Strategic Alignment Suggestion */}
+            <AIStrategicAlignmentCard
+              suggestions={strategicSuggestions}
+              isLoading={isLoadingStrategic}
+              selectedThesisId={selectedThesisId}
+              onSuggest={handleSuggestStrategic}
+              onSelect={handleSelectThesis}
+              onDismiss={() => {
+                clearStrategicSuggestions();
+                setSelectedThesisId(null);
+              }}
+              disabled={!canUseAIFeatures}
             />
           </CardContent>
         </Card>
