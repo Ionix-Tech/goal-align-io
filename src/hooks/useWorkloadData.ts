@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateTaskWorkloadLevel } from "@/config/workloadRules";
 
 export interface WorkloadMember {
   memberId: string;
@@ -19,13 +20,6 @@ export interface WorkloadData {
   unassignedTasks: number;
   totalTasks: number;
   overdueTasks: number;
-}
-
-function calculateWorkloadLevel(activeTasks: number): WorkloadMember["workloadLevel"] {
-  if (activeTasks <= 5) return "low";
-  if (activeTasks <= 10) return "medium";
-  if (activeTasks <= 15) return "high";
-  return "overloaded";
 }
 
 export function useWorkloadData() {
@@ -84,7 +78,7 @@ export function useWorkloadData() {
           completed,
           overdue,
           activeTasks,
-          workloadLevel: calculateWorkloadLevel(activeTasks),
+          workloadLevel: calculateTaskWorkloadLevel(activeTasks),
         };
       });
 

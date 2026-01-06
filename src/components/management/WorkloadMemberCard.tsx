@@ -4,33 +4,11 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2, Clock, ListTodo } from "lucide-react";
 import type { WorkloadMember } from "@/hooks/useWorkloadData";
+import { getTaskWorkloadConfig } from "@/config/workloadRules";
 
 interface WorkloadMemberCardProps {
   member: WorkloadMember;
 }
-
-const workloadConfig = {
-  low: {
-    label: "Baixa",
-    color: "bg-green-500",
-    badge: "default" as const,
-  },
-  medium: {
-    label: "Moderada",
-    color: "bg-yellow-500",
-    badge: "secondary" as const,
-  },
-  high: {
-    label: "Alta",
-    color: "bg-orange-500",
-    badge: "outline" as const,
-  },
-  overloaded: {
-    label: "Sobrecarregado",
-    color: "bg-red-500",
-    badge: "destructive" as const,
-  },
-};
 
 function getInitials(name: string): string {
   return name
@@ -42,7 +20,7 @@ function getInitials(name: string): string {
 }
 
 export function WorkloadMemberCard({ member }: WorkloadMemberCardProps) {
-  const config = workloadConfig[member.workloadLevel];
+  const config = getTaskWorkloadConfig(member.workloadLevel);
   const progressPercentage =
     member.totalTasks > 0
       ? Math.round((member.completed / member.totalTasks) * 100)

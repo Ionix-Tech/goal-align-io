@@ -4,33 +4,11 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2, AlertCircle, HelpCircle, FolderKanban } from "lucide-react";
 import type { ProjectLeader } from "@/hooks/useProjectLeadershipData";
+import { getLeadershipConfig } from "@/config/workloadRules";
 
 interface ProjectLeaderCardProps {
   leader: ProjectLeader;
 }
-
-const leadershipConfig = {
-  low: {
-    label: "Controlada",
-    color: "bg-green-500",
-    badge: "default" as const,
-  },
-  medium: {
-    label: "Moderada",
-    color: "bg-yellow-500",
-    badge: "secondary" as const,
-  },
-  high: {
-    label: "Alta",
-    color: "bg-orange-500",
-    badge: "outline" as const,
-  },
-  overloaded: {
-    label: "Sobrecarregado",
-    color: "bg-red-500",
-    badge: "destructive" as const,
-  },
-};
 
 function getInitials(name: string): string {
   return name
@@ -42,7 +20,7 @@ function getInitials(name: string): string {
 }
 
 export function ProjectLeaderCard({ leader }: ProjectLeaderCardProps) {
-  const config = leadershipConfig[leader.leadershipLevel];
+  const config = getLeadershipConfig(leader.leadershipLevel);
 
   return (
     <Card className="hover:shadow-md transition-shadow">

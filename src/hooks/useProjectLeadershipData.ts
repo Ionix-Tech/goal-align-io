@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateLeadershipLevel } from "@/config/workloadRules";
 
 export interface ProjectLeaderProject {
   id: string;
@@ -29,16 +30,6 @@ export interface ProjectLeadershipData {
   unassignedProjects: number;
   totalProjects: number;
   criticalProjects: number;
-}
-
-function calculateLeadershipLevel(
-  totalProjects: number,
-  critical: number
-): ProjectLeader["leadershipLevel"] {
-  if (critical >= 3) return "overloaded";
-  if (critical >= 2 || totalProjects > 5) return "high";
-  if (totalProjects > 3 || critical >= 1) return "medium";
-  return "low";
 }
 
 export function useProjectLeadershipData() {
