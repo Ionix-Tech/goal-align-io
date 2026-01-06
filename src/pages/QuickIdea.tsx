@@ -15,6 +15,7 @@ import { useAIIdeaAssistant } from "@/hooks/useAIIdeaAssistant";
 import { AICategorySuggestion } from "@/components/ideas/AICategorySuggestion";
 import { AIExpandDescriptionButton } from "@/components/ideas/AIExpandDescriptionButton";
 import { AIExpandedDescriptionPreview } from "@/components/ideas/AIExpandedDescriptionPreview";
+import { AIImpactEffortCard } from "@/components/ideas/AIImpactEffortCard";
 import { useDebouncedValue } from "@/hooks/useDebounce";
 
 const QuickIdea = () => {
@@ -34,6 +35,10 @@ const QuickIdea = () => {
     isLoadingExpansion,
     expandDescription,
     clearExpandedDescription,
+    evaluation,
+    isLoadingEvaluation,
+    evaluateIdea,
+    clearEvaluation,
   } = useAIIdeaAssistant();
 
   // Debounce para sugestão de categoria
@@ -46,6 +51,13 @@ const QuickIdea = () => {
       suggestCategory(debouncedTitle, debouncedDescription);
     }
   }, [debouncedTitle, debouncedDescription, category, suggestCategory]);
+
+  // Clear evaluation when title or description changes significantly
+  useEffect(() => {
+    if (evaluation) {
+      clearEvaluation();
+    }
+  }, [title, description]);
 
   const handleAcceptCategory = useCallback((suggestedCategory: ProjectCategory) => {
     setCategory(suggestedCategory);
@@ -62,6 +74,10 @@ const QuickIdea = () => {
       clearExpandedDescription();
     }
   }, [expandedDescription, clearExpandedDescription]);
+
+  const handleEvaluateIdea = useCallback(() => {
+    evaluateIdea(title, description);
+  }, [title, description, evaluateIdea]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +101,7 @@ const QuickIdea = () => {
     setSubmitting(true);
 
     try {
-      const ideaData = {
+      const ideaData: any = {
         name: title,
         description: description,
         status: 'idea' as const,
@@ -94,6 +110,18 @@ const QuickIdea = () => {
         assigned_to: null,
         category: category || null,
       };
+
+      // Include AI evaluation if available
+      if (evaluation) {
+        ideaData.ai_impact_score = evaluation.impact_score;
+        ideaData.ai_effort_score = evaluation.effort_score;
+        ideaData.ai_analysis_summary = evaluation.summary;
+      }
+
+      // Include AI category suggestion if user didn't select a category
+      if (categorySuggestion && !category) {
+        ideaData.ai_category_suggestion = categorySuggestion.category;
+      }
 
       console.log('Creating idea with data:', ideaData);
 
@@ -237,6 +265,15 @@ const QuickIdea = () => {
                 />
               )}
             </div>
+
+            {/* AI Impact/Effort Evaluation */}
+            <AIImpactEffortCard
+              evaluation={evaluation}
+              isLoading={isLoadingEvaluation}
+              onEvaluate={handleEvaluateIdea}
+              onDismiss={clearEvaluation}
+              disabled={!title.trim() || description.length < 20}
+            />
           </CardContent>
         </Card>
 

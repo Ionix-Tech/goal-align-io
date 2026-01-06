@@ -8,6 +8,14 @@ interface CategorySuggestion {
   reason: string;
 }
 
+interface ImpactEffortEvaluation {
+  impact_score: number;
+  effort_score: number;
+  impact_reason: string;
+  effort_reason: string;
+  summary: string;
+}
+
 interface UseAIIdeaAssistantReturn {
   // Category suggestion
   categorySuggestion: CategorySuggestion | null;
@@ -20,6 +28,12 @@ interface UseAIIdeaAssistantReturn {
   isLoadingExpansion: boolean;
   expandDescription: (title: string, description: string) => Promise<void>;
   clearExpandedDescription: () => void;
+
+  // Impact/Effort evaluation
+  evaluation: ImpactEffortEvaluation | null;
+  isLoadingEvaluation: boolean;
+  evaluateIdea: (title: string, description: string) => Promise<void>;
+  clearEvaluation: () => void;
 }
 
 export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
@@ -28,6 +42,9 @@ export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
   
   const [expandedDescription, setExpandedDescription] = useState<string | null>(null);
   const [isLoadingExpansion, setIsLoadingExpansion] = useState(false);
+
+  const [evaluation, setEvaluation] = useState<ImpactEffortEvaluation | null>(null);
+  const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(false);
 
   const suggestCategory = useCallback(async (title: string, description: string) => {
     if (!title.trim() || !description.trim()) {
@@ -57,7 +74,6 @@ export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
       }
     } catch (error) {
       console.error('Error suggesting category:', error);
-      // Silently fail - this is a helper feature
     } finally {
       setIsLoadingCategory(false);
     }
@@ -115,6 +131,60 @@ export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
     setExpandedDescription(null);
   }, []);
 
+  const evaluateIdea = useCallback(async (title: string, description: string) => {
+    if (!title.trim() || !description.trim()) {
+      toast.error('Preencha o título e a descrição primeiro');
+      return;
+    }
+
+    if (description.length < 20) {
+      toast.error('A descrição precisa ter pelo menos 20 caracteres para avaliação');
+      return;
+    }
+
+    setIsLoadingEvaluation(true);
+    setEvaluation(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-idea-assistant', {
+        body: {
+          action: 'evaluate',
+          title,
+          description,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.impact_score && data?.effort_score) {
+        setEvaluation({
+          impact_score: data.impact_score,
+          effort_score: data.effort_score,
+          impact_reason: data.impact_reason || '',
+          effort_reason: data.effort_reason || '',
+          summary: data.summary || '',
+        });
+        toast.success('Avaliação concluída!');
+      }
+    } catch (error: any) {
+      console.error('Error evaluating idea:', error);
+      
+      if (error?.message?.includes('429')) {
+        toast.error('Limite de requisições atingido. Aguarde alguns segundos.');
+      } else if (error?.message?.includes('402')) {
+        toast.error('Créditos de IA esgotados.');
+      } else {
+        toast.error('Erro ao avaliar ideia. Tente novamente.');
+      }
+    } finally {
+      setIsLoadingEvaluation(false);
+    }
+  }, []);
+
+  const clearEvaluation = useCallback(() => {
+    setEvaluation(null);
+  }, []);
+
   return {
     categorySuggestion,
     isLoadingCategory,
@@ -125,5 +195,10 @@ export function useAIIdeaAssistant(): UseAIIdeaAssistantReturn {
     isLoadingExpansion,
     expandDescription,
     clearExpandedDescription,
+
+    evaluation,
+    isLoadingEvaluation,
+    evaluateIdea,
+    clearEvaluation,
   };
 }
