@@ -11,6 +11,7 @@ export interface ApprovedProject {
   approved_at: string | null;
   updated_at: string | null;
   is_critical: boolean;
+  critical_reason?: string | null;
   assigned_to_profile?: {
     full_name: string;
     avatar_url: string | null;
@@ -39,6 +40,7 @@ export function useApprovedProjects(thesisId?: string | null) {
           approved_at,
           updated_at,
           is_critical,
+          critical_reason,
           assigned_to_profile:profiles!projects_assigned_to_fkey(full_name, avatar_url)
         `)
         .in('status', ['approved', 'completed'])

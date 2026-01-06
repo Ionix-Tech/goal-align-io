@@ -879,6 +879,7 @@ export type Database = {
           context: string | null
           created_at: string | null
           created_by: string
+          critical_reason: string | null
           current_situation_description: string | null
           current_step: number | null
           description: string | null
@@ -919,6 +920,7 @@ export type Database = {
           context?: string | null
           created_at?: string | null
           created_by: string
+          critical_reason?: string | null
           current_situation_description?: string | null
           current_step?: number | null
           description?: string | null
@@ -959,6 +961,7 @@ export type Database = {
           context?: string | null
           created_at?: string | null
           created_by?: string
+          critical_reason?: string | null
           current_situation_description?: string | null
           current_step?: number | null
           description?: string | null

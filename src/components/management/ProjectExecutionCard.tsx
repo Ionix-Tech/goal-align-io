@@ -5,7 +5,21 @@ import { Progress } from "@/components/ui/progress";
 import { HealthStatusBadge } from "./HealthStatusBadge";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock, FileText, ClipboardList, Flame } from "lucide-react";
+import { Clock, FileText, ClipboardList, Flame, MoreVertical, ExternalLink, FileEdit, Printer } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import type { ApprovedProject } from "@/hooks/useApprovedProjects";
 
 const PILLAR_CONFIG = {
@@ -38,12 +52,34 @@ interface ProjectExecutionCardProps {
 }
 
 export function ProjectExecutionCard({ project, onClick }: ProjectExecutionCardProps) {
+  const navigate = useNavigate();
   const pillarConfig = project.strategic_pillar ? PILLAR_CONFIG[project.strategic_pillar] : null;
   const initiativeConfig = INITIATIVE_TYPE_CONFIG[project.initiative_type] || INITIATIVE_TYPE_CONFIG.project;
   const InitiativeIcon = initiativeConfig.icon;
   const progressPercentage = project.milestones_total > 0
     ? Math.round((project.milestones_completed / project.milestones_total) * 100)
     : 0;
+
+  const handleOpenExecution = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/management/${project.id}`);
+  };
+
+  const handleViewA3 = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/projects/${project.id}`);
+  };
+
+  const handleEditA3 = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/projects/${project.id}/a3`);
+  };
+
+  const handleExportReport = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Navigate to project page with print param
+    navigate(`/management/${project.id}?print=true`);
+  };
 
   return (
     <Card
@@ -59,13 +95,68 @@ export function ProjectExecutionCard({ project, onClick }: ProjectExecutionCardP
               {initiativeConfig.label}
             </Badge>
             {project.is_critical && (
-              <Badge variant="destructive" className="gap-1 px-1.5">
-                <Flame className="h-3 w-3" />
-                <span className="sr-only sm:not-sr-only">Crítico</span>
-              </Badge>
+              project.critical_reason ? (
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <Badge variant="destructive" className="gap-1 px-1.5 cursor-help">
+                      <Flame className="h-3 w-3" />
+                      <span className="sr-only sm:not-sr-only">Crítico</span>
+                    </Badge>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80" side="top">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <Flame className="h-4 w-4 text-destructive" />
+                        Projeto Crítico
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {project.critical_reason}
+                      </p>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              ) : (
+                <Badge variant="destructive" className="gap-1 px-1.5">
+                  <Flame className="h-3 w-3" />
+                  <span className="sr-only sm:not-sr-only">Crítico</span>
+                </Badge>
+              )
             )}
           </div>
-          <HealthStatusBadge status={project.current_health} size="md" />
+          <div className="flex items-center gap-2">
+            <HealthStatusBadge status={project.current_health} size="md" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleOpenExecution}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Abrir Execução
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleViewA3}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Ver A3
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEditA3}>
+                  <FileEdit className="h-4 w-4 mr-2" />
+                  Editar A3
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExportReport}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Exportar Relatório
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Header */}

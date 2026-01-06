@@ -207,7 +207,7 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
           </div>
 
           {/* Projeto Crítico */}
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-full bg-destructive/10 p-2">
@@ -225,9 +225,30 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
               <Switch
                 id="is-critical"
                 checked={data.isCritical}
-                onCheckedChange={(checked) => updateData({ isCritical: checked })}
+                onCheckedChange={(checked) => {
+                  updateData({ 
+                    isCritical: checked,
+                    criticalReason: checked ? data.criticalReason : ""
+                  });
+                }}
               />
             </div>
+            
+            {data.isCritical && (
+              <div className="pl-12 space-y-2">
+                <Label htmlFor="critical-reason" className="text-sm">
+                  Justificativa da criticidade *
+                </Label>
+                <Textarea
+                  id="critical-reason"
+                  value={data.criticalReason || ""}
+                  onChange={(e) => updateData({ criticalReason: e.target.value })}
+                  placeholder="Explique por que este projeto é considerado crítico..."
+                  rows={2}
+                  className="bg-background"
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
