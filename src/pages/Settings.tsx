@@ -1,9 +1,10 @@
-import { Settings as SettingsIcon, User, Users, Tags, Bell } from "lucide-react";
+import { Settings as SettingsIcon, User, Users, Tags, Bell, Gauge } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { TeamSettings } from "@/components/settings/TeamSettings";
 import { CategorySettings } from "@/components/settings/CategorySettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
+import { WorkloadSettings } from "@/components/settings/WorkloadSettings";
 import { useUserRole } from "@/hooks/useUserRole";
 
 export default function Settings() {
@@ -24,7 +25,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Meu Perfil</span>
@@ -45,6 +46,13 @@ export default function Settings() {
               <span className="hidden sm:inline">Notificações</span>
               <span className="sm:hidden">Alertas</span>
             </TabsTrigger>
+            {isManager && (
+              <TabsTrigger value="workload" className="flex items-center gap-2">
+                <Gauge className="h-4 w-4" />
+                <span className="hidden sm:inline">Sobrecarga</span>
+                <span className="sm:hidden">Carga</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="profile">
@@ -64,6 +72,12 @@ export default function Settings() {
           <TabsContent value="notifications">
             <NotificationSettings />
           </TabsContent>
+
+          {isManager && (
+            <TabsContent value="workload">
+              <WorkloadSettings />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

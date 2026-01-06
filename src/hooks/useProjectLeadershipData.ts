@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateLeadershipLevel } from "@/config/workloadRules";
+import { WORKLOAD_RULES } from "@/config/workloadRules";
 
 export interface ProjectLeaderProject {
   id: string;
@@ -32,10 +32,47 @@ export interface ProjectLeadershipData {
   criticalProjects: number;
 }
 
+// Dynamic function that uses thresholds from settings
+function calculateLeadershipLevel(
+  totalProjects: number,
+  criticalProjects: number,
+  thresholds: {
+    overloadedCritical: number;
+    highCritical: number;
+    highProjects: number;
+    mediumCritical: number;
+    mediumProjects: number;
+  }
+): "low" | "medium" | "high" | "overloaded" {
+  if (criticalProjects >= thresholds.overloadedCritical) return "overloaded";
+  if (criticalProjects >= thresholds.highCritical || totalProjects > thresholds.highProjects) return "high";
+  if (criticalProjects >= thresholds.mediumCritical || totalProjects > thresholds.mediumProjects) return "medium";
+  return "low";
+}
+
 export function useProjectLeadershipData() {
   return useQuery({
     queryKey: ["project-leadership-data"],
     queryFn: async (): Promise<ProjectLeadershipData> => {
+      // Fetch settings from database
+      const { data: settingsData } = await supabase
+        .from("workload_settings")
+        .select("setting_key, setting_value");
+
+      // Build thresholds from settings or use defaults
+      const settingsMap: Record<string, number> = {};
+      for (const row of settingsData || []) {
+        settingsMap[row.setting_key] = row.setting_value;
+      }
+
+      const leadershipThresholds = {
+        overloadedCritical: settingsMap.leadership_overloaded_critical ?? WORKLOAD_RULES.leadership.thresholds.overloadedCritical,
+        highCritical: settingsMap.leadership_high_critical ?? WORKLOAD_RULES.leadership.thresholds.highCritical,
+        highProjects: settingsMap.leadership_high_projects ?? WORKLOAD_RULES.leadership.thresholds.highProjects,
+        mediumCritical: settingsMap.leadership_medium_critical ?? WORKLOAD_RULES.leadership.thresholds.mediumCritical,
+        mediumProjects: settingsMap.leadership_medium_projects ?? WORKLOAD_RULES.leadership.thresholds.mediumProjects,
+      };
+
       // Get all active projects
       const { data: projects, error: projectsError } = await supabase
         .from("projects")
@@ -189,7 +226,8 @@ export function useProjectLeadershipData() {
           averageProgress: avgProgress,
           leadershipLevel: calculateLeadershipLevel(
             leaderProjects.length,
-            critical
+            critical,
+            leadershipThresholds
           ),
           projects: leaderProjects,
         });
