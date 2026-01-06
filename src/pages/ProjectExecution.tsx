@@ -117,6 +117,18 @@ const ProjectExecution = () => {
     const pendingTasks = (tasks || []).filter(t => t.status !== 'completed');
     const completedTasks = (tasks || []).filter(t => t.status === 'completed');
     
+    // Get unique team members from tasks
+    const memberMap = new Map<string, string>();
+    (tasks || []).forEach(t => {
+      if (t.assigned_to && t.assignee?.full_name) {
+        memberMap.set(t.assigned_to, t.assignee.full_name);
+      }
+    });
+    const members = Array.from(memberMap.entries()).map(([id, name]) => ({ id, name }));
+    
+    // Get assignee name from project
+    const assigneeName = project.assignee?.full_name;
+    
     return {
       name: project.name,
       objective: project.objective || undefined,
@@ -138,9 +150,12 @@ const ProjectExecution = () => {
         status: t.status,
         priority: t.priority,
         dueDate: t.due_date ? format(new Date(t.due_date), 'dd/MM/yyyy') : undefined,
+        assigneeName: t.assignee?.full_name,
       })),
       pendingActions: pendingTasks.length,
       completedActions: completedTasks.length,
+      assignee: assigneeName,
+      members,
     };
   }, [project, tasks]);
 

@@ -49,24 +49,30 @@ interface ManagementChatProps {
       status: string;
       priority: string;
       dueDate?: string;
+      assigneeName?: string;
     }>;
     pendingActions: number;
     completedActions: number;
+    assignee?: string;
+    members?: Array<{
+      id: string;
+      name: string;
+    }>;
   };
 }
 
-const managementSuggestions = [
+const defaultManagementSuggestions = [
   { icon: '🚨', text: 'Quais projetos precisam de atenção?' },
   { icon: '📊', text: 'Qual o resumo do portfólio?' },
-  { icon: '🔴', text: 'Liste os projetos críticos' },
-  { icon: '📈', text: 'Qual projeto tem mais progresso?' },
+  { icon: '👥', text: 'Carga de trabalho por responsável' },
+  { icon: '🚫', text: 'Projetos com tarefas bloqueadas' },
 ];
 
-const executionSuggestions = [
-  { icon: '📅', text: 'O que devo fazer essa semana?' },
-  { icon: '🎯', text: 'Quais milestones estão atrasados?' },
+const defaultExecutionSuggestions = [
+  { icon: '📋', text: 'Quais tarefas estão atrasadas?' },
+  { icon: '🚫', text: 'O que está bloqueado?' },
   { icon: '📊', text: 'Como estão os indicadores?' },
-  { icon: '⚠️', text: 'Quais são os riscos do projeto?' },
+  { icon: '👥', text: 'Quem tem mais tarefas pendentes?' },
 ];
 
 export function ManagementChatPanel({
@@ -136,7 +142,49 @@ export function ManagementChatPanel({
     handleSend(suggestion);
   };
 
-  const suggestions = contextType === 'management' ? managementSuggestions : executionSuggestions;
+  // Build dynamic suggestions based on context
+  const suggestions = useMemo(() => {
+    if (contextType === 'management') {
+      return defaultManagementSuggestions;
+    }
+    
+    const dynamicSuggestions = [...defaultExecutionSuggestions];
+    
+    // Add milestone-specific suggestion if there's a pending milestone
+    if (projectDetails?.milestones?.length) {
+      const nextMilestone = projectDetails.milestones
+        .filter(m => !m.completed)
+        .sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime())[0];
+      
+      if (nextMilestone) {
+        dynamicSuggestions.push({ 
+          icon: '🎯', 
+          text: `Status do milestone "${nextMilestone.title}"` 
+        });
+      }
+    }
+    
+    // Add assignee-specific suggestion
+    if (projectDetails?.assignee) {
+      dynamicSuggestions.push({ 
+        icon: '👤', 
+        text: `Tarefas do ${projectDetails.assignee}` 
+      });
+    }
+    
+    // Add member-specific suggestion if there are team members
+    if (projectDetails?.members?.length) {
+      const firstMember = projectDetails.members[0];
+      if (firstMember && firstMember.name !== projectDetails?.assignee) {
+        dynamicSuggestions.push({ 
+          icon: '👤', 
+          text: `Tarefas do ${firstMember.name}` 
+        });
+      }
+    }
+    
+    return dynamicSuggestions.slice(0, 6); // Limit to 6 suggestions
+  }, [contextType, projectDetails]);
 
   const placeholderText = contextType === 'management'
     ? 'Ex: Quais projetos precisam de atenção?'
