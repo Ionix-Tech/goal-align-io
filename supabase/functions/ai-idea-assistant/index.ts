@@ -65,6 +65,40 @@ IMPORTANTE:
 
       userPrompt = `Título da ideia: ${title}\n\nDescrição original: ${description}\n\nExpanda esta descrição mantendo a essência original.`;
     }
+    else if (action === 'evaluate') {
+      systemPrompt = `Você é um especialista em avaliação de ideias e projetos estratégicos empresariais.
+Sua tarefa é avaliar o IMPACTO potencial e o ESFORÇO necessário para implementar uma ideia.
+
+ESCALA DE IMPACTO (1-5):
+1 - Muito Baixo: Melhoria marginal, afeta poucos processos/pessoas
+2 - Baixo: Melhoria pequena, benefício localizado
+3 - Médio: Melhoria significativa, benefício para uma área inteira
+4 - Alto: Grande impacto, benefício para múltiplas áreas ou receita
+5 - Muito Alto: Transformacional, impacto estratégico em toda empresa
+
+ESCALA DE ESFORÇO (1-5):
+1 - Muito Baixo: Implementação simples, dias, poucos recursos
+2 - Baixo: Algumas semanas, equipe pequena
+3 - Médio: 1-3 meses, recursos moderados
+4 - Alto: 3-6 meses, equipe dedicada, investimento significativo
+5 - Muito Alto: 6+ meses, múltiplas equipes, alto investimento
+
+IMPORTANTE:
+- Seja realista e objetivo
+- Considere o contexto de uma empresa de médio porte
+- Justifique brevemente cada pontuação
+
+Responda APENAS com um JSON válido no formato:
+{
+  "impact_score": 4,
+  "effort_score": 2,
+  "impact_reason": "Justificativa do impacto em 1 frase",
+  "effort_reason": "Justificativa do esforço em 1 frase",
+  "summary": "Resumo geral da avaliação em 2-3 frases"
+}`;
+
+      userPrompt = `Título: ${title}\nDescrição: ${description}`;
+    }
     else {
       return new Response(
         JSON.stringify({ error: 'Ação não suportada' }),
@@ -146,6 +180,38 @@ IMPORTANTE:
     if (action === 'expand') {
       return new Response(
         JSON.stringify({ expandedDescription: content }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'evaluate') {
+      try {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return new Response(
+            JSON.stringify({
+              impact_score: Math.min(5, Math.max(1, parseInt(parsed.impact_score) || 3)),
+              effort_score: Math.min(5, Math.max(1, parseInt(parsed.effort_score) || 3)),
+              impact_reason: parsed.impact_reason || '',
+              effort_reason: parsed.effort_reason || '',
+              summary: parsed.summary || ''
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (e) {
+        console.error('Error parsing evaluation JSON:', e);
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          impact_score: 3, 
+          effort_score: 3,
+          impact_reason: 'Não foi possível avaliar com precisão',
+          effort_reason: 'Não foi possível avaliar com precisão',
+          summary: 'Avaliação automática não disponível'
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

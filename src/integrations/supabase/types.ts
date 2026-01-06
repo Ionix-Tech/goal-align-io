@@ -868,6 +868,10 @@ export type Database = {
       }
       projects: {
         Row: {
+          ai_analysis_summary: string | null
+          ai_category_suggestion: string | null
+          ai_effort_score: number | null
+          ai_impact_score: number | null
           approved_at: string | null
           approved_by: string | null
           assigned_to: string | null
@@ -904,6 +908,10 @@ export type Database = {
           why: string | null
         }
         Insert: {
+          ai_analysis_summary?: string | null
+          ai_category_suggestion?: string | null
+          ai_effort_score?: number | null
+          ai_impact_score?: number | null
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
@@ -940,6 +948,10 @@ export type Database = {
           why?: string | null
         }
         Update: {
+          ai_analysis_summary?: string | null
+          ai_category_suggestion?: string | null
+          ai_effort_score?: number | null
+          ai_impact_score?: number | null
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
