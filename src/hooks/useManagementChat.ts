@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
 export interface ChatMessage {
@@ -61,14 +61,6 @@ type ChatContext = ManagementContext | ExecutionContext;
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/management-chat`;
 
-// Generate storage key based on context
-function getStorageKey(context: ChatContext): string {
-  if (context.type === 'management') {
-    return 'chat_history_management';
-  }
-  return `chat_history_project_${context.project.name.replace(/\s+/g, '_').toLowerCase()}`;
-}
-
 // Load messages from localStorage
 function loadMessages(key: string): ChatMessage[] {
   try {
@@ -96,14 +88,35 @@ function saveMessages(key: string, messages: ChatMessage[]) {
 }
 
 export function useManagementChat(context: ChatContext) {
-  const storageKey = getStorageKey(context);
-  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(storageKey));
-  const [isLoading, setIsLoading] = useState(false);
+  // Extract stable values for dependencies
+  const contextType = context.type;
+  const projectName = context.type === 'execution' ? context.project.name : '';
+  
+  // Compute storage key based on context type and project name (stable)
+  const storageKey = useMemo(() => {
+    if (contextType === 'management') {
+      return 'chat_history_management';
+    }
+    return `chat_history_project_${(projectName || 'unknown').replace(/\s+/g, '_').toLowerCase()}`;
+  }, [contextType, projectName]);
 
-  // Save to localStorage whenever messages change
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load messages from localStorage on mount or when storageKey changes
   useEffect(() => {
-    saveMessages(storageKey, messages);
-  }, [messages, storageKey]);
+    const loaded = loadMessages(storageKey);
+    setMessages(loaded);
+    setIsInitialized(true);
+  }, [storageKey]);
+
+  // Save to localStorage whenever messages change (after initialization)
+  useEffect(() => {
+    if (isInitialized) {
+      saveMessages(storageKey, messages);
+    }
+  }, [messages, storageKey, isInitialized]);
 
   const sendMessage = useCallback(async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
