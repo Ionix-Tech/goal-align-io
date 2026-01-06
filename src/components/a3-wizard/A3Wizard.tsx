@@ -35,6 +35,7 @@ export function A3Wizard() {
     updateRequirement,
     removeRequirement,
     addAction,
+    addActionWithData,
     updateAction,
     removeAction,
     addWhyLink,
@@ -623,6 +624,7 @@ export function A3Wizard() {
           <Step5Execution 
             data={data}
             addAction={addAction}
+            addActionWithData={addActionWithData}
             updateAction={updateAction}
             removeAction={removeAction}
             addWhyLink={addWhyLink}

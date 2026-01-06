@@ -283,7 +283,9 @@ Sugira 3-5 ações para alcançar a situação alvo.
 Cada ação deve:
 - Ser específica e executável
 - Estar vinculada a pelo menos um requisito (use os códigos R1, R2, etc.)
-- Ter descrição clara do que fazer`;
+- Ter descrição clara do que fazer
+- Ter prioridade (high para ações críticas e urgentes, medium para importantes, low para complementares)
+- Ter estimativa de horas (esforço realista)`;
         toolDefinition = {
           type: "function",
           function: {
@@ -298,9 +300,11 @@ Cada ação deve:
                     type: "object",
                     properties: {
                       description: { type: "string" },
-                      linkedRequirements: { type: "array", items: { type: "string" } }
+                      linkedRequirements: { type: "array", items: { type: "string" } },
+                      priority: { type: "string", enum: ["high", "medium", "low"] },
+                      estimatedHours: { type: "number" }
                     },
-                    required: ["description", "linkedRequirements"]
+                    required: ["description", "linkedRequirements", "priority", "estimatedHours"]
                   }
                 }
               },
