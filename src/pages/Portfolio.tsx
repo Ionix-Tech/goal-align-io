@@ -2,10 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { usePortfolioMetrics } from "@/hooks/usePortfolioMetrics";
 import { PortfolioKPICard } from "@/components/portfolio/PortfolioKPICard";
 import { PillarDistributionChart } from "@/components/portfolio/PillarDistributionChart";
-import { HealthStatusChart } from "@/components/portfolio/HealthStatusChart";
 import { AttentionRequiredCard } from "@/components/portfolio/AttentionRequiredCard";
 import { PipelineFunnelChart } from "@/components/portfolio/PipelineFunnelChart";
-import { ApprovalTimelineChart } from "@/components/portfolio/ApprovalTimelineChart";
 import { StrategicAlignmentScorecard } from "@/components/portfolio/StrategicAlignmentScorecard";
 import { StrategicGapsCard } from "@/components/portfolio/StrategicGapsCard";
 import { useStrategicAlignment } from "@/hooks/useStrategicAlignment";
@@ -112,9 +110,7 @@ export default function Portfolio() {
       {/* Charts Grid */}
       <div className="grid gap-4 lg:grid-cols-2">
         <PillarDistributionChart data={metrics.pillarDistribution} />
-        <HealthStatusChart data={metrics.healthDistribution} />
         <PipelineFunnelChart />
-        <ApprovalTimelineChart />
       </div>
 
 
