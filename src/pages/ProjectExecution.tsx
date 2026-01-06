@@ -71,6 +71,55 @@ const ProjectExecution = () => {
   const [selectedMilestone, setSelectedMilestone] = useState<{ id: string; title: string; progress: number } | null>(null);
   const [selectedIndicator, setSelectedIndicator] = useState<{ id: string; name: string; targetValue?: string; unit?: string | null } | null>(null);
 
+  // Prepare context for AI chat - must be before any conditional returns
+  const chatProjectDetails = useMemo(() => {
+    if (!project || !tasks) return null;
+    
+    const pendingTasks = tasks.filter(t => t.status !== 'completed');
+    const completedTasks = tasks.filter(t => t.status === 'completed');
+    
+    // Get unique team members from tasks
+    const memberMap = new Map<string, string>();
+    tasks.forEach(t => {
+      if (t.assigned_to && t.assignee?.full_name) {
+        memberMap.set(t.assigned_to, t.assignee.full_name);
+      }
+    });
+    const members = Array.from(memberMap.entries()).map(([id, name]) => ({ id, name }));
+    
+    // Get assignee name from project
+    const assigneeName = project.assignee?.full_name;
+    
+    return {
+      name: project.name,
+      objective: project.objective || undefined,
+      health: undefined,
+      milestones: project.milestones.map(m => ({
+        title: m.title,
+        targetDate: m.target_date ? format(new Date(m.target_date), 'dd/MM/yyyy') : 'Não definido',
+        completed: m.completed,
+        type: m.milestone_type || undefined,
+      })),
+      indicators: project.indicators.map(i => ({
+        name: i.name,
+        current: i.current_state,
+        target: i.target_state,
+        unit: i.unit || undefined,
+      })),
+      tasks: tasks.map(t => ({
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        dueDate: t.due_date ? format(new Date(t.due_date), 'dd/MM/yyyy') : undefined,
+        assigneeName: t.assignee?.full_name,
+      })),
+      pendingActions: pendingTasks.length,
+      completedActions: completedTasks.length,
+      assignee: assigneeName,
+      members,
+    };
+  }, [project, tasks]);
+
   // Helper to generate next requirement code
   const getNextRequirementCode = () => {
     if (!requirements || requirements.length === 0) return "R1";
@@ -111,53 +160,6 @@ const ProjectExecution = () => {
   const handleExportReport = () => {
     window.print();
   };
-
-  // Prepare context for AI chat
-  const chatProjectDetails = useMemo(() => {
-    const pendingTasks = (tasks || []).filter(t => t.status !== 'completed');
-    const completedTasks = (tasks || []).filter(t => t.status === 'completed');
-    
-    // Get unique team members from tasks
-    const memberMap = new Map<string, string>();
-    (tasks || []).forEach(t => {
-      if (t.assigned_to && t.assignee?.full_name) {
-        memberMap.set(t.assigned_to, t.assignee.full_name);
-      }
-    });
-    const members = Array.from(memberMap.entries()).map(([id, name]) => ({ id, name }));
-    
-    // Get assignee name from project
-    const assigneeName = project.assignee?.full_name;
-    
-    return {
-      name: project.name,
-      objective: project.objective || undefined,
-      health: undefined, // Could be fetched from health status if available
-      milestones: project.milestones.map(m => ({
-        title: m.title,
-        targetDate: m.target_date ? format(new Date(m.target_date), 'dd/MM/yyyy') : 'Não definido',
-        completed: m.completed,
-        type: m.milestone_type || undefined,
-      })),
-      indicators: project.indicators.map(i => ({
-        name: i.name,
-        current: i.current_state,
-        target: i.target_state,
-        unit: i.unit || undefined,
-      })),
-      tasks: (tasks || []).map(t => ({
-        title: t.title,
-        status: t.status,
-        priority: t.priority,
-        dueDate: t.due_date ? format(new Date(t.due_date), 'dd/MM/yyyy') : undefined,
-        assigneeName: t.assignee?.full_name,
-      })),
-      pendingActions: pendingTasks.length,
-      completedActions: completedTasks.length,
-      assignee: assigneeName,
-      members,
-    };
-  }, [project, tasks]);
 
   return (
     <AppLayout
