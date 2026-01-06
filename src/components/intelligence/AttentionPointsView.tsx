@@ -72,6 +72,7 @@ const AttentionPointsView = () => {
 
   return (
     <div>
+      {/* Métricas primeiro para hierarquia visual */}
       <AttentionMetricsCards
         criticalCount={data.criticalCount}
         dueTodayCount={data.dueTodayItems.length}
@@ -79,6 +80,7 @@ const AttentionPointsView = () => {
         noUpdateCount={data.projectsWithoutUpdates.length}
       />
 
+      {/* Filtros específicos da aba Pontos de Atenção */}
       <AttentionPointsFilters
         selectedThesis={selectedThesis}
         selectedProject={selectedProject}

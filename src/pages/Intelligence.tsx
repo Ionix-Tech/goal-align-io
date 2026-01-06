@@ -34,14 +34,8 @@ const Intelligence = () => {
           </div>
         </div>
 
-        {/* Filtros */}
-        <ActivityFeedFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-        />
-
         {/* Tabs para alternar entre Feed, Pontos de Atenção e Carga de Trabalho */}
-        <Tabs defaultValue="feed" className="w-full mt-6">
+        <Tabs defaultValue="feed" className="w-full">
           <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="feed" className="gap-2">
               <Activity className="h-4 w-4" />
@@ -58,7 +52,13 @@ const Intelligence = () => {
           </TabsList>
 
           <TabsContent value="feed" className="mt-6">
-            <div className="flex items-center gap-2 mb-4">
+            {/* Filtros específicos do Feed */}
+            <ActivityFeedFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+
+            <div className="flex items-center gap-2 mb-4 mt-4">
               <span className="text-sm text-muted-foreground">Agrupar por:</span>
               <ToggleGroup 
                 type="single" 
