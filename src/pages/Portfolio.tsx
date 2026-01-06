@@ -59,6 +59,14 @@ export default function Portfolio() {
         </div>
       </div>
 
+      {/* Strategic Alignment Section */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <StrategicAlignmentScorecard />
+        </div>
+        <StrategicGapsCard gaps={alignmentData?.gaps || []} />
+      </div>
+
       {/* KPIs Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <PortfolioKPICard
@@ -109,13 +117,6 @@ export default function Portfolio() {
         <ApprovalTimelineChart />
       </div>
 
-      {/* Strategic Alignment Section */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <StrategicAlignmentScorecard />
-        </div>
-        <StrategicGapsCard gaps={alignmentData?.gaps || []} />
-      </div>
 
       {/* Attention Required Section */}
       {metrics.attentionRequired.length > 0 && (
