@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.management-chat]
 verify_jwt = false
+
+[functions.ai-idea-assistant]
+verify_jwt = false
