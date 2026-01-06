@@ -142,7 +142,7 @@ export default function ActivityFeedFilters({ filters, onFiltersChange }: Activi
       )}
 
       {/* Activity Type Filter */}
-      <div className="flex-1 min-w-[140px]">
+      <div className="flex-1 min-w-[180px]">
         <Select 
           value={filters.activityType} 
           onValueChange={(value) => onFiltersChange({ ...filters, activityType: value as Filters['activityType'] })}
@@ -151,9 +151,16 @@ export default function ActivityFeedFilters({ filters, onFiltersChange }: Activi
             <SelectValue placeholder="Tipo de atividade" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="indicator">Indicadores</SelectItem>
-            <SelectItem value="milestone">Milestones</SelectItem>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectItem value="indicator">📊 Indicadores</SelectItem>
+            <SelectItem value="milestone">🎯 Marcos</SelectItem>
+            <SelectItem value="task_status">✅ Status de Tarefas</SelectItem>
+            <SelectItem value="task_date">📅 Datas de Tarefas</SelectItem>
+            <SelectItem value="milestone_date">📆 Datas de Marcos</SelectItem>
+            <SelectItem value="situation">⚠️ Situações</SelectItem>
+            <SelectItem value="comment">💬 Comentários</SelectItem>
+            <SelectItem value="health">❤️ Status de Saúde</SelectItem>
+            <SelectItem value="attachment">📎 Anexos</SelectItem>
           </SelectContent>
         </Select>
       </div>
