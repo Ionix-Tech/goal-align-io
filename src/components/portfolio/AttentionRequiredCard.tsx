@@ -33,7 +33,7 @@ export function AttentionRequiredCard({
 
   const handleViewProject = () => {
     if (status === 'approved') {
-      navigate(`/execution/${projectId}`);
+      navigate(`/management/${projectId}`);
     } else {
       navigate(`/projects/${projectId}`);
     }

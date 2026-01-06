@@ -121,7 +121,7 @@ const AttentionItem = ({ item }: AttentionItemProps) => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => navigate(`/project/${item.projectId}`)}
+        onClick={() => navigate(`/projects/${item.projectId}`)}
         className="ml-4"
       >
         Abrir
