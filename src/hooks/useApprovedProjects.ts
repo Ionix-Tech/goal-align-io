@@ -6,6 +6,7 @@ export interface ApprovedProject {
   name: string;
   initiative_type: 'project' | 'idea';
   strategic_pillar: 'operational_efficiency' | 'sales_expansion' | 'new_business' | null;
+  thesis_id: string | null;
   assigned_to: string | null;
   approved_at: string | null;
   updated_at: string | null;
@@ -21,9 +22,9 @@ export interface ApprovedProject {
   last_update?: string | null;
 }
 
-export function useApprovedProjects(pillar?: string | null) {
+export function useApprovedProjects(thesisId?: string | null) {
   return useQuery({
-    queryKey: ['approved-projects', pillar],
+    queryKey: ['approved-projects', thesisId],
     queryFn: async () => {
       // Buscar projetos aprovados
       let query = supabase
@@ -33,6 +34,7 @@ export function useApprovedProjects(pillar?: string | null) {
           name,
           initiative_type,
           strategic_pillar,
+          thesis_id,
           assigned_to,
           approved_at,
           updated_at,
@@ -42,8 +44,8 @@ export function useApprovedProjects(pillar?: string | null) {
         .in('status', ['approved', 'completed'])
         .order('approved_at', { ascending: false });
 
-      if (pillar) {
-        query = query.eq('strategic_pillar', pillar as any);
+      if (thesisId) {
+        query = query.eq('thesis_id', thesisId);
       }
 
       const { data: projects, error: projectsError } = await query;
