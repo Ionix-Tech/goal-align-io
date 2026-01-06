@@ -80,6 +80,7 @@ const Management = () => {
         ? Math.round((p.milestones_completed / p.milestones_total) * 100)
         : 0,
       pendingTasks: undefined,
+      assignee: p.assigned_to_profile?.full_name || null,
     })),
   [projects]);
 
