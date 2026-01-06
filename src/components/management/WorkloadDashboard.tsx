@@ -63,9 +63,6 @@ export function WorkloadDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* AI Insights */}
-      <WorkloadAIInsights workloadData={workloadData} leadershipData={leadershipData} />
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "tasks" | "projects")}>
         <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -229,6 +226,9 @@ export function WorkloadDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* AI Insights - at the end */}
+      <WorkloadAIInsights workloadData={workloadData} leadershipData={leadershipData} />
     </div>
   );
 }
