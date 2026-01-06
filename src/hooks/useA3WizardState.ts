@@ -12,6 +12,8 @@ export interface WizardIndicator {
   linkedRequirementCodes: string[];
 }
 
+export type ActionPriority = 'high' | 'medium' | 'low';
+
 export interface WizardAction {
   id: string;
   description: string;
@@ -19,6 +21,8 @@ export interface WizardAction {
   startDate: string;
   dueDate: string;
   status: string;
+  priority: ActionPriority;
+  estimatedHours: number | null;
   linkedRequirements: string[];
   linkedMilestone: string | null; // 'm1', 'm2', 'm3', or extra milestone ID
   linkedIndicators: string[]; // Array of indicator IDs
@@ -285,6 +289,8 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
             startDate: task.start_date || '',
             dueDate: task.due_date || '',
             status: task.status || 'not_started',
+            priority: ((task as any).priority as ActionPriority) || 'medium',
+            estimatedHours: (task as any).estimated_hours || null,
             linkedRequirements: linkedReqs,
             linkedMilestone,
             linkedIndicators: linkedInds
@@ -428,6 +434,8 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           startDate: "",
           dueDate: "",
           status: "not_started",
+          priority: "medium" as ActionPriority,
+          estimatedHours: null,
           linkedRequirements: [],
           linkedMilestone: null,
           linkedIndicators: []
@@ -440,6 +448,28 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
     setData(prev => ({
       ...prev,
       actions: prev.actions.map(a => a.id === id ? { ...a, ...updates } : a)
+    }));
+  }, []);
+
+  const addActionWithData = useCallback((actionData: Partial<WizardAction>) => {
+    setData(prev => ({
+      ...prev,
+      actions: [
+        ...prev.actions,
+        {
+          id: crypto.randomUUID(),
+          description: actionData.description || "",
+          responsibleId: actionData.responsibleId || "",
+          startDate: actionData.startDate || "",
+          dueDate: actionData.dueDate || "",
+          status: actionData.status || "not_started",
+          priority: actionData.priority || "medium" as ActionPriority,
+          estimatedHours: actionData.estimatedHours || null,
+          linkedRequirements: actionData.linkedRequirements || [],
+          linkedMilestone: actionData.linkedMilestone || null,
+          linkedIndicators: actionData.linkedIndicators || []
+        }
+      ]
     }));
   }, []);
 
@@ -608,6 +638,7 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
     updateRequirement,
     removeRequirement,
     addAction,
+    addActionWithData,
     updateAction,
     removeAction,
     addWhyLink,

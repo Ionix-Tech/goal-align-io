@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,14 +7,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { A3WizardData, WizardAction, WizardWhyLink } from "@/hooks/useA3WizardState";
+import { Badge } from "@/components/ui/badge";
+import { A3WizardData, WizardAction, WizardWhyLink, ActionPriority } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink } from "lucide-react";
+import { useA3Copilot } from "@/hooks/useA3Copilot";
+import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink, Sparkles, Loader2, ArrowUp, ArrowRight, ArrowDown, Clock, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Step5ExecutionProps {
   data: A3WizardData;
   addAction: () => void;
+  addActionWithData: (actionData: Partial<WizardAction>) => void;
   updateAction: (id: string, updates: Partial<WizardAction>) => void;
   removeAction: (id: string) => void;
   addWhyLink: () => void;
@@ -28,9 +33,16 @@ const statusOptions = [
   { value: "completed", label: "Concluída" },
 ];
 
+const priorityOptions: { value: ActionPriority; label: string; icon: React.ReactNode; color: string }[] = [
+  { value: "high", label: "Alta", icon: <ArrowUp className="w-3 h-3" />, color: "text-destructive" },
+  { value: "medium", label: "Média", icon: <ArrowRight className="w-3 h-3" />, color: "text-warning" },
+  { value: "low", label: "Baixa", icon: <ArrowDown className="w-3 h-3" />, color: "text-muted-foreground" },
+];
+
 export function Step5Execution({ 
   data, 
   addAction, 
+  addActionWithData,
   updateAction, 
   removeAction,
   addWhyLink,
@@ -38,6 +50,8 @@ export function Step5Execution({
   removeWhyLink
 }: Step5ExecutionProps) {
   const { data: teamMembers = [] } = useTeamMembers();
+  const { suggestActions, isLoading: isAISuggestingActions } = useA3Copilot();
+  const [improvingActionId, setImprovingActionId] = useState<string | null>(null);
 
   const toggleRequirementLink = (actionId: string, reqCode: string) => {
     const action = data.actions.find(a => a.id === actionId);
@@ -65,10 +79,84 @@ export function Step5Execution({
 
   const uncoveredCount = coverage.filter(c => !c.covered).length;
 
-  // Get requirement description by code
-  const getRequirementDescription = (code: string) => {
-    const req = data.requirements.find(r => r.code === code);
-    return req?.description || "Sem descrição";
+  // Calculate total estimated hours
+  const totalEstimatedHours = data.actions.reduce((acc, action) => acc + (action.estimatedHours || 0), 0);
+
+  // Handle AI suggestion
+  const handleSuggestActions = async () => {
+    try {
+      const suggestions = await suggestActions(data);
+      if (suggestions && suggestions.length > 0) {
+        suggestions.forEach(suggestion => {
+          addActionWithData({
+            description: suggestion.description,
+            priority: ((suggestion as any).priority as ActionPriority) || "medium",
+            estimatedHours: (suggestion as any).estimatedHours || null,
+            linkedRequirements: suggestion.linkedRequirements || [],
+          });
+        });
+        toast.success(`${suggestions.length} ações sugeridas pela IA!`);
+      } else {
+        toast.info("A IA não conseguiu gerar sugestões. Tente adicionar mais contexto ao projeto.");
+      }
+    } catch (error) {
+      console.error("Error suggesting actions:", error);
+      toast.error("Erro ao sugerir ações com IA");
+    }
+  };
+
+  // Handle AI improve action
+  const handleImproveAction = async (actionId: string) => {
+    const action = data.actions.find(a => a.id === actionId);
+    if (!action || !action.description.trim()) {
+      toast.error("Adicione uma descrição primeiro");
+      return;
+    }
+
+    setImprovingActionId(actionId);
+    try {
+      const { improveRequirement } = await import("@/hooks/useA3Copilot").then(m => {
+        const copilot = m.useA3Copilot();
+        return copilot;
+      });
+      // Use the existing improve functionality - reusing requirement improver for action text
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a3-copilot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'improve_requirement',
+          currentStep: 5,
+          projectData: data,
+          specificInput: action.description
+        })
+      });
+      
+      const result = await response.json();
+      if (result?.generatedContent?.improvedText) {
+        updateAction(actionId, { description: result.generatedContent.improvedText });
+        toast.success("Ação melhorada com IA!");
+      }
+    } catch (error) {
+      console.error("Error improving action:", error);
+      toast.error("Erro ao melhorar ação");
+    } finally {
+      setImprovingActionId(null);
+    }
+  };
+
+  const getPriorityBadge = (priority: ActionPriority) => {
+    const option = priorityOptions.find(p => p.value === priority);
+    if (!option) return null;
+    
+    return (
+      <Badge variant="outline" className={cn("gap-1 text-xs", option.color)}>
+        {option.icon}
+        {option.label}
+      </Badge>
+    );
   };
 
   return (
@@ -76,22 +164,68 @@ export function Step5Execution({
       {/* Actions Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-              5
-            </span>
-            Plano de Ação
-          </CardTitle>
-          <CardDescription>
-            O que vamos fazer? Defina as ações e vincule aos requisitos que serão impactados.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                  5
+                </span>
+                Plano de Ação
+              </CardTitle>
+              <CardDescription className="mt-2">
+                O que vamos fazer? Defina as ações e vincule aos requisitos que serão impactados.
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleSuggestActions}
+              disabled={isAISuggestingActions}
+              className="gap-2"
+            >
+              {isAISuggestingActions ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              Sugerir com IA
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Summary bar */}
+          {data.actions.length > 0 && (
+            <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg border text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{data.actions.length}</span>
+                <span className="text-muted-foreground">ações</span>
+              </div>
+              {totalEstimatedHours > 0 && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">{totalEstimatedHours}h</span>
+                  <span className="text-muted-foreground">estimadas</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 ml-auto">
+                {priorityOptions.map(p => {
+                  const count = data.actions.filter(a => a.priority === p.value).length;
+                  if (count === 0) return null;
+                  return (
+                    <Badge key={p.value} variant="secondary" className={cn("gap-1", p.color)}>
+                      {p.icon}
+                      {count}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {data.actions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma ação adicionada ainda.</p>
-              <p className="text-sm">Adicione ações e vincule aos requisitos definidos.</p>
+              <p className="text-sm">Adicione ações manualmente ou use a IA para sugestões.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -101,17 +235,42 @@ export function Step5Execution({
                   className="border rounded-lg p-4 bg-card space-y-4"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Ação {index + 1}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeAction(action.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Ação {index + 1}
+                      </span>
+                      {getPriorityBadge(action.priority)}
+                      {action.estimatedHours && (
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                          <Clock className="w-3 h-3" />
+                          {action.estimatedHours}h
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleImproveAction(action.id)}
+                        disabled={improvingActionId === action.id}
+                        className="text-primary hover:text-primary"
+                        title="Melhorar com IA"
+                      >
+                        {improvingActionId === action.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAction(action.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -124,7 +283,42 @@ export function Step5Execution({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Prioridade</Label>
+                      <Select
+                        value={action.priority}
+                        onValueChange={(value: ActionPriority) => updateAction(action.id, { priority: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {priorityOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className={cn("flex items-center gap-2", option.color)}>
+                                {option.icon}
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Esforço (horas)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={action.estimatedHours || ""}
+                        onChange={(e) => updateAction(action.id, { 
+                          estimatedHours: e.target.value ? parseInt(e.target.value) : null 
+                        })}
+                        placeholder="Ex: 8"
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <Label>Responsável</Label>
                       <Select
@@ -343,7 +537,7 @@ export function Step5Execution({
           💡 Dica
         </h4>
         <p className="text-sm text-muted-foreground">
-          Cada requisito deve ter pelo menos uma ação vinculada. Isso garante rastreabilidade e permite análise de eficácia das ações durante o acompanhamento.
+          Use o botão "Sugerir com IA" para gerar ações baseadas no objetivo e requisitos do projeto. A IA vinculará automaticamente cada ação aos requisitos relevantes.
         </p>
       </div>
     </div>
