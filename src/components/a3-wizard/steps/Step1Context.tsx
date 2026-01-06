@@ -4,12 +4,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { A3WizardData, StrategicKPI } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useAllTheses } from "@/hooks/usePillars";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { PROJECT_CATEGORIES } from "@/config/categories";
-import { Heart, Brain, Zap, X } from "lucide-react";
+import { Heart, Brain, Zap, X, Flame } from "lucide-react";
 
 interface Step1ContextProps {
   data: A3WizardData;
@@ -202,6 +203,30 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
               ) : availableKPIs.length === 0 && data.strategicKpis.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhum indicador disponível para este objetivo</p>
               ) : null}
+            </div>
+          </div>
+
+          {/* Projeto Crítico */}
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-destructive/10 p-2">
+                  <Flame className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <Label htmlFor="is-critical" className="font-medium cursor-pointer">
+                    Projeto Crítico
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Projetos críticos têm prioridade máxima e acompanhamento intensificado
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="is-critical"
+                checked={data.isCritical}
+                onCheckedChange={(checked) => updateData({ isCritical: checked })}
+              />
             </div>
           </div>
 

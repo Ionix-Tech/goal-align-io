@@ -882,6 +882,7 @@ export type Database = {
           how_much: string | null
           id: string
           initiative_type: Database["public"]["Enums"]["initiative_type"]
+          is_critical: boolean
           name: string
           objective: string | null
           requirements: string | null
@@ -917,6 +918,7 @@ export type Database = {
           how_much?: string | null
           id?: string
           initiative_type?: Database["public"]["Enums"]["initiative_type"]
+          is_critical?: boolean
           name: string
           objective?: string | null
           requirements?: string | null
@@ -952,6 +954,7 @@ export type Database = {
           how_much?: string | null
           id?: string
           initiative_type?: Database["public"]["Enums"]["initiative_type"]
+          is_critical?: boolean
           name?: string
           objective?: string | null
           requirements?: string | null

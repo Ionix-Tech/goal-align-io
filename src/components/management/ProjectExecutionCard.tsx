@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { HealthStatusBadge } from "./HealthStatusBadge";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock, FileText, ClipboardList } from "lucide-react";
+import { Clock, FileText, ClipboardList, Flame } from "lucide-react";
 import type { ApprovedProject } from "@/hooks/useApprovedProjects";
 
 const PILLAR_CONFIG = {
@@ -53,10 +53,18 @@ export function ProjectExecutionCard({ project, onClick }: ProjectExecutionCardP
       <div className="space-y-4">
         {/* Initiative Type Badge */}
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className={initiativeConfig.className}>
-            <InitiativeIcon className="h-3 w-3 mr-1" />
-            {initiativeConfig.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={initiativeConfig.className}>
+              <InitiativeIcon className="h-3 w-3 mr-1" />
+              {initiativeConfig.label}
+            </Badge>
+            {project.is_critical && (
+              <Badge variant="destructive" className="gap-1 px-1.5">
+                <Flame className="h-3 w-3" />
+                <span className="sr-only sm:not-sr-only">Crítico</span>
+              </Badge>
+            )}
+          </div>
           <HealthStatusBadge status={project.current_health} size="md" />
         </div>
 

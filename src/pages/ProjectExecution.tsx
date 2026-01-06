@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Plus, Lightbulb, LayoutGrid, BarChart3, Columns } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Lightbulb, LayoutGrid, BarChart3, Columns, Flame } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,6 +198,12 @@ const ProjectExecution = () => {
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold">{project.name}</h1>
+                  {project.is_critical && (
+                    <Badge variant="destructive" className="gap-1">
+                      <Flame className="h-3 w-3" />
+                      Crítico
+                    </Badge>
+                  )}
                   <Badge variant="default">Projeto</Badge>
                   {project.source_idea && (
                     <Badge variant="outline" className="text-yellow-600 border-yellow-400 bg-yellow-50">

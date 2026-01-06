@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { FileText, Lightbulb } from "lucide-react";
+import { FileText, Lightbulb, Flame } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { THESIS_TYPE_COLORS } from "@/config/thesisTemplates";
 import { getCategoryConfig } from "@/config/categories";
@@ -20,6 +20,7 @@ interface KanbanCardProps {
     category?: ProjectCategory | null;
     updated_at: string | null;
     initiative_type?: string;
+    is_critical?: boolean;
     assigned_to_profile?: {
       full_name: string;
       avatar_url: string | null;
@@ -81,10 +82,17 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
           <h4 className="font-medium text-sm line-clamp-2 leading-snug flex-1">
             {project.name}
           </h4>
-          <Badge variant={typeInfo.variant} className={cn("text-xs shrink-0", typeInfo.className)}>
-            <TypeIcon className="h-3 w-3 mr-1" />
-            {typeInfo.label}
-          </Badge>
+          <div className="flex items-center gap-1 shrink-0">
+            {project.is_critical && (
+              <Badge variant="destructive" className="text-xs gap-1 px-1.5">
+                <Flame className="h-3 w-3" />
+              </Badge>
+            )}
+            <Badge variant={typeInfo.variant} className={cn("text-xs", typeInfo.className)}>
+              <TypeIcon className="h-3 w-3 mr-1" />
+              {typeInfo.label}
+            </Badge>
+          </div>
         </div>
 
         {/* Categoria e tipo */}
