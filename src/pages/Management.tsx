@@ -1,48 +1,23 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings2, Filter, Database as DatabaseIcon, FileText } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Settings2, Filter, FileText, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ProjectExecutionCard } from "@/components/management/ProjectExecutionCard";
 import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
 import { useApprovedProjects } from "@/hooks/useApprovedProjects";
-import type { Database } from "@/integrations/supabase/types";
+import { useTheses } from "@/hooks/useTheses";
 
-type StrategicPillar = Database['public']['Enums']['strategic_pillar'];
 type HealthStatus = 'green' | 'yellow' | 'red';
 
 const Management = () => {
   const navigate = useNavigate();
-  const [selectedPillar, setSelectedPillar] = useState<StrategicPillar | null>(null);
+  const [selectedThesisId, setSelectedThesisId] = useState<string | null>(null);
   const [selectedHealth, setSelectedHealth] = useState<HealthStatus | 'all'>('all');
-  const [isGeneratingTestData, setIsGeneratingTestData] = useState(false);
 
-  const { data: projects, isLoading } = useApprovedProjects(selectedPillar);
-
-  const handleGenerateTestData = async () => {
-    setIsGeneratingTestData(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('populate-test-data');
-      
-      if (error) throw error;
-      
-      if (data.success) {
-        toast.success(data.message || 'Projeto de teste criado com sucesso!');
-        window.location.reload();
-      } else {
-        throw new Error(data.error || 'Erro ao criar projeto de teste');
-      }
-    } catch (error) {
-      console.error('Error generating test data:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      toast.error('Erro ao criar projeto de teste: ' + errorMessage);
-    } finally {
-      setIsGeneratingTestData(false);
-    }
-  };
+  const { data: theses } = useTheses({ includeArchived: false });
+  const { data: projects, isLoading } = useApprovedProjects(selectedThesisId);
 
   // Filter by health status
   const filteredProjects = (projects || []).filter(p => {
@@ -81,6 +56,9 @@ const Management = () => {
       assignee: p.assigned_to_profile?.full_name || null,
     })),
   [projects]);
+
+  // Group theses by type for better organization
+  const activeTheses = (theses || []).filter(t => t.is_active);
 
   return (
     <div className="p-8">
@@ -179,17 +157,32 @@ const Management = () => {
               <Filter className="h-4 w-4 text-muted-foreground" />
 
               <Select
-                value={selectedPillar || 'all'}
-                onValueChange={(value) => setSelectedPillar(value === 'all' ? null : value as StrategicPillar)}
+                value={selectedThesisId || 'all'}
+                onValueChange={(value) => setSelectedThesisId(value === 'all' ? null : value)}
               >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Todos os pilares" />
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="Todos os objetivos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os pilares</SelectItem>
-                  <SelectItem value="operational_efficiency">⚙️ Eficiência Operacional</SelectItem>
-                  <SelectItem value="sales_expansion">📈 Expansão de Vendas</SelectItem>
-                  <SelectItem value="new_business">🚀 Novos Negócios</SelectItem>
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                      Todos os objetivos estratégicos
+                    </div>
+                  </SelectItem>
+                  {activeTheses.map((thesis) => (
+                    <SelectItem key={thesis.id} value={thesis.id}>
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-primary" />
+                        <span className="truncate max-w-[200px]">{thesis.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {activeTheses.length === 0 && (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      Nenhum objetivo estratégico ativo
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
 
@@ -223,12 +216,12 @@ const Management = () => {
                 </SelectContent>
               </Select>
 
-              {(selectedPillar || selectedHealth !== 'all') && (
+              {(selectedThesisId || selectedHealth !== 'all') && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setSelectedPillar(null);
+                    setSelectedThesisId(null);
                     setSelectedHealth('all');
                   }}
                 >
@@ -250,7 +243,7 @@ const Management = () => {
               <div className="text-center text-muted-foreground">
                 <p className="text-lg font-medium">Nenhum projeto aprovado encontrado</p>
                 <p className="text-sm mt-2">
-                  {selectedPillar || selectedHealth !== 'all'
+                  {selectedThesisId || selectedHealth !== 'all'
                     ? 'Tente ajustar os filtros'
                     : 'Aprove projetos na tela de Priorização para vê-los aqui'}
                 </p>
