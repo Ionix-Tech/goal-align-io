@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { A3WizardData } from "@/hooks/useA3WizardState";
+import { A3WizardData, WizardAttachment } from "@/hooks/useA3WizardState";
 import { Upload, FileText, FileSpreadsheet, File, X, ZoomIn, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -82,7 +82,9 @@ type PreviewState =
   | { type: 'pdf'; file: File; name: string };
 
 export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
-  const [attachments, setAttachments] = useState<File[]>([]);
+  // Use centralized state from wizard
+  const attachments = data.currentSituationAttachments;
+  
   const [previewFile, setPreviewFile] = useState<PreviewState | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -90,19 +92,30 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setAttachments(prev => [...prev, ...files]);
+    const newAttachments: WizardAttachment[] = files.map(file => ({
+      id: crypto.randomUUID(),
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    }));
+    updateData({ 
+      currentSituationAttachments: [...attachments, ...newAttachments] 
+    });
   };
 
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
+  const removeAttachment = (id: string) => {
+    updateData({ 
+      currentSituationAttachments: attachments.filter(a => a.id !== id) 
+    });
   };
 
-  const openPreview = (file: File) => {
-    const isImage = file.type.startsWith('image/');
-    const isPdf = file.type.includes('pdf');
+  const openPreview = (attachment: WizardAttachment) => {
+    const isImage = attachment.type.startsWith('image/');
+    const isPdf = attachment.type.includes('pdf');
     
     if (isPdf) {
-      setPreviewFile({ type: 'pdf', file, name: file.name });
+      setPreviewFile({ type: 'pdf', file: attachment.file, name: attachment.name });
       setCurrentPage(1);
       setNumPages(0);
       setPdfError(false);
@@ -110,8 +123,8 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
     }
     
     if (isImage) {
-      const url = URL.createObjectURL(file);
-      setPreviewFile({ type: 'image', url, name: file.name });
+      const url = URL.createObjectURL(attachment.file);
+      setPreviewFile({ type: 'image', url, name: attachment.name });
     }
   };
 
@@ -200,18 +213,18 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
             
             {attachments.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
-                {attachments.map((file, index) => (
-                  <div key={index} className="flex items-center gap-3 bg-muted/50 rounded-lg p-2">
-                    <LocalFileThumbnail file={file} onClick={() => openPreview(file)} />
+                {attachments.map((attachment) => (
+                  <div key={attachment.id} className="flex items-center gap-3 bg-muted/50 rounded-lg p-2">
+                    <LocalFileThumbnail file={attachment.file} onClick={() => openPreview(attachment)} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                      <p className="text-sm truncate">{attachment.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 shrink-0"
-                      onClick={() => removeAttachment(index)}
+                      onClick={() => removeAttachment(attachment.id)}
                     >
                       <X className="h-4 w-4" />
                     </Button>

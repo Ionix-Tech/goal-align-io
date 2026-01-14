@@ -107,6 +107,9 @@ export function AICopilotPanel({
     toast.success("Nome aplicado!");
   };
 
+  // State for pending objective suggestion (2.1 - show preview before applying)
+  const [pendingObjectiveSuggestion, setPendingObjectiveSuggestion] = useState<string | null>(null);
+
   const handleExpandObjective = async () => {
     if (!data.objective?.trim()) {
       toast.error("Preencha o objetivo primeiro.");
@@ -114,9 +117,23 @@ export function AICopilotPanel({
     }
     const expanded = await expandObjective(data.objective, data);
     if (expanded) {
-      onApplySuggestion("objective", expanded);
-      toast.success("Objetivo expandido!");
+      // Show preview instead of applying directly
+      setPendingObjectiveSuggestion(expanded);
+      toast.success("Sugestão de objetivo gerada!");
     }
+  };
+
+  const handleApplyObjective = () => {
+    if (pendingObjectiveSuggestion) {
+      onApplySuggestion("objective", pendingObjectiveSuggestion);
+      setPendingObjectiveSuggestion(null);
+      toast.success("Objetivo atualizado!");
+    }
+  };
+
+  const handleRejectObjective = () => {
+    setPendingObjectiveSuggestion(null);
+    toast.info("Objetivo original mantido");
   };
 
   const handleGenerateRequirements = async () => {
@@ -449,6 +466,40 @@ export function AICopilotPanel({
                     {name}
                   </Button>
                 ))}
+              </div>
+            )}
+
+            {/* Pending Objective Suggestion (2.1 fix) */}
+            {pendingObjectiveSuggestion && (
+              <div className="relative bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-3">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-primary mb-1">Sugestão de Objetivo:</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {pendingObjectiveSuggestion}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleApplyObjective}
+                    className="flex-1 gap-1"
+                  >
+                    <CheckCircle className="w-3 h-3" />
+                    Usar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRejectObjective}
+                    className="flex-1 gap-1"
+                  >
+                    <X className="w-3 h-3" />
+                    Manter Original
+                  </Button>
+                </div>
               </div>
             )}
 
