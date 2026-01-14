@@ -58,6 +58,14 @@ export interface StrategicKPI {
   kpiName: string;
 }
 
+export interface WizardAttachment {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+}
+
 export interface A3WizardData {
   // Step 1: Contexto
   name: string;
@@ -77,11 +85,11 @@ export interface A3WizardData {
   
   // Step 3: Diagnóstico
   currentSituationDescription: string;
-  // attachments handled separately via storage
+  currentSituationAttachments: WizardAttachment[]; // Centralized attachment state
   
   // Step 4: Estratégia
   targetSituationDescription: string;
-  // requirements.target_value updated here
+  targetSituationAttachments: WizardAttachment[]; // Centralized attachment state
   
   // Step 5: Execução
   actions: WizardAction[];
@@ -109,7 +117,9 @@ const initialData: A3WizardData = {
   criticalReason: "",
   requirements: [],
   currentSituationDescription: "",
+  currentSituationAttachments: [],
   targetSituationDescription: "",
+  targetSituationAttachments: [],
   actions: [],
   whyLinks: [],
   indicators: [],
@@ -345,6 +355,8 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           members: [],
           pillarId: "", // Will be populated from thesis relation if needed
           thesisId: project.thesis_id || "",
+          currentSituationAttachments: [], // Attachments loaded from storage separately if needed
+          targetSituationAttachments: [], // Attachments loaded from storage separately if needed
           isCritical: project.is_critical || false,
           criticalReason: (project as any).critical_reason || "",
           requirements: (requirements || []).map(r => ({

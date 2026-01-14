@@ -3,15 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { A3WizardData, WizardAction, StrategicKPI } from "@/hooks/useA3WizardState";
 import { 
   FileText, Target, Search, Lightbulb, ClipboardList, Shield, Send, 
   Pencil, Calendar, BarChart3, Crosshair, Link, PlaneTakeoff, Plane, Rocket,
-  CheckCircle2, AlertCircle, User, LayoutGrid, Sparkles
+  CheckCircle2, AlertCircle, User, LayoutGrid, Sparkles, AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -65,8 +66,38 @@ export function Step7Review({
     );
   };
 
+  // 2.5 fix: Validation for submission
+  const validationErrors = useMemo(() => {
+    const errors: { message: string; step: number }[] = [];
+    
+    // Check actions have responsible and due date
+    const actionsWithContent = data.actions.filter(a => a.description.trim() !== "");
+    const incompleteActions = actionsWithContent.filter(
+      a => !a.responsibleId || !a.dueDate
+    );
+    if (incompleteActions.length > 0) {
+      errors.push({ 
+        message: `${incompleteActions.length} ação(ões) sem responsável ou prazo definido`, 
+        step: 5 
+      });
+    }
+    
+    // Check indicators have current and target values
+    const incompleteIndicators = data.indicators.filter(
+      i => !i.currentValue.trim() || !i.targetValue.trim()
+    );
+    if (incompleteIndicators.length > 0) {
+      errors.push({ 
+        message: `${incompleteIndicators.length} indicador(es) sem valor atual ou meta`, 
+        step: 6 
+      });
+    }
+    
+    return errors;
+  }, [data.actions, data.indicators]);
+
   const checklistComplete = checkedItems.length === checklistItems.length;
-  const canSubmit = data.m1Date && checklistComplete;
+  const canSubmit = data.m1Date && checklistComplete && validationErrors.length === 0;
 
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -378,24 +409,42 @@ export function Step7Review({
               <CollapsibleContent className="pt-4">
                 {data.actions.filter(a => a.description.trim()).length > 0 ? (
                   <div className="space-y-2">
-                    {data.actions.filter(a => a.description.trim()).map((action, index) => (
-                      <div key={action.id} className="flex items-start justify-between gap-2 text-sm p-2 bg-muted/30 rounded">
-                        <div className="flex-1">
-                          <span className="font-medium">{action.description}</span>
-                          <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
-                            <span>👤 {getResponsibleName(action.responsibleId)}</span>
-                            {action.dueDate && <span>📅 até {formatDisplayDate(action.dueDate)}</span>}
+                    {data.actions.filter(a => a.description.trim()).map((action, index) => {
+                      const isIncomplete = !action.responsibleId || !action.dueDate;
+                      return (
+                        <div 
+                          key={action.id} 
+                          className={cn(
+                            "flex items-start justify-between gap-2 text-sm p-2 rounded",
+                            isIncomplete ? "bg-destructive/10 border border-destructive/30" : "bg-muted/30"
+                          )}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{action.description}</span>
+                              {isIncomplete && (
+                                <Badge variant="destructive" className="text-xs">Incompleto</Badge>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
+                              <span className={!action.responsibleId ? "text-destructive" : ""}>
+                                👤 {action.responsibleId ? getResponsibleName(action.responsibleId) : "Sem responsável"}
+                              </span>
+                              <span className={!action.dueDate ? "text-destructive" : ""}>
+                                📅 {action.dueDate ? `até ${formatDisplayDate(action.dueDate)}` : "Sem prazo"}
+                              </span>
+                            </div>
                           </div>
+                          {action.linkedRequirements.length > 0 && (
+                            <div className="flex gap-1">
+                              {action.linkedRequirements.map(code => (
+                                <Badge key={code} variant="outline" className="text-xs">{code}</Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {action.linkedRequirements.length > 0 && (
-                          <div className="flex gap-1">
-                            {action.linkedRequirements.map(code => (
-                              <Badge key={code} variant="outline" className="text-xs">{code}</Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-destructive">Nenhuma ação definida</p>
@@ -549,6 +598,31 @@ export function Step7Review({
                 {checkedItems.length} de {checklistItems.length} itens verificados
               </p>
 
+              {/* Validation Errors (2.5 fix) */}
+              {validationErrors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Campos obrigatórios pendentes</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc pl-4 mt-2 space-y-1">
+                      {validationErrors.map((error, i) => (
+                        <li key={i} className="flex items-center justify-between">
+                          <span>{error.message}</span>
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="h-auto p-0 text-xs"
+                            onClick={() => goToStep(error.step)}
+                          >
+                            Corrigir no Step {error.step}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Submit Button */}
               <Button
                 onClick={onSubmit}
@@ -560,7 +634,7 @@ export function Step7Review({
                 {isSubmitting ? "Enviando..." : "Enviar para Aprovação"}
               </Button>
 
-              {!canSubmit && (
+              {!canSubmit && validationErrors.length === 0 && (
                 <p className="text-sm text-center text-muted-foreground">
                   {!data.m1Date 
                     ? "Defina a data de início (M1) no Step 6 para enviar."
