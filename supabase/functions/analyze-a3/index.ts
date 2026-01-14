@@ -32,13 +32,18 @@ interface A3ProjectData {
 const systemPrompt = `Você é um especialista em metodologia A3 Thinking e gestão de projetos estratégicos.
 
 Analise o projeto A3 fornecido e avalie cada seção quanto a:
-- Completude dos dados
+- Completude dos dados essenciais (nome, objetivo, requisitos, ações)
 - Clareza e especificidade das descrições
 - Coerência e alinhamento entre as seções
 - Viabilidade das metas e prazos
 - Vinculação adequada entre requisitos, indicadores e ações
-- Boas práticas de gestão de projetos
 
+IMPORTANTE: Este é um PLANEJAMENTO. NÃO penalize ausência de:
+- Links externos ou evidências
+- Documentação de suporte
+- Resultados ou métricas (serão coletados na execução)
+
+Foque em avaliar se o plano está bem estruturado para INICIAR a execução.
 Seja específico nas recomendações, indicando exatamente o que precisa ser melhorado e como.
 Considere um ciclo de 90 dias típico para projetos A3.`;
 
@@ -134,9 +139,6 @@ ${projectData.requirements?.filter(r => r.description).map(r =>
 
 ## Situação Atual
 ${projectData.currentSituationDescription || "Não descrita"}
-
-## Links de Evidência
-${projectData.whyLinks?.filter(l => l.url).map(l => `- ${l.label || l.url}`).join("\n") || "Nenhum link fornecido"}
 
 ## Situação Alvo
 ${projectData.targetSituationDescription || "Não descrita"}
