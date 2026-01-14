@@ -143,6 +143,68 @@ export function A3Wizard() {
               });
           }
         }
+
+        // --- SAVE INDICATORS (AUTO-SAVE) ---
+        if (dataRef.current.indicators.length > 0) {
+          // Get existing indicators to delete
+          const { data: existingIndicators } = await supabase
+            .from('project_indicators')
+            .select('id')
+            .eq('project_id', currentProjectId);
+
+          if (existingIndicators && existingIndicators.length > 0) {
+            const indIds = existingIndicators.map(i => i.id);
+            await supabase
+              .from('requirement_indicator_links')
+              .delete()
+              .in('indicator_id', indIds);
+            await supabase
+              .from('project_indicators')
+              .delete()
+              .eq('project_id', currentProjectId);
+          }
+
+          // Get requirement IDs for linking
+          const { data: savedReqs } = await supabase
+            .from('project_requirements')
+            .select('id, code')
+            .eq('project_id', currentProjectId);
+
+          const reqIdByCode = new Map<string, string>();
+          (savedReqs || []).forEach(r => reqIdByCode.set(r.code, r.id));
+
+          // Insert indicators
+          for (const indicator of dataRef.current.indicators) {
+            if (!indicator.name.trim()) continue;
+
+            const { data: newIndicator, error: indError } = await supabase
+              .from('project_indicators')
+              .insert({
+                project_id: currentProjectId,
+                name: indicator.name,
+                unit: indicator.unit || null,
+                current_state: indicator.currentValue,
+                target_state: indicator.targetValue
+              })
+              .select()
+              .single();
+
+            if (indError) throw indError;
+
+            // Insert requirement links
+            for (const reqCode of indicator.linkedRequirementCodes) {
+              const reqId = reqIdByCode.get(reqCode);
+              if (reqId) {
+                await supabase
+                  .from('requirement_indicator_links')
+                  .insert({
+                    indicator_id: newIndicator.id,
+                    requirement_id: reqId
+                  });
+              }
+            }
+          }
+        }
         
         setAutoSaveStatus('saved');
       } else {
@@ -264,6 +326,68 @@ export function A3Wizard() {
                 target_value: req.target_value,
                 display_order: req.display_order
               });
+          }
+        }
+
+        // --- SAVE INDICATORS (MANUAL SAVE) ---
+        if (data.indicators.length > 0) {
+          // Get existing indicators to delete
+          const { data: existingIndicators } = await supabase
+            .from('project_indicators')
+            .select('id')
+            .eq('project_id', currentProjectId);
+
+          if (existingIndicators && existingIndicators.length > 0) {
+            const indIds = existingIndicators.map(i => i.id);
+            await supabase
+              .from('requirement_indicator_links')
+              .delete()
+              .in('indicator_id', indIds);
+            await supabase
+              .from('project_indicators')
+              .delete()
+              .eq('project_id', currentProjectId);
+          }
+
+          // Get requirement IDs for linking
+          const { data: savedReqs } = await supabase
+            .from('project_requirements')
+            .select('id, code')
+            .eq('project_id', currentProjectId);
+
+          const reqIdByCode = new Map<string, string>();
+          (savedReqs || []).forEach(r => reqIdByCode.set(r.code, r.id));
+
+          // Insert indicators
+          for (const indicator of data.indicators) {
+            if (!indicator.name.trim()) continue;
+
+            const { data: newIndicator, error: indError } = await supabase
+              .from('project_indicators')
+              .insert({
+                project_id: currentProjectId,
+                name: indicator.name,
+                unit: indicator.unit || null,
+                current_state: indicator.currentValue,
+                target_state: indicator.targetValue
+              })
+              .select()
+              .single();
+
+            if (indError) throw indError;
+
+            // Insert requirement links
+            for (const reqCode of indicator.linkedRequirementCodes) {
+              const reqId = reqIdByCode.get(reqCode);
+              if (reqId) {
+                await supabase
+                  .from('requirement_indicator_links')
+                  .insert({
+                    indicator_id: newIndicator.id,
+                    requirement_id: reqId
+                  });
+              }
+            }
           }
         }
         
