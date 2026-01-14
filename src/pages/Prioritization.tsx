@@ -6,10 +6,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { ProjectFilters } from "@/components/projects/ProjectFilters";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
+import { IdeaDetailsDialog } from "@/components/ideas/IdeaDetailsDialog";
 import { useProjects } from "@/hooks/useProjects";
 import { useUserRole } from "@/hooks/useUserRole";
 import type { Database } from "@/integrations/supabase/types";
 import { ProjectCategory } from "@/config/categories";
+
+interface SelectedIdeaFull {
+  id: string;
+  name: string;
+  description: string | null;
+  category: ProjectCategory | null;
+  thesis_id: string | null;
+  ai_impact_score: number | null;
+  ai_effort_score: number | null;
+  ai_analysis_summary: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  created_by_profile?: {
+    full_name: string;
+    avatar_url: string | null;
+  } | null;
+}
 
 const Prioritization = () => {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
@@ -17,7 +35,8 @@ const Prioritization = () => {
   const [selectedThesis, setSelectedThesis] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<Database['public']['Enums']['initiative_type'] | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory | null>(null);
-  const [selectedIdea, setSelectedIdea] = useState<{ id: string; name: string; description: string | null; category?: string | null } | null>(null);
+  const [selectedIdea, setSelectedIdea] = useState<SelectedIdeaFull | null>(null);
+  const [showIdeaDetails, setShowIdeaDetails] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
 
   const { role } = useUserRole();
@@ -61,21 +80,38 @@ const Prioritization = () => {
   const allProjects = data?.all || [];
 
   const handleProjectClick = (project: any) => {
-    // If it's an idea, show convert dialog instead of navigating
+    // If it's an idea, show details dialog for viewing/editing
     if (project.initiative_type === 'idea') {
       setSelectedIdea({
         id: project.id,
         name: project.name,
         description: project.description,
-        category: project.category
+        category: project.category || null,
+        thesis_id: project.thesis_id || null,
+        ai_impact_score: project.ai_impact_score || null,
+        ai_effort_score: project.ai_effort_score || null,
+        ai_analysis_summary: project.ai_analysis_summary || null,
+        created_at: project.created_at || null,
+        updated_at: project.updated_at || null,
+        created_by_profile: project.created_by_profile || null
       });
-      setShowConvertDialog(true);
+      setShowIdeaDetails(true);
     } else if (project.initiative_type === 'project' && project.status === 'draft') {
       // Draft projects go directly to A3 wizard
       navigate(`/projects/${project.id}/a3`);
     } else {
       navigate(`/projects/${project.id}`);
     }
+  };
+
+  const handleCloseIdeaDetails = () => {
+    setShowIdeaDetails(false);
+    setSelectedIdea(null);
+  };
+
+  const handleOpenConvertDialog = () => {
+    setShowIdeaDetails(false);
+    setShowConvertDialog(true);
   };
 
   const handleCloseConvertDialog = () => {
@@ -245,11 +281,24 @@ const Prioritization = () => {
         </Tabs>
       </div>
 
+      {/* Idea Details Dialog */}
+      <IdeaDetailsDialog
+        open={showIdeaDetails}
+        onClose={handleCloseIdeaDetails}
+        idea={selectedIdea}
+        onConvert={handleOpenConvertDialog}
+      />
+
       {/* Convert Idea Dialog */}
       <ConvertIdeaDialog
         open={showConvertDialog}
         onClose={handleCloseConvertDialog}
-        idea={selectedIdea}
+        idea={selectedIdea ? {
+          id: selectedIdea.id,
+          name: selectedIdea.name,
+          description: selectedIdea.description,
+          category: selectedIdea.category
+        } : null}
       />
     </div>
   );
