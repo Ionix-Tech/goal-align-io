@@ -11,6 +11,7 @@ type CopilotAction =
   | "expand_objective"
   | "generate_requirements"
   | "improve_requirement"
+  | "improve_action"
   | "expand_current_situation"
   | "generate_target_situation"
   | "suggest_actions"
@@ -213,6 +214,29 @@ Ex: "Taxa de erro deve ser menor que 2%"`;
           }
         };
         toolChoice = { type: "function", function: { name: "improved_requirement" } };
+        break;
+
+      case "improve_action":
+        userPrompt = `Ação: "${specificInput}"
+
+Reescreva em NO MÁXIMO 15 palavras.
+Formato: [VERBO] + [O QUE] + [RESULTADO]
+Ex: "Implementar dashboard automático para eliminar geração manual"`;
+        toolDefinition = {
+          type: "function",
+          function: {
+            name: "improved_action",
+            description: "Retorna ação melhorada",
+            parameters: {
+              type: "object",
+              properties: {
+                improvedText: { type: "string" }
+              },
+              required: ["improvedText"]
+            }
+          }
+        };
+        toolChoice = { type: "function", function: { name: "improved_action" } };
         break;
 
       case "expand_current_situation":
