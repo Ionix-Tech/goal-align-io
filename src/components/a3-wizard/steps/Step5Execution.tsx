@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { A3WizardData, WizardAction, WizardWhyLink, ActionPriority } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useA3Copilot } from "@/hooks/useA3Copilot";
-import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink, Sparkles, Loader2, ArrowUp, ArrowRight, ArrowDown, Clock, Wand2 } from "lucide-react";
+import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink, Sparkles, Loader2, ArrowUp, ArrowRight, ArrowDown, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -35,7 +35,7 @@ const statusOptions = [
 
 const priorityOptions: { value: ActionPriority; label: string; icon: React.ReactNode; color: string }[] = [
   { value: "high", label: "Alta", icon: <ArrowUp className="w-3 h-3" />, color: "text-destructive" },
-  { value: "medium", label: "Média", icon: <ArrowRight className="w-3 h-3" />, color: "text-warning" },
+  { value: "medium", label: "Padrão", icon: <ArrowRight className="w-3 h-3" />, color: "text-warning" },
   { value: "low", label: "Baixa", icon: <ArrowDown className="w-3 h-3" />, color: "text-muted-foreground" },
 ];
 
@@ -50,8 +50,9 @@ export function Step5Execution({
   removeWhyLink
 }: Step5ExecutionProps) {
   const { data: teamMembers = [] } = useTeamMembers();
-  const { suggestActions, isLoading: isAISuggestingActions } = useA3Copilot();
+  const { suggestActions, improveAction, isLoading: isAISuggestingActions } = useA3Copilot();
   const [improvingActionId, setImprovingActionId] = useState<string | null>(null);
+  const [groupBy, setGroupBy] = useState<'none' | 'chronology'>('none');
 
   const toggleRequirementLink = (actionId: string, reqCode: string) => {
     const action = data.actions.find(a => a.id === actionId);
@@ -78,9 +79,6 @@ export function Step5Execution({
   });
 
   const uncoveredCount = coverage.filter(c => !c.covered).length;
-
-  // Calculate total estimated hours
-  const totalEstimatedHours = data.actions.reduce((acc, action) => acc + (action.estimatedHours || 0), 0);
 
   // Handle AI suggestion
   const handleSuggestActions = async () => {
@@ -115,28 +113,9 @@ export function Step5Execution({
 
     setImprovingActionId(actionId);
     try {
-      const { improveRequirement } = await import("@/hooks/useA3Copilot").then(m => {
-        const copilot = m.useA3Copilot();
-        return copilot;
-      });
-      // Use the existing improve functionality - reusing requirement improver for action text
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a3-copilot`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          action: 'improve_requirement',
-          currentStep: 5,
-          projectData: data,
-          specificInput: action.description
-        })
-      });
-      
-      const result = await response.json();
-      if (result?.generatedContent?.improvedText) {
-        updateAction(actionId, { description: result.generatedContent.improvedText });
+      const improved = await improveAction(action.description, data);
+      if (improved) {
+        updateAction(actionId, { description: improved });
         toast.success("Ação melhorada com IA!");
       }
     } catch (error) {
@@ -146,6 +125,15 @@ export function Step5Execution({
       setImprovingActionId(null);
     }
   };
+
+  // Sort actions by date if groupBy is chronology
+  const sortedActions = groupBy === 'chronology'
+    ? [...data.actions].sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      })
+    : data.actions;
 
   const getPriorityBadge = (priority: ActionPriority) => {
     const option = priorityOptions.find(p => p.value === priority);
@@ -199,13 +187,17 @@ export function Step5Execution({
                 <span className="font-medium">{data.actions.length}</span>
                 <span className="text-muted-foreground">ações</span>
               </div>
-              {totalEstimatedHours > 0 && (
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">{totalEstimatedHours}h</span>
-                  <span className="text-muted-foreground">estimadas</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <Select value={groupBy} onValueChange={(v: 'none' | 'chronology') => setGroupBy(v)}>
+                  <SelectTrigger className="h-7 w-32 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem ordenação</SelectItem>
+                    <SelectItem value="chronology">Por Data</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2 ml-auto">
                 {priorityOptions.map(p => {
                   const count = data.actions.filter(a => a.priority === p.value).length;
@@ -229,7 +221,7 @@ export function Step5Execution({
             </div>
           ) : (
             <div className="space-y-4">
-              {data.actions.map((action, index) => (
+              {sortedActions.map((action, index) => (
                 <div
                   key={action.id}
                   className="border rounded-lg p-4 bg-card space-y-4"
@@ -240,12 +232,6 @@ export function Step5Execution({
                         Ação {index + 1}
                       </span>
                       {getPriorityBadge(action.priority)}
-                      {action.estimatedHours && (
-                        <Badge variant="secondary" className="gap-1 text-xs">
-                          <Clock className="w-3 h-3" />
-                          {action.estimatedHours}h
-                        </Badge>
-                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
@@ -283,7 +269,7 @@ export function Step5Execution({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label>Prioridade</Label>
                       <Select
@@ -307,25 +293,14 @@ export function Step5Execution({
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Esforço (horas)</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={action.estimatedHours || ""}
-                        onChange={(e) => updateAction(action.id, { 
-                          estimatedHours: e.target.value ? parseInt(e.target.value) : null 
-                        })}
-                        placeholder="Ex: 8"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Responsável</Label>
+                      <Label>Responsável *</Label>
                       <Select
                         value={action.responsibleId}
                         onValueChange={(value) => updateAction(action.id, { responsibleId: value })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={cn(
+                          action.description.trim() && !action.responsibleId && "border-destructive"
+                        )}>
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -336,6 +311,9 @@ export function Step5Execution({
                           ))}
                         </SelectContent>
                       </Select>
+                      {action.description.trim() && !action.responsibleId && (
+                        <p className="text-xs text-destructive">Obrigatório</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -369,12 +347,18 @@ export function Step5Execution({
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Prazo</Label>
+                      <Label>Prazo *</Label>
                       <Input
                         type="date"
                         value={action.dueDate}
                         onChange={(e) => updateAction(action.id, { dueDate: e.target.value })}
+                        className={cn(
+                          action.description.trim() && !action.dueDate && "border-destructive"
+                        )}
                       />
+                      {action.description.trim() && !action.dueDate && (
+                        <p className="text-xs text-destructive">Obrigatório</p>
+                      )}
                     </div>
                   </div>
 

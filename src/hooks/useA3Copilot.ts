@@ -9,6 +9,7 @@ type CopilotAction =
   | "expand_objective"
   | "generate_requirements"
   | "improve_requirement"
+  | "improve_action"
   | "expand_current_situation"
   | "generate_target_situation"
   | "suggest_actions"
@@ -117,6 +118,11 @@ export function useA3Copilot() {
     return response?.generatedContent?.improvedText || null;
   }, [callCopilot]);
 
+  const improveAction = useCallback(async (actionDescription: string, data: Partial<A3WizardData>): Promise<string | null> => {
+    const response = await callCopilot("improve_action", 5, data, actionDescription);
+    return response?.generatedContent?.improvedText || null;
+  }, [callCopilot]);
+
   const expandCurrentSituation = useCallback(async (current: string, data: Partial<A3WizardData>): Promise<string | null> => {
     const response = await callCopilot("expand_current_situation", 3, data, current);
     return response?.generatedContent?.expandedText || null;
@@ -161,6 +167,7 @@ export function useA3Copilot() {
     expandObjective,
     generateRequirements,
     improveRequirement,
+    improveAction,
     expandCurrentSituation,
     generateTargetSituation,
     suggestActions,

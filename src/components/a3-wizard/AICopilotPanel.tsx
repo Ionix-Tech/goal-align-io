@@ -303,8 +303,7 @@ export function AICopilotPanel({
             ), 
             icon: <MessageCircle className="w-4 h-4" />,
             isTip: true
-          },
-          { label: "Sugerir Ações", action: handleSuggestActions, icon: <Wand2 className="w-4 h-4" />, isTip: false }
+          }
         ];
       case 6:
         return [
