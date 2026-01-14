@@ -62,22 +62,15 @@ Releia o A3 de cima a baixo. Ele conta uma história lógica do problema à solu
 💡 Pergunte-se: "Uma pessoa que nunca viu isso entenderia em 5 minutos?"`
 };
 
-const systemPrompt = `Você é um FACILITADOR DE PENSAMENTO para projetos A3.
+const systemPrompt = `Você é um assistente CONCISO para projetos A3.
 
-REGRAS FUNDAMENTAIS:
-1. **NUNCA dê respostas prontas** — faça perguntas que ajudem o usuário a descobrir sozinho
-2. **Seja CONCISO** — máximo 3-4 frases por resposta
-3. **Traga exemplos concretos** quando explicar conceitos
-4. **Faça perguntas provocativas** que destravem a criatividade
+REGRAS:
+1. Respostas CURTAS - máximo 3-4 frases
+2. Use exemplos de 1 linha quando necessário
+3. NUNCA gere listas longas ou múltiplos parágrafos
+4. Siga EXATAMENTE o formato solicitado em cada prompt
 
-Você ajuda o usuário a PENSAR MELHOR, não a escrever por ele.
-
-Formato ideal de resposta:
-- 1 frase de contexto/conceito
-- 1-2 perguntas reflexivas
-- 1 exemplo curto (se necessário)
-
-Respostas em português brasileiro. Seja direto e prático.`;
+Respostas em português brasileiro. Direto ao ponto.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -141,9 +134,13 @@ Os nomes devem ser claros, profissionais e refletir o objetivo.`;
 
       case "expand_objective":
         userPrompt = `Objetivo atual: "${projectData.objective || specificInput}"
-        
-Expanda e melhore este objetivo, tornando-o mais claro, específico e alinhado com boas práticas de gestão de projetos.
-Mantenha a essência mas torne mais completo.`;
+
+REESCREVA em NO MÁXIMO 2 FRASES no formato:
+[VERBO] + [O QUE] + [PARA QUEM/ONDE] + [RESULTADO]
+
+Ex: "Automatizar relatórios mensais para reduzir tempo de 5 dias para 4 horas."
+
+NÃO inclua critérios, requisitos ou detalhes. Apenas o objetivo direto.`;
         toolDefinition = {
           type: "function",
           function: {
@@ -162,13 +159,13 @@ Mantenha a essência mas torne mais completo.`;
         break;
 
       case "generate_requirements":
-        userPrompt = `Projeto: ${projectData.name}
-Objetivo: ${projectData.objective}
-Requisitos existentes: ${JSON.stringify(projectData.requirements || [])}
+        userPrompt = `Objetivo: ${projectData.objective}
 
-Gere 3-5 requisitos adicionais para este projeto.
-Requisitos são "O Que Precisa Dar Certo" - critérios de sucesso mensuráveis.
-Cada requisito deve ter uma descrição clara e ser diferente dos existentes.`;
+Gere 3 requisitos (1 frase cada).
+Formato: "O [algo] deve [resultado mensurável]"
+Ex: "O tempo de geração deve cair de 5 dias para 4 horas"
+
+NÃO repita: ${JSON.stringify(projectData.requirements?.map((r: any) => r.description) || [])}`;
         toolDefinition = {
           type: "function",
           function: {
@@ -196,10 +193,11 @@ Cada requisito deve ter uma descrição clara e ser diferente dos existentes.`;
         break;
 
       case "improve_requirement":
-        userPrompt = `Requisito atual: "${specificInput}"
-Contexto do projeto: ${projectData.objective}
+        userPrompt = `Requisito: "${specificInput}"
 
-Melhore a redação deste requisito, tornando-o mais específico e mensurável.`;
+Reescreva em 1 FRASE com métrica.
+Formato: "[Sujeito] deve [ação] [meta numérica]"
+Ex: "Taxa de erro deve ser menor que 2%"`;
         toolDefinition = {
           type: "function",
           function: {
@@ -218,16 +216,15 @@ Melhore a redação deste requisito, tornando-o mais específico e mensurável.`
         break;
 
       case "expand_current_situation":
-        userPrompt = `Projeto: ${projectData.name}
-Objetivo: ${projectData.objective}
-Requisitos: ${JSON.stringify(projectData.requirements?.map((r: any) => r.description) || [])}
-Situação atual: ${projectData.currentSituationDescription || specificInput || ''}
+        userPrompt = `Situação atual: ${projectData.currentSituationDescription || specificInput || ''}
 
-Expanda a descrição da situação atual, estruturando em:
-1. Estado atual
-2. Principais problemas
-3. Evidências/dados
-4. Impactos`;
+Reescreva em NO MÁXIMO 4 frases:
+1. Estado atual (1 frase)
+2. Principal problema (1 frase)
+3. Impacto quantificado (1 frase)
+4. Evidência/dado (1 frase)
+
+Direto. Sem introduções.`;
         toolDefinition = {
           type: "function",
           function: {
@@ -246,15 +243,15 @@ Expanda a descrição da situação atual, estruturando em:
         break;
 
       case "generate_target_situation":
-        userPrompt = `Projeto: ${projectData.name}
-Objetivo: ${projectData.objective}
+        userPrompt = `Situação atual: ${projectData.currentSituationDescription}
 Requisitos: ${JSON.stringify(projectData.requirements?.map((r: any) => r.description) || [])}
-Situação atual: ${projectData.currentSituationDescription}
 
-Gere uma descrição da situação alvo que:
-1. Endereça cada problema da situação atual
-2. Define metas para cada requisito
-3. Descreve o estado futuro desejado`;
+Descreva situação ALVO em NO MÁXIMO 4 frases:
+1. Estado futuro (1 frase)
+2. Meta para requisitos (1-2 frases)
+3. Benefício principal (1 frase)
+
+Sem detalhes de implementação. Apenas resultado final.`;
         toolDefinition = {
           type: "function",
           function: {
@@ -273,19 +270,13 @@ Gere uma descrição da situação alvo que:
         break;
 
       case "suggest_actions":
-        userPrompt = `Projeto: ${projectData.name}
-Objetivo: ${projectData.objective}
-Requisitos: ${JSON.stringify(projectData.requirements?.map((r: any) => ({ code: r.code, description: r.description })) || [])}
-Ações existentes: ${JSON.stringify(projectData.actions?.map((a: any) => a.description) || [])}
-Situação alvo: ${projectData.targetSituationDescription}
+        userPrompt = `Requisitos: ${JSON.stringify(projectData.requirements?.map((r: any) => r.code) || [])}
 
-Sugira 3-5 ações para alcançar a situação alvo.
-Cada ação deve:
-- Ser específica e executável
-- Estar vinculada a pelo menos um requisito (use os códigos R1, R2, etc.)
-- Ter descrição clara do que fazer
-- Ter prioridade (high para ações críticas e urgentes, medium para importantes, low para complementares)
-- Ter estimativa de horas (esforço realista)`;
+Sugira 3-5 ações (máximo 15 palavras cada).
+Formato: VERBO + O QUE + RESULTADO
+Ex: "Implementar dashboard automático para eliminar geração manual"
+
+Vincule cada ação a requisito (R1, R2, etc.)`;
         toolDefinition = {
           type: "function",
           function: {
@@ -316,12 +307,12 @@ Cada ação deve:
         break;
 
       case "suggest_indicators":
-        userPrompt = `Projeto: ${projectData.name}
-Requisitos: ${JSON.stringify(projectData.requirements?.map((r: any) => ({ code: r.code, description: r.description })) || [])}
-Indicadores existentes: ${JSON.stringify(projectData.indicators?.map((i: any) => i.name) || [])}
+        userPrompt = `Requisitos: ${JSON.stringify(projectData.requirements?.map((r: any) => r.code + ': ' + r.description) || [])}
 
-Sugira indicadores para acompanhar o progresso dos requisitos.
-Cada indicador deve ter nome, unidade e estar vinculado a requisitos.`;
+Sugira 1 indicador por requisito.
+Formato: Nome curto (3-5 palavras) + Unidade
+Ex: "Tempo de geração" / "horas"
+Ex: "Taxa de erro" / "%"`;
         toolDefinition = {
           type: "function",
           function: {
