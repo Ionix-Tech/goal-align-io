@@ -22,6 +22,7 @@ import ProjectExecution from "./pages/ProjectExecution";
 import ProjectExecutionRedirect from "./pages/ProjectExecutionRedirect";
 import Intelligence from "./pages/Intelligence";
 import Settings from "./pages/Settings";
+import KPIs from "./pages/KPIs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/management/:projectId" element={<ProtectedRoute><ProjectExecution /></ProtectedRoute>} />
           <Route path="/project-execution/:projectId" element={<ProtectedRoute><ProjectExecutionRedirect /></ProtectedRoute>} />
           <Route path="/intelligence" element={<ProtectedRoute><AppLayout><Intelligence /></AppLayout></ProtectedRoute>} />
+          <Route path="/kpis" element={<ProtectedRoute><AppLayout><KPIs /></AppLayout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

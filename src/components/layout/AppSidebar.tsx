@@ -1,4 +1,4 @@
-import { Plus, Target, ClipboardCheck, Brain, ChevronRight, ListOrdered, FolderKanban, FileText, Settings } from "lucide-react";
+import { Plus, Target, ClipboardCheck, Brain, ChevronRight, ListOrdered, FolderKanban, FileText, Settings, BarChart3 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { InitiativeTypeSelector } from "@/components/projects/InitiativeTypeSelector";
@@ -32,7 +32,14 @@ const menuItems = [
       { title: "Portfólio", url: "/portfolio", icon: FolderKanban },
     ]
   },
-  { title: "Gestão e Execução", url: "/management", icon: ClipboardCheck },
+  { 
+    title: "Gestão e Execução", 
+    icon: ClipboardCheck,
+    subitems: [
+      { title: "Projetos", url: "/management", icon: FolderKanban },
+      { title: "Indicadores", url: "/kpis", icon: BarChart3 },
+    ]
+  },
   { title: "Inteligência", url: "/intelligence", icon: Brain },
   { title: "Configurações", url: "/settings", icon: Settings },
 ];
@@ -52,6 +59,7 @@ export function AppSidebar() {
   
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     "Estratégia": true,
+    "Gestão e Execução": true,
   });
 
   const isActive = (path: string) => currentPath === path;
