@@ -49,5 +49,7 @@ export function useUserRole() {
     fetchRole();
   }, [user]);
 
-  return { role, loading };
+  const isManager = role === 'ceo' || role === 'pmo_manager';
+  
+  return { role, loading, isManager };
 }
