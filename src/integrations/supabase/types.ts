@@ -14,6 +14,329 @@ export type Database = {
   }
   public: {
     Tables: {
+      areas: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          manager_id: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "areas_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_control_requests: {
+        Row: {
+          area_id: string | null
+          area_validated_at: string | null
+          area_validated_by: string | null
+          context_type: string
+          created_at: string | null
+          created_kpi_id: string | null
+          direction: Database["public"]["Enums"]["kpi_direction"]
+          id: string
+          justification: string
+          project_id: string
+          rejection_reason: string | null
+          requested_by: string
+          status: Database["public"]["Enums"]["kpi_request_status"]
+          suggested_name: string
+          suggested_owner_id: string | null
+          target_type: Database["public"]["Enums"]["kpi_target_type"]
+          unit: string
+          updated_at: string | null
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          area_id?: string | null
+          area_validated_at?: string | null
+          area_validated_by?: string | null
+          context_type: string
+          created_at?: string | null
+          created_kpi_id?: string | null
+          direction: Database["public"]["Enums"]["kpi_direction"]
+          id?: string
+          justification: string
+          project_id: string
+          rejection_reason?: string | null
+          requested_by: string
+          status?: Database["public"]["Enums"]["kpi_request_status"]
+          suggested_name: string
+          suggested_owner_id?: string | null
+          target_type: Database["public"]["Enums"]["kpi_target_type"]
+          unit: string
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          area_id?: string | null
+          area_validated_at?: string | null
+          area_validated_by?: string | null
+          context_type?: string
+          created_at?: string | null
+          created_kpi_id?: string | null
+          direction?: Database["public"]["Enums"]["kpi_direction"]
+          id?: string
+          justification?: string
+          project_id?: string
+          rejection_reason?: string | null
+          requested_by?: string
+          status?: Database["public"]["Enums"]["kpi_request_status"]
+          suggested_name?: string
+          suggested_owner_id?: string | null
+          target_type?: Database["public"]["Enums"]["kpi_target_type"]
+          unit?: string
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_control_requests_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_control_requests_area_validated_by_fkey"
+            columns: ["area_validated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_control_requests_created_kpi_id_fkey"
+            columns: ["created_kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_control_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_control_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_control_requests_suggested_owner_id_fkey"
+            columns: ["suggested_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_control_requests_validated_by_fkey"
+            columns: ["validated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_monthly_values: {
+        Row: {
+          actual_value: number | null
+          id: string
+          kpi_id: string
+          month: number
+          notes: string | null
+          status: Database["public"]["Enums"]["kpi_status"] | null
+          target_value: number | null
+          updated_at: string | null
+          updated_by: string | null
+          year: number
+        }
+        Insert: {
+          actual_value?: number | null
+          id?: string
+          kpi_id: string
+          month: number
+          notes?: string | null
+          status?: Database["public"]["Enums"]["kpi_status"] | null
+          target_value?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          year: number
+        }
+        Update: {
+          actual_value?: number | null
+          id?: string
+          kpi_id?: string
+          month?: number
+          notes?: string | null
+          status?: Database["public"]["Enums"]["kpi_status"] | null
+          target_value?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_monthly_values_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_monthly_values_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpis: {
+        Row: {
+          area_id: string | null
+          context_type: string | null
+          created_at: string | null
+          created_by: string
+          default_target: number | null
+          description: string | null
+          direction: Database["public"]["Enums"]["kpi_direction"]
+          id: string
+          is_active: boolean | null
+          kpi_type: Database["public"]["Enums"]["kpi_type"]
+          name: string
+          objective_id: string | null
+          owner_id: string
+          parent_kpi_id: string | null
+          pillar_id: string | null
+          target_type: Database["public"]["Enums"]["kpi_target_type"]
+          unit: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          area_id?: string | null
+          context_type?: string | null
+          created_at?: string | null
+          created_by: string
+          default_target?: number | null
+          description?: string | null
+          direction?: Database["public"]["Enums"]["kpi_direction"]
+          id?: string
+          is_active?: boolean | null
+          kpi_type: Database["public"]["Enums"]["kpi_type"]
+          name: string
+          objective_id?: string | null
+          owner_id: string
+          parent_kpi_id?: string | null
+          pillar_id?: string | null
+          target_type?: Database["public"]["Enums"]["kpi_target_type"]
+          unit: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          area_id?: string | null
+          context_type?: string | null
+          created_at?: string | null
+          created_by?: string
+          default_target?: number | null
+          description?: string | null
+          direction?: Database["public"]["Enums"]["kpi_direction"]
+          id?: string
+          is_active?: boolean | null
+          kpi_type?: Database["public"]["Enums"]["kpi_type"]
+          name?: string
+          objective_id?: string | null
+          owner_id?: string
+          parent_kpi_id?: string | null
+          pillar_id?: string | null
+          target_type?: Database["public"]["Enums"]["kpi_target_type"]
+          unit?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpis_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpis_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpis_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_theses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpis_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpis_parent_kpi_id_fkey"
+            columns: ["parent_kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpis_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       milestone_date_history: {
         Row: {
           changed_at: string
@@ -373,6 +696,55 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_indicators_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_kpi_links: {
+        Row: {
+          id: string
+          kpi_id: string
+          linked_at: string | null
+          linked_by: string
+          notes: string | null
+          project_id: string
+        }
+        Insert: {
+          id?: string
+          kpi_id: string
+          linked_at?: string | null
+          linked_by: string
+          notes?: string | null
+          project_id: string
+        }
+        Update: {
+          id?: string
+          kpi_id?: string
+          linked_at?: string | null
+          linked_by?: string
+          notes?: string | null
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_kpi_links_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_kpi_links_linked_by_fkey"
+            columns: ["linked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_kpi_links_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -1646,6 +2018,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_kpi_monthly_grid: {
+        Args: { p_kpi_id: string; p_year: number }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1661,6 +2037,17 @@ export type Database = {
     Enums: {
       app_role: "ceo" | "pmo_manager" | "project_member"
       initiative_type: "idea" | "project" | "action_plan"
+      kpi_direction: "higher_better" | "lower_better"
+      kpi_request_status:
+        | "submitted"
+        | "validating_pmo"
+        | "awaiting_area"
+        | "approved"
+        | "returned"
+        | "rejected"
+      kpi_status: "green" | "yellow" | "red"
+      kpi_target_type: "fixed" | "variable"
+      kpi_type: "strategic" | "area" | "control"
       milestone_type: "decolagem" | "voo" | "escala"
       pillar_type: "corpo" | "alma" | "mente"
       project_category:
@@ -1829,6 +2216,18 @@ export const Constants = {
     Enums: {
       app_role: ["ceo", "pmo_manager", "project_member"],
       initiative_type: ["idea", "project", "action_plan"],
+      kpi_direction: ["higher_better", "lower_better"],
+      kpi_request_status: [
+        "submitted",
+        "validating_pmo",
+        "awaiting_area",
+        "approved",
+        "returned",
+        "rejected",
+      ],
+      kpi_status: ["green", "yellow", "red"],
+      kpi_target_type: ["fixed", "variable"],
+      kpi_type: ["strategic", "area", "control"],
       milestone_type: ["decolagem", "voo", "escala"],
       pillar_type: ["corpo", "alma", "mente"],
       project_category: [
