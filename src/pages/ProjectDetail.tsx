@@ -550,7 +550,7 @@ const ProjectDetail = () => {
           await supabase.from('project_comments').insert({
             project_id: projectId,
             user_id: user.id,
-            content: `[Comentário de envio para aprovação] ${approvalComment.trim()}`
+            comment: `[Comentário de envio para aprovação] ${approvalComment.trim()}`
           });
         }
         toast.success(labels.submitted);

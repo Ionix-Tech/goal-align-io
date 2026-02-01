@@ -28,7 +28,6 @@ export interface ProjectDetails {
   submitted_for_review_at: string | null;
   approved_at: string | null;
   approved_by: string | null;
-  thesis_id: string | null;
   thesis_kpi?: {
     id: string;
     name: string;
