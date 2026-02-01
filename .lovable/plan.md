@@ -1,248 +1,115 @@
-# Plano: Evoluir Aba "Carga de Trabalho" na Pagina de Inteligencia
 
-## Objetivo
-Complementar a visao de carga de trabalho atual (distribuicao de tarefas por membro) com uma nova secao de **Lideranca de Projetos**, mostrando o status dos projetos sob responsabilidade de cada lider. Alem disso, melhorar a UX geral e adicionar recursos de IA.
+# Plano: Corrigir Erros de Build e Adicionar Colunas de Configuração em Indicadores
 
----
+## Diagnóstico dos Problemas
 
-## Diagnostico Atual
+### 1. Erros de TypeScript Identificados
 
-### O que ja existe:
-1. **Cards de resumo**: Total de tarefas, sem responsavel, atrasadas, membros sobrecarregados
-2. **Grafico de barras**: Distribuicao de tarefas por membro (top 10)
-3. **Cards por membro**: Detalhes de tarefas por pessoa (a fazer, em progresso, concluidas, atrasadas)
+| Arquivo | Linha | Problema |
+|---------|-------|----------|
+| `useProjectDetails.ts` | 20, 31 | `thesis_id` duplicado na interface `ProjectDetails` |
+| `ProjectExecution.tsx` | 13, 43 | Import duplicado de `useProjectTasks` |
+| `ProjectExecution.tsx` | 245, 247 | Comparação inválida com `'action_plan'` (tipo não existe no enum) |
+| `ProjectDetail.tsx` | 551 | Usando `content` ao invés de `comment` na inserção |
 
-### O que falta:
-1. **Visao de lideranca de projetos**: Quais projetos cada pessoa lidera e como estao
-2. **Navegacao entre visualizacoes**: Alternar entre "Tarefas" e "Projetos"
-3. **AI Features**: Sugestoes inteligentes de redistribuicao de carga
-4. **Filtros**: Por pilar estrategico, por status de saude
+### 2. Erro de Deploy de Edge Functions
+
+O erro `npm:openai@^4.52.5` vem do `jsr:@supabase/functions-js/edge-runtime.d.ts` - uma dependência interna do runtime. Isso é um problema transitório que se resolve com redeploy.
 
 ---
 
-## Arquitetura Proposta
+## Ações Corretivas
 
-### Nova Estrutura de Componentes
+### Correção 1: useProjectDetails.ts
+- Remover a linha 31 que contém `thesis_id: string | null;` duplicada (já existe na linha 20)
 
-```
-WorkloadDashboard.tsx (atualizado)
-├── WorkloadSummaryCards.tsx (novo - extrai cards de resumo)
-├── WorkloadTabs.tsx (novo - alterna entre visoes)
-│   ├── Tab "Tarefas" 
-│   │   ├── WorkloadChart.tsx (existente)
-│   │   └── WorkloadMemberCard.tsx (existente)
-│   └── Tab "Projetos"
-│       ├── ProjectLeadershipChart.tsx (novo)
-│       └── ProjectLeaderCard.tsx (novo)
-└── WorkloadAIInsights.tsx (novo - painel de sugestoes IA)
-```
+### Correção 2: ProjectExecution.tsx
+- Remover a linha 43 que duplica o import `useProjectTasks`
+- Corrigir as comparações nas linhas 245 e 247:
+  - De: `project.initiative_type === 'action_plan'`
+  - Para: `project.initiative_type === 'project'`
+  - (O tipo `action_plan` foi normalizado para `project` no hook)
+
+### Correção 3: ProjectDetail.tsx
+- Linha 553: Trocar `content:` por `comment:` para alinhar com a estrutura da tabela `project_comments`
 
 ---
 
-## Mudancas Detalhadas
+## Migration SQL Solicitada
 
-### 1. Criar Hook `useProjectLeadershipData`
+Adicionar as colunas de configuração de exibição:
 
-**Arquivo**: `src/hooks/useProjectLeadershipData.ts`
+```sql
+-- Adiciona colunas de configuração de exibição nos indicadores de projeto
+ALTER TABLE project_indicators
+  ADD COLUMN IF NOT EXISTS display_format text DEFAULT 'percentage',
+  ADD COLUMN IF NOT EXISTS ytd_mode text DEFAULT 'accumulated';
 
-**Funcionalidade**:
-- Buscar todos os projetos ativos (status: approved, review, draft)
-- Agrupar por `assigned_to` (lider do projeto)
-- Para cada lider calcular:
-  - Total de projetos liderados
-  - Projetos por status de saude (green, yellow, red)
-  - Projetos sem status de saude
-  - Projetos atrasados (milestones vencidos)
-  - Progresso medio dos projetos
-
-**Interface retornada**:
-```typescript
-interface ProjectLeader {
-  leaderId: string;
-  leaderName: string;
-  email: string;
-  totalProjects: number;
-  healthy: number;      // green
-  attention: number;    // yellow
-  critical: number;     // red
-  noStatus: number;
-  overdueProjects: number;
-  averageProgress: number;
-  projects: Array<{
-    id: string;
-    name: string;
-    health: 'green' | 'yellow' | 'red' | null;
-    progress: number;
-    overdueMillestones: number;
-  }>;
-}
+-- Adiciona as mesmas colunas na tabela de KPIs estratégicos
+ALTER TABLE thesis_kpis
+  ADD COLUMN IF NOT EXISTS display_format text DEFAULT 'percentage',
+  ADD COLUMN IF NOT EXISTS ytd_mode text DEFAULT 'accumulated';
 ```
 
----
+**Significado das colunas:**
 
-### 2. Criar Componente `ProjectLeadershipChart`
-
-**Arquivo**: `src/components/management/ProjectLeadershipChart.tsx`
-
-**Design**:
-- Grafico de barras empilhadas (como WorkloadChart)
-- Eixo X: Nome do lider (primeiro nome)
-- Barras empilhadas: Projetos por status de saude
-  - Verde: Projetos saudaveis
-  - Amarelo: Projetos com atencao
-  - Vermelho: Projetos criticos
-  - Cinza: Sem status
+| Coluna | Valores | Descrição |
+|--------|---------|-----------|
+| `display_format` | `'percentage'` / `'absolute'` | Como exibir o KPI na visão mensal |
+| `ytd_mode` | `'accumulated'` / `'average'` | Como calcular o YTD (acumulado total ou média) |
 
 ---
 
-### 3. Criar Componente `ProjectLeaderCard`
+## Edge Functions
 
-**Arquivo**: `src/components/management/ProjectLeaderCard.tsx`
+**Nota importante**: O Lovable **faz deploy automático** das edge functions quando você salva o código. Não é necessário CLI nem dashboard externo.
 
-**Design similar ao WorkloadMemberCard**:
-- Avatar do lider
-- Nome e email
-- Badge de status geral (baseado em % de projetos criticos)
-- Grid de metricas:
-  - Saudaveis | Atencao | Criticos | Sem Status
-- Lista expansivel dos projetos (opcional)
-- Barra de progresso medio
+As edge functions mencionadas já existem no projeto:
+- `suggest-project-name` - usa `OPENAI_API_KEY` diretamente via fetch (sem SDK)
+- `seed-users` - usa `SUPABASE_SERVICE_ROLE_KEY` (já configurado)
 
 ---
 
-### 4. Atualizar `WorkloadDashboard`
+## Resumo da Implementação
 
-**Arquivo**: `src/components/management/WorkloadDashboard.tsx`
-
-**Mudancas**:
-- Adicionar `Tabs` do Radix para alternar entre:
-  - "Tarefas" (conteudo atual)
-  - "Projetos" (nova visao de lideranca)
-- Mover cards de resumo para componente separado
-- Adicionar card de resumo de projetos quando na aba "Projetos"
-
-**Cards de resumo da aba "Projetos"**:
-- Total de projetos ativos
-- Projetos criticos (saude vermelha)
-- Projetos sem lider
-- Lideres sobrecarregados (>3 projetos com problemas)
-
----
-
-### 5. Adicionar AI Insights (Recurso de IA)
-
-**Arquivo**: `src/components/management/WorkloadAIInsights.tsx`
-
-**Funcionalidade**:
-Usar a Lovable AI (via edge function existente `management-chat`) para gerar insights automaticos sobre:
-
-1. **Analise de Sobrecarga**:
-   - Identificar membros com carga desproporcional
-   - Sugerir redistribuicao de tarefas
-
-2. **Alertas de Risco**:
-   - Projetos sem atualizacoes recentes
-   - Lideres com muitos projetos criticos
-   - Tarefas atrasadas concentradas em poucos membros
-
-3. **Recomendacoes**:
-   - "Joao tem 3 projetos criticos. Considere redistribuir o Projeto X para Maria."
-   - "5 tarefas estao sem responsavel no Projeto ABC."
-
-**UI**:
-- Card colapsavel no topo ou lateral
-- Icone de "sparkles" (IA)
-- Botao "Analisar carga" que chama a AI
-- Lista de insights com badges de prioridade
-
-**Implementacao**:
-- Criar nova action no edge function `management-chat` ou usar o existente com contexto de workload
-- Passar dados agregados de carga e lideranca para a AI
-- Exibir resposta formatada
-
----
-
-### 6. Melhorias de UX
-
-**Cards clicaveis**:
-- Ao clicar em um membro/lider, expandir para ver detalhes ou navegar para filtro
-
-**Filtros**:
-- Adicionar filtro por pilar estrategico
-- Adicionar filtro por status de saude
-
-**Ordenacao**:
-- Permitir ordenar por: mais tarefas, mais atrasados, mais projetos criticos
-
----
-
-## Arquivos a Criar
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/hooks/useProjectLeadershipData.ts` | Hook para buscar dados de lideranca de projetos |
-| `src/components/management/ProjectLeadershipChart.tsx` | Grafico de projetos por lider |
-| `src/components/management/ProjectLeaderCard.tsx` | Card individual de lider |
-| `src/components/management/WorkloadAIInsights.tsx` | Painel de insights de IA |
-
-## Arquivos a Modificar
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/management/WorkloadDashboard.tsx` | Adicionar tabs, integrar novos componentes |
-| `src/hooks/useWorkloadData.ts` | Adicionar dados de projetos sem responsavel (opcional) |
-
----
-
-## Fluxo de Dados
-
-```
-useProjectLeadershipData
-    ├── Query: projects (status in approved, review, draft)
-    ├── Query: project_health_status (ultimo por projeto)
-    ├── Query: project_milestones (para calcular atrasos)
-    └── Query: profiles (para nome do lider)
-
-Resultado: Array<ProjectLeader> ordenado por projetos criticos desc
+```text
+┌─────────────────────────────────────────────────────────┐
+│  FASE 1: Corrigir Erros de TypeScript                   │
+├─────────────────────────────────────────────────────────┤
+│  • useProjectDetails.ts - remover thesis_id duplicado   │
+│  • ProjectExecution.tsx - remover import duplicado      │
+│  • ProjectExecution.tsx - corrigir comparação de tipo   │
+│  • ProjectDetail.tsx - usar 'comment' ao invés de       │
+│    'content'                                            │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  FASE 2: Executar Migration SQL                         │
+├─────────────────────────────────────────────────────────┤
+│  • Adicionar display_format em project_indicators       │
+│  • Adicionar ytd_mode em project_indicators             │
+│  • Adicionar display_format em thesis_kpis              │
+│  • Adicionar ytd_mode em thesis_kpis                    │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## AI Features Detalhadas
+## Detalhes Técnicos
 
-### Opcao 1: Usar edge function existente
+### Arquivos a Modificar
 
-O `management-chat` ja aceita contexto do tipo `management` e pode responder perguntas sobre carga de trabalho. Podemos:
-1. Adicionar um botao "Pedir analise para IA"
-2. Montar contexto com dados de workload + leadership
-3. Enviar pergunta pre-definida como "Analise a distribuicao de carga e sugira melhorias"
+1. **src/hooks/useProjectDetails.ts**
+   - Linha 31: Deletar `thesis_id: string | null;`
 
-### Opcao 2: Criar insights automaticos
+2. **src/pages/ProjectExecution.tsx**
+   - Linha 43: Deletar `import { useProjectTasks } from "@/hooks/useProjectTasks";`
+   - Linha 245: Trocar `'action_plan'` por `'project'`
+   - Linha 247: Trocar `'action_plan'` por `'project'`
 
-Criar logica client-side que identifica padroes e exibe cards de alerta:
-- "3 membros estao sobrecarregados (>15 tarefas ativas)"
-- "Ana lidera 4 projetos criticos - considere redistribuir"
-- "15 tarefas estao sem responsavel"
+3. **src/pages/ProjectDetail.tsx**
+   - Linha 553: Trocar `content:` por `comment:`
 
-**Recomendacao**: Comecar com Opcao 2 (simples, sem custo de AI) e adicionar botao para analise profunda via AI (Opcao 1)
-
----
-
-## Beneficios
-
-1. **Visao completa**: Tarefas E projetos em um so lugar
-2. **Identificacao de gargalos**: Ver quem esta sobrecarregado tanto em tarefas quanto em projetos
-3. **Decisoes informadas**: AI sugere redistribuicao de forma inteligente
-4. **Navegacao intuitiva**: Tabs claras para alternar entre perspectivas
-5. **Alertas proativos**: Identificar problemas antes que se tornem criticos
-
----
-
-## Ordem de Implementacao
-
-1. Criar `useProjectLeadershipData` (base de dados)
-2. Criar `ProjectLeaderCard` (UI basica)
-3. Criar `ProjectLeadershipChart` (visualizacao)
-4. Atualizar `WorkloadDashboard` com tabs
-5. Criar `WorkloadAIInsights` (opcional, pode ser fase 2)
-6. Adicionar filtros e ordenacao (opcional, pode ser fase 2)
+4. **Nova Migration SQL**
+   - Adicionar colunas `display_format` e `ytd_mode` nas tabelas `project_indicators` e `thesis_kpis`
