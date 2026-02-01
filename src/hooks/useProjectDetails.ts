@@ -28,6 +28,15 @@ export interface ProjectDetails {
   submitted_for_review_at: string | null;
   approved_at: string | null;
   approved_by: string | null;
+  thesis_id: string | null;
+  thesis_kpi?: {
+    id: string;
+    name: string;
+    current_value: number | null;
+    target_value: number | null;
+    unit: string | null;
+    description: string | null;
+  } | null;
   source_idea_id: string | null;
   current_situation_description: string | null;
   target_situation_description: string | null;
@@ -176,7 +185,7 @@ export function useProjectDetails(projectId: string | null) {
           ? supabase.from('strategic_theses').select('id, name, objective').eq('id', projectData.thesis_id).single()
           : Promise.resolve({ data: null }),
         projectData.thesis_id
-          ? supabase.from('thesis_kpis').select('id, name, current_value, target_value, unit').eq('thesis_id', projectData.thesis_id)
+          ? supabase.from('thesis_kpis').select('id, name, current_value, target_value, unit, description').eq('thesis_id', projectData.thesis_id)
           : Promise.resolve({ data: null }),
         supabase
           .from('project_tasks')
@@ -189,34 +198,28 @@ export function useProjectDetails(projectId: string | null) {
           .eq('project_id', projectId)
       ]);
 
+      // CHG-15: thesis_kpi = first KPI from thesis
+      const thesisKpi = thesisKPIs?.[0] || null;
+
       // Encontrar o KPI vinculado ao projeto pelo strategic_indicator
       let linkedKPI = null;
       if (projectData.strategic_indicator && thesisKPIs && thesisKPIs.length > 0) {
-        // Normalização robusta: remove TABs, quebras de linha e espaços extras
         const normalizeForComparison = (str: string) => {
           return str
             .toLowerCase()
-            .replace(/[\t\r\n]/g, ' ')  // TABs e quebras de linha viram espaço
-            .replace(/\s+/g, ' ')        // múltiplos espaços viram um
+            .replace(/[\t\r\n]/g, ' ')
+            .replace(/\s+/g, ' ')
             .trim();
         };
 
         const normalizedIndicator = normalizeForComparison(projectData.strategic_indicator);
-        
+
         linkedKPI = thesisKPIs.find((kpi: any) => {
           const normalizedKPIName = normalizeForComparison(kpi.name);
-          // Comparação flexível: igualdade OU um contém o outro
-          return normalizedKPIName === normalizedIndicator || 
-                 normalizedKPIName.includes(normalizedIndicator) || 
+          return normalizedKPIName === normalizedIndicator ||
+                 normalizedKPIName.includes(normalizedIndicator) ||
                  normalizedIndicator.includes(normalizedKPIName);
         }) || null;
-
-        console.log('[useProjectDetails] KPI matching:', {
-          strategicIndicator: projectData.strategic_indicator,
-          normalizedIndicator,
-          availableKPIs: thesisKPIs.map((k: any) => ({ name: k.name, normalized: normalizeForComparison(k.name) })),
-          matchedKPI: linkedKPI
-        });
       }
 
       // Buscar milestone updates apenas se houver milestones
@@ -303,6 +306,7 @@ export function useProjectDetails(projectId: string | null) {
       const data = {
         ...projectData,
         initiative_type: normalizedType,
+        thesis_kpi: thesisKpi,
         source_idea: sourceIdea || null,
         thesis: thesisData || null,
         linkedKPI,

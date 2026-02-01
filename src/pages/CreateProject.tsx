@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, X, Users, Save, Send, ArrowLeft, FileText, Upload, Trash2 } from "lucide-react";
+import { Plus, X, Users, Save, Send, ArrowLeft, FileText, Upload, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,8 @@ import { PROJECT_CATEGORIES, ProjectCategory } from "@/config/categories";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
 import { LabelWithHelp } from "@/components/ui/help-tooltip";
+import { GuidePopover } from "@/components/ui/guide-popover";
+import { REQUIREMENT_EXAMPLES, REQUIREMENT_QUESTIONS, CURRENT_SITUATION_QUESTIONS, TARGET_SITUATION_QUESTIONS } from "@/config/guideContent";
 
 interface Indicator {
   id: string;
@@ -71,11 +73,13 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
   const [loading, setLoading] = useState(false);
   const [membersPopoverOpen, setMembersPopoverOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+  const [suggestingName, setSuggestingName] = useState(false);
 
   // Track form changes for unsaved changes warning
   const hasFormContent = useMemo(() => {
-    return projectName.trim() !== '' || 
-           context.trim() !== '' || 
+    return projectName.trim() !== '' ||
+           context.trim() !== '' ||
            objective.trim() !== '' ||
            indicators.length > 0 ||
            milestones.length > 0 ||
@@ -89,6 +93,26 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
     proceedNavigation,
     cancelNavigation,
   } = useUnsavedChanges(hasUnsavedChanges);
+
+  const handleSuggestName = async () => {
+    if (!objective.trim()) {
+      toast.error("Preencha o Objetivo primeiro para gerar sugestões de nome");
+      return;
+    }
+    setSuggestingName(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-project-name', {
+        body: { objective: objective.trim(), category: category || undefined },
+      });
+      if (error) throw error;
+      setNameSuggestions(data?.suggestions || []);
+    } catch (err) {
+      console.error('Error suggesting name:', err);
+      toast.error("Não foi possível gerar sugestões. Verifique se a função está configurada.");
+    } finally {
+      setSuggestingName(false);
+    }
+  };
 
   const strategicPillars = [
     { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -349,6 +373,14 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
         toast.error("Adicione pelo menos 1 milestone para enviar para aprovação");
         return;
       }
+      // CHG-05: Require at least 1 image in situations
+      const hasImage = situations.some(s =>
+        s.attachments.some(f => /\.(png|jpg|jpeg)$/i.test(f.name))
+      );
+      if (!hasImage) {
+        toast.error("Anexe pelo menos 1 imagem como evidência na Situação Atual");
+        return;
+      }
     }
 
     setLoading(true);
@@ -576,9 +608,22 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Nome do Projeto */}
           <Card className="p-6">
             <div className="space-y-2">
-              <Label htmlFor="projectName" className="text-base font-semibold">
-                Nome do Projeto *
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="projectName" className="text-base font-semibold">
+                  Nome do Projeto *
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSuggestName}
+                  disabled={suggestingName}
+                  className="gap-1"
+                >
+                  {suggestingName ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Sugerir Nome
+                </Button>
+              </div>
               <Input
                 id="projectName"
                 placeholder="Ex: Redução de Custos Operacionais"
@@ -586,6 +631,20 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                 onChange={(e) => setProjectName(e.target.value)}
                 className="text-base"
               />
+              {nameSuggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {nameSuggestions.map((s, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() => { setProjectName(s); setNameSuggestions([]); }}
+                    >
+                      {s}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -687,11 +746,20 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
           {/* Requisitos do Projeto */}
           <Card className="p-6">
             <div className="space-y-2">
-              <LabelWithHelp
-                label="Requisitos do Projeto"
-                htmlFor="requirements"
-                helpKey="requirements"
-              />
+              <div className="flex items-center justify-between">
+                <LabelWithHelp
+                  label="Requisitos do Projeto"
+                  htmlFor="requirements"
+                  helpKey="requirements"
+                />
+                <div className="flex gap-1">
+                  <GuidePopover items={REQUIREMENT_EXAMPLES} count={5} label="Ver Exemplos" title="Exemplos de requisitos:" />
+                  <GuidePopover items={REQUIREMENT_QUESTIONS} count={4} label="Perguntas-Chave" title="Responda e transforme em requisito:" />
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Quais são os requisitos essenciais para o sucesso deste projeto?
+              </p>
               <Textarea
                 id="requirements"
                 placeholder="Liste os requisitos principais do projeto (recursos, aprovações, pré-condições, etc.)..."
@@ -732,10 +800,13 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                     {/* Descrições */}
                     <div className="grid gap-3 md:grid-cols-2">
                       <div className="space-y-1">
-                        <LabelWithHelp
-                          label="Situação Atual / Problema"
-                          helpKey="situationCurrent"
-                        />
+                        <div className="flex items-center justify-between">
+                          <LabelWithHelp
+                            label="Situação Atual / Problema"
+                            helpKey="situationCurrent"
+                          />
+                          <GuidePopover items={CURRENT_SITUATION_QUESTIONS} count={5} label="Perguntas-Guia" title="Perguntas para descrever o problema:" />
+                        </div>
                         <Textarea
                           placeholder="Ex: Alto índice de retrabalho nos processos"
                           value={situation.currentProblem}
@@ -745,10 +816,13 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <LabelWithHelp
-                          label="Situação Alvo / Meta"
-                          helpKey="situationTarget"
-                        />
+                        <div className="flex items-center justify-between">
+                          <LabelWithHelp
+                            label="Situação Alvo / Meta"
+                            helpKey="situationTarget"
+                          />
+                          <GuidePopover items={TARGET_SITUATION_QUESTIONS} count={5} label="Perguntas-Guia" title="Perguntas para definir o alvo:" />
+                        </div>
                         <Textarea
                           placeholder="Ex: Processo padronizado e com baixo retrabalho"
                           value={situation.targetGoal}
@@ -766,26 +840,40 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
                       </div>
 
                       {situation.attachments.length > 0 && (
-                        <div className="space-y-1 mb-2">
-                          {situation.attachments.map((file, fileIndex) => (
-                            <div key={fileIndex} className="flex items-center justify-between p-2 border rounded bg-muted/30">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                <span className="text-sm truncate">{file.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                                </span>
+                        <div className="space-y-2 mb-2">
+                          {situation.attachments.map((file, fileIndex) => {
+                            const isImage = /\.(png|jpg|jpeg)$/i.test(file.name);
+                            return (
+                              <div key={fileIndex} className="border rounded bg-muted/30">
+                                <div className="flex items-center justify-between p-2">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-sm truncate">{file.name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                    </span>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeAttachmentFromSituation(situation.id, fileIndex)}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                  </Button>
+                                </div>
+                                {isImage && (
+                                  <div className="px-2 pb-2">
+                                    <img
+                                      src={URL.createObjectURL(file)}
+                                      alt={file.name}
+                                      className="w-full max-h-[400px] object-contain rounded border"
+                                    />
+                                  </div>
+                                )}
                               </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeAttachmentFromSituation(situation.id, fileIndex)}
-                              >
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 

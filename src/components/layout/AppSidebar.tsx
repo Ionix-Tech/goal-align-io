@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
+import { SeedUsersButton } from "@/components/admin/SeedUsersButton";
 
 const menuItems = [
   { 
@@ -134,20 +135,22 @@ export function AppSidebar() {
                             )}
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenu className="ml-4 border-l pl-2">
-                            {item.subitems.map((subitem) => (
-                              <SidebarMenuItem key={subitem.title}>
-                                <SidebarMenuButton asChild isActive={isActive(subitem.url)}>
-                                  <NavLink to={subitem.url}>
-                                    <subitem.icon className="h-4 w-4" />
-                                    {open && <span>{subitem.title}</span>}
-                                  </NavLink>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            ))}
-                          </SidebarMenu>
-                        </CollapsibleContent>
+                        {open && (
+                          <CollapsibleContent>
+                            <SidebarMenu className="ml-4 border-l pl-2">
+                              {item.subitems.map((subitem) => (
+                                <SidebarMenuItem key={subitem.title}>
+                                  <SidebarMenuButton asChild isActive={isActive(subitem.url)}>
+                                    <NavLink to={subitem.url}>
+                                      <subitem.icon className="h-4 w-4" />
+                                      <span>{subitem.title}</span>
+                                    </NavLink>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              ))}
+                            </SidebarMenu>
+                          </CollapsibleContent>
+                        )}
                       </SidebarMenuItem>
                     </Collapsible>
                   );
@@ -167,6 +170,13 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {role === 'ceo' && open && (
+          <SidebarGroup>
+            <div className="px-3 py-2">
+              <SeedUsersButton />
+            </div>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <InitiativeTypeSelector 

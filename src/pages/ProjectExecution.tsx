@@ -39,6 +39,8 @@ import { ProjectKanban } from "@/components/execution/ProjectKanban";
 import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
 import { Target, FileCheck, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { ActionMatrix } from "@/components/execution/ActionMatrix";
+import { useProjectTasks } from "@/hooks/useProjectTasks";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -56,18 +58,18 @@ const ProjectExecution = () => {
   const { data: reportData } = useA3ReportData(projectId || null);
   const { data: tasks } = useProjectTasks(projectId || null);
   const deleteMilestone = useDeleteMilestone();
-  
+
   // Get initial tab from URL parameter
   const getInitialTab = () => {
     const tabParam = searchParams.get('tab');
     if (!tabParam) return 'overview';
-    
-    const validTabs = ['overview', 'thesis', 'progress', 'indicators', 'visualization', 'updates'];
+
+    const validTabs = ['overview', 'thesis', 'progress', 'indicators', 'matrix', 'visualization', 'updates'];
     if (validTabs.includes(tabParam)) return tabParam;
-    
+
     return 'overview';
   };
-  
+
   const [activeTab, setActiveTab] = useState(getInitialTab);
 
   // Dialog states
@@ -240,11 +242,14 @@ const ProjectExecution = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${project.initiative_type === 'action_plan' ? 'grid-cols-6' : 'grid-cols-7'}`}>
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
-            <TabsTrigger value="thesis">📄 Detalhamento</TabsTrigger>
+            {project.initiative_type !== 'action_plan' && (
+              <TabsTrigger value="thesis">📄 Objetivo</TabsTrigger>
+            )}
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
             <TabsTrigger value="indicators">📊 Indicadores</TabsTrigger>
+            <TabsTrigger value="action-matrix">📋 Matriz</TabsTrigger>
             <TabsTrigger value="visualization">
               <LayoutGrid className="h-4 w-4 mr-1" />
               Visualização
@@ -368,6 +373,42 @@ const ProjectExecution = () => {
                 Novo Indicador
               </Button>
             </div>
+
+            {/* CHG-15: Strategic KPI mirror (read-only) */}
+            {project.thesis_kpi && (
+              <Card className="p-4 border-primary/30 bg-primary/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">KPI Estratégico (espelho do objetivo)</span>
+                  <Badge variant="outline" className="text-xs">Somente leitura</Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Nome</p>
+                    <p className="font-medium">{project.thesis_kpi.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Atual</p>
+                    <p className="font-medium">{project.thesis_kpi.current_value ?? '—'} {project.thesis_kpi.unit || ''}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Meta</p>
+                    <p className="font-medium">{project.thesis_kpi.target_value ?? '—'} {project.thesis_kpi.unit || ''}</p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* CHG-17: Informational text about automatic metrics */}
+            <Card className="p-4 bg-muted/50 border-dashed">
+              <div className="flex gap-3 text-sm text-muted-foreground">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <p><strong>Acurácia:</strong> % de ações concluídas dentro do prazo definido.</p>
+                  <p><strong>Eficiência:</strong> impacto das ações realizadas na evolução dos KPIs definidos.</p>
+                </div>
+              </div>
+            </Card>
 
             <IndicatorCards
               indicators={project.indicators.map(ind => ({
@@ -694,6 +735,17 @@ const ProjectExecution = () => {
                 }}
               />
             </div>
+          </TabsContent>
+
+          {/* CHG-22: Action Matrix */}
+          <TabsContent value="action-matrix" className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Matriz de Ações</h3>
+              <p className="text-sm text-muted-foreground">
+                Visualize as ações do projeto agrupadas por data ou responsável
+              </p>
+            </div>
+            <ActionMatrix tasks={tasks || []} />
           </TabsContent>
 
           <TabsContent value="updates" className="space-y-6">

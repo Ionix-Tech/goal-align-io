@@ -128,11 +128,11 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
   };
 
   const loadTemplateKPIs = () => {
-    setKpis(template.defaultKPIs.map(kpi => ({
-      name: kpi.name,
-      target_value: "",
-      unit: kpi.unit
-    })));
+    // Only load the first KPI from template (limit 1 strategic KPI per objective)
+    const firstKpi = template.defaultKPIs[0];
+    if (firstKpi) {
+      setKpis([{ name: firstKpi.name, target_value: "", unit: firstKpi.unit }]);
+    }
   };
 
   return (
@@ -282,30 +282,38 @@ export function CreateThesisDialog({ open, onOpenChange }: CreateThesisDialogPro
           {step === 3 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>KPIs Principais</Label>
+                <Label>KPI Estratégico</Label>
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={loadTemplateKPIs}
-                  >
-                    Carregar KPIs do Template
-                  </Button>
+                  {kpis.length === 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={loadTemplateKPIs}
+                    >
+                      Carregar KPI do Template
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={addKPI}
+                    disabled={kpis.length >= 1}
                   >
                     Adicionar KPI
                   </Button>
                 </div>
               </div>
+              {kpis.length >= 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Limite de 1 KPI Estratégico por objetivo atingido.
+                </p>
+              )}
 
               {kpis.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nenhum KPI adicionado. Clique em "Carregar KPIs do Template" ou "Adicionar KPI".
+                  Nenhum KPI adicionado. Clique em "Carregar KPI do Template" ou "Adicionar KPI".
                 </div>
               ) : (
                 <div className="space-y-4">

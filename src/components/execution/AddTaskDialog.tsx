@@ -155,7 +155,7 @@ export function AddTaskDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição (opcional)</Label>
             <Textarea
               id="description"
               value={description}
@@ -250,7 +250,7 @@ export function AddTaskDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Data de Início</Label>
+              <Label htmlFor="startDate">Data de Início (opcional)</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -259,7 +259,7 @@ export function AddTaskDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Data de Vencimento *</Label>
+              <Label htmlFor="dueDate">Data de Vencimento (opcional)</Label>
               <Input
                 id="dueDate"
                 type="date"
@@ -270,13 +270,14 @@ export function AddTaskDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="linkUrl">Link/Anexo</Label>
+            <Label htmlFor="linkUrl" className="text-xs text-muted-foreground">Link de Referência (opcional)</Label>
             <Input
               id="linkUrl"
               type="url"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://..."
+              className="text-sm"
             />
           </div>
 

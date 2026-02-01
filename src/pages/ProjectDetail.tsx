@@ -26,7 +26,8 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
 import { getInitiativeLabels } from "@/config/initiativeLabels";
-
+import { GuidePopover } from "@/components/ui/guide-popover";
+import { REQUIREMENT_EXAMPLES, REQUIREMENT_QUESTIONS, CURRENT_SITUATION_QUESTIONS, TARGET_SITUATION_QUESTIONS } from "@/config/guideContent";
 
 interface Indicator {
   id: string;
@@ -92,9 +93,10 @@ const ProjectDetail = () => {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   // Flag para evitar sobrescrita de dados locais pelo useEffect
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
+  const [approvalComment, setApprovalComment] = useState("");
 
   const isIdea = project?.initiative_type === 'idea';
   const labels = project ? getInitiativeLabels(project.initiative_type) : getInitiativeLabels('project');
@@ -383,6 +385,14 @@ const ProjectDetail = () => {
         toast.error("Adicione pelo menos 1 milestone");
         return;
       }
+      // CHG-05: Require at least 1 image in situations
+      const hasImage = situations.some(s =>
+        s.attachments.some((f: File) => /\.(png|jpg|jpeg)$/i.test(f.name))
+      );
+      if (!hasImage) {
+        toast.error("Anexe pelo menos 1 imagem como evidência na Situação Atual");
+        return;
+      }
     }
 
     setSaving(true);
@@ -535,6 +545,14 @@ const ProjectDetail = () => {
       if (targetStatus === 'draft') {
         toast.success("Alterações salvas");
       } else {
+        // Save approval comment if provided
+        if (approvalComment.trim() && user?.id) {
+          await supabase.from('project_comments').insert({
+            project_id: projectId,
+            user_id: user.id,
+            content: `[Comentário de envio para aprovação] ${approvalComment.trim()}`
+          });
+        }
         toast.success(labels.submitted);
         navigate('/prioritization');
       }
@@ -787,9 +805,15 @@ const ProjectDetail = () => {
                   {/* Requisitos do Projeto */}
                   <Card className="p-6">
                     <div className="space-y-4">
-                      <Label htmlFor="requirements" className="text-base font-semibold">
-                        Requisitos do Projeto
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="requirements" className="text-base font-semibold">
+                          Requisitos do Projeto
+                        </Label>
+                        <div className="flex gap-1">
+                          <GuidePopover items={REQUIREMENT_EXAMPLES} count={5} label="Ver Exemplos" title="Exemplos de requisitos:" />
+                          <GuidePopover items={REQUIREMENT_QUESTIONS} count={4} label="Perguntas-Chave" title="Responda e transforme em requisito:" />
+                        </div>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Quais são os requisitos essenciais para o sucesso deste projeto?
                       </p>
@@ -833,7 +857,10 @@ const ProjectDetail = () => {
                             {/* Descrições */}
                             <div className="grid gap-3 md:grid-cols-2">
                               <div className="space-y-1">
-                                <Label className="text-sm">Situação Atual / Problema</Label>
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Situação Atual / Problema</Label>
+                                  <GuidePopover items={CURRENT_SITUATION_QUESTIONS} count={5} label="Perguntas-Guia" title="Perguntas para descrever o problema:" />
+                                </div>
                                 <Textarea
                                   placeholder="Ex: Alto índice de retrabalho nos processos"
                                   value={situation.currentProblem}
@@ -843,7 +870,10 @@ const ProjectDetail = () => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-sm">Situação Alvo / Meta</Label>
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Situação Alvo / Meta</Label>
+                                  <GuidePopover items={TARGET_SITUATION_QUESTIONS} count={5} label="Perguntas-Guia" title="Perguntas para definir o alvo:" />
+                                </div>
                                 <Textarea
                                   placeholder="Ex: Processo padronizado e com baixo retrabalho"
                                   value={situation.targetGoal}
@@ -946,26 +976,40 @@ const ProjectDetail = () => {
                               </div>
 
                               {situation.attachments.length > 0 && (
-                                <div className="space-y-1 mb-2">
-                                  {situation.attachments.map((file, fileIndex) => (
-                                    <div key={fileIndex} className="flex items-center justify-between p-2 border rounded bg-muted/30">
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                        <span className="text-sm truncate">{file.name}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                                        </span>
+                                <div className="space-y-2 mb-2">
+                                  {situation.attachments.map((file, fileIndex) => {
+                                    const isImage = /\.(png|jpg|jpeg)$/i.test(file.name);
+                                    return (
+                                      <div key={fileIndex} className="border rounded bg-muted/30">
+                                        <div className="flex items-center justify-between p-2">
+                                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                            <span className="text-sm truncate">{file.name}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                              ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                            </span>
+                                          </div>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => removeAttachmentFromSituation(situation.id, fileIndex)}
+                                          >
+                                            <Trash2 className="h-3 w-3 text-destructive" />
+                                          </Button>
+                                        </div>
+                                        {isImage && (
+                                          <div className="px-2 pb-2">
+                                            <img
+                                              src={URL.createObjectURL(file)}
+                                              alt={file.name}
+                                              className="w-full max-h-[400px] object-contain rounded border"
+                                            />
+                                          </div>
+                                        )}
                                       </div>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeAttachmentFromSituation(situation.id, fileIndex)}
-                                      >
-                                        <Trash2 className="h-3 w-3 text-destructive" />
-                                      </Button>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               )}
 
@@ -1306,22 +1350,58 @@ const ProjectDetail = () => {
       <div className="border-t bg-background sticky bottom-0">
         <div className="max-w-6xl mx-auto px-8 py-4">
           {canEdit && (
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => handleSave('draft')}
-                disabled={saving}
-              >
-                <Save className="mr-2 h-4 w-4" />
-                {saving ? "Salvando..." : "Salvar"}
-              </Button>
-              <Button
-                onClick={() => handleSave('review')}
-                disabled={saving}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                Enviar para Aprovação
-              </Button>
+            <div className="space-y-3">
+              {/* CHG-20: Pre-submission checklist */}
+              <div className="rounded-lg border p-3 bg-muted/30 space-y-1.5">
+                <p className="text-xs font-medium mb-1">Checklist de Revisão</p>
+                <div className="grid grid-cols-2 gap-1 text-xs">
+                  <span className={projectName.trim() ? 'text-green-600' : 'text-destructive'}>
+                    {projectName.trim() ? '✓' : '✗'} Nome do projeto
+                  </span>
+                  <span className={context.trim() ? 'text-green-600' : 'text-destructive'}>
+                    {context.trim() ? '✓' : '✗'} Contexto
+                  </span>
+                  <span className={objective.trim() ? 'text-green-600' : 'text-destructive'}>
+                    {objective.trim() ? '✓' : '✗'} Objetivo
+                  </span>
+                  <span className={indicators.length > 0 ? 'text-green-600' : 'text-destructive'}>
+                    {indicators.length > 0 ? '✓' : '✗'} Indicadores ({indicators.length})
+                  </span>
+                  <span className={milestones.length > 0 ? 'text-green-600' : 'text-destructive'}>
+                    {milestones.length > 0 ? '✓' : '✗'} Milestones ({milestones.length})
+                  </span>
+                  <span className={situations.some(s => s.attachments.length > 0) ? 'text-green-600' : 'text-destructive'}>
+                    {situations.some(s => s.attachments.length > 0) ? '✓' : '✗'} Evidência anexada
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm text-muted-foreground">Comentário para aprovação (opcional)</Label>
+                <Textarea
+                  placeholder="Adicione um contexto ou observação para o aprovador..."
+                  value={approvalComment}
+                  onChange={(e) => setApprovalComment(e.target.value)}
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => handleSave('draft')}
+                  disabled={saving}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {saving ? "Salvando..." : "Salvar"}
+                </Button>
+                <Button
+                  onClick={() => handleSave('review')}
+                  disabled={saving}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Enviar para Aprovação
+                </Button>
+              </div>
             </div>
           )}
 
