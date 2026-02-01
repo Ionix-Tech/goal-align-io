@@ -40,7 +40,6 @@ import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
 import { Target, FileCheck, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ActionMatrix } from "@/components/execution/ActionMatrix";
-import { useProjectTasks } from "@/hooks/useProjectTasks";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -242,9 +241,9 @@ const ProjectExecution = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${project.initiative_type === 'action_plan' ? 'grid-cols-6' : 'grid-cols-7'}`}>
+          <TabsList className={`grid w-full grid-cols-7`}>
             <TabsTrigger value="overview">📄 Capa</TabsTrigger>
-            {project.initiative_type !== 'action_plan' && (
+            {project.initiative_type !== 'idea' && (
               <TabsTrigger value="thesis">📄 Objetivo</TabsTrigger>
             )}
             <TabsTrigger value="progress">🎯 Milestones</TabsTrigger>
