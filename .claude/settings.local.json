@@ -7,7 +7,21 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nfix: Adicionar tabelas faltantes para milestone e indicator updates\n\n**Migration criada:**\n- project_milestone_updates: Para rastrear progresso de milestones\n- project_indicator_updates: Para registrar medições de indicadores\n- RLS policies configuradas para ambas as tabelas\n- Indexes para performance\n\n**Nota:** Esta migration corrige o erro \"Could not find the table 'public.project_indicator_updates' in the schema cache\" que ocorria ao tentar registrar medições.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
       "Bash(npm run build:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "mcp__plugin_supabase_supabase__list_organizations",
+      "mcp__plugin_supabase_supabase__get_cost",
+      "mcp__plugin_supabase_supabase__confirm_cost",
+      "mcp__plugin_supabase_supabase__create_project",
+      "mcp__plugin_supabase_supabase__get_project_url",
+      "mcp__plugin_supabase_supabase__get_publishable_keys",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(where:*)",
+      "Bash(npx vercel:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate Supabase project and add Vercel config\n\n- Point .env to new Supabase project \\(hhzsdmvqgrktncusjgfw\\)\n- Add .vercel to .gitignore\n- Update Claude local settings\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": [],
     "ask": []
