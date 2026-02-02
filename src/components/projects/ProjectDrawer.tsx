@@ -594,9 +594,9 @@ export function ProjectDrawer({ projectId, isOpen, onClose, onSuccess }: Project
 
   const isEditMode = project.status === 'draft';
   const isReviewMode = project.status === 'review';
-  const canEdit = isEditMode && (user?.id === project.created_by || role === 'ceo');
-  const canApprove = isReviewMode && role === 'ceo';
-  const canComment = role === 'ceo' || user?.id === project.created_by;
+  const canEdit = isEditMode;
+  const canApprove = isReviewMode;
+  const canComment = true;
 
   // Validações de requisitos
   const hasIndicators = indicators.length > 0;

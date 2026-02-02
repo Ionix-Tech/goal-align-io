@@ -30,7 +30,7 @@ export function LinkedIdeasCard({ projectId }: LinkedIdeasCardProps) {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [unlinkConfirmId, setUnlinkConfirmId] = useState<string | null>(null);
 
-  const canUnlink = role === 'ceo' || role === 'pmo_manager';
+  const canUnlink = true;
 
   const handleUnlink = async () => {
     if (!unlinkConfirmId) return;

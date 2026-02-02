@@ -58,28 +58,7 @@ Deno.serve(async (req) => {
 
     console.log('[create-user] Caller:', caller.id, caller.email)
 
-    // Check if caller has CEO or PMO Manager role
-    const { data: callerRole, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', caller.id)
-      .single()
-
-    if (roleError || !callerRole) {
-      console.error('[create-user] Caller role not found:', roleError)
-      return new Response(
-        JSON.stringify({ error: 'Permissão negada - role não encontrada' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (callerRole.role !== 'ceo' && callerRole.role !== 'pmo_manager') {
-      console.error('[create-user] Caller does not have permission:', callerRole.role)
-      return new Response(
-        JSON.stringify({ error: 'Apenas CEO e PMO Manager podem criar usuários' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // All authenticated users can create users
 
     // Parse request body
     const body: CreateUserRequest = await req.json()
@@ -90,14 +69,6 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Todos os campos são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Check if CEO role - only CEO can create other CEOs
-    if (body.role === 'ceo' && callerRole.role !== 'ceo') {
-      return new Response(
-        JSON.stringify({ error: 'Apenas CEO pode criar outros CEOs' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

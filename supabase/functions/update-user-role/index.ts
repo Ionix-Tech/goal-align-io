@@ -56,28 +56,7 @@ Deno.serve(async (req) => {
 
     console.log('[update-user-role] Caller:', caller.id, caller.email)
 
-    // Check if caller has CEO role (only CEO can change roles)
-    const { data: callerRole, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', caller.id)
-      .single()
-
-    if (roleError || !callerRole) {
-      console.error('[update-user-role] Caller role not found:', roleError)
-      return new Response(
-        JSON.stringify({ error: 'Permissão negada' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (callerRole.role !== 'ceo') {
-      console.error('[update-user-role] Only CEO can change roles')
-      return new Response(
-        JSON.stringify({ error: 'Apenas o CEO pode alterar roles de usuários' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // All authenticated users can change roles
 
     // Parse request body
     const body: UpdateUserRoleRequest = await req.json()
@@ -87,14 +66,6 @@ Deno.serve(async (req) => {
     if (!body.user_id || !body.new_role) {
       return new Response(
         JSON.stringify({ error: 'user_id e new_role são obrigatórios' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Prevent CEO from changing their own role
-    if (body.user_id === caller.id) {
-      return new Response(
-        JSON.stringify({ error: 'Você não pode alterar sua própria role' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

@@ -170,7 +170,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {role === 'ceo' && open && (
+        {open && (
           <SidebarGroup>
             <div className="px-3 py-2">
               <SeedUsersButton />

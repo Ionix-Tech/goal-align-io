@@ -52,7 +52,7 @@ export default function Theses() {
   const updateThesis = useUpdateThesis();
   const deleteThesis = useDeleteThesis();
 
-  const canManageTheses = role === "ceo" || role === "pmo_manager";
+  const canManageTheses = true;
 
   // Dynamic year list: current year -1, current, +1, +2
   const currentYear = new Date().getFullYear();

@@ -178,7 +178,7 @@ const Prioritization = () => {
             </CardContent>
           </Card>
 
-          <Card className={role === 'ceo' && (stats.review_projects + stats.review_plans) > 0 ? "ring-2 ring-orange-500" : ""}>
+          <Card className={(stats.review_projects + stats.review_plans) > 0 ? "ring-2 ring-orange-500" : ""}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 ⏳ Em Análise
@@ -189,7 +189,7 @@ const Prioritization = () => {
               <div className="text-xs text-muted-foreground mt-1">
                 {stats.review_projects} projetos · {stats.review_plans} planos
               </div>
-              {role === 'ceo' && (stats.review_projects + stats.review_plans) > 0 && (
+              {(stats.review_projects + stats.review_plans) > 0 && (
                 <p className="text-xs text-orange-600 mt-1">Aguardando sua aprovação</p>
               )}
             </CardContent>

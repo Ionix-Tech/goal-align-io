@@ -9,7 +9,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 export default function Settings() {
   const { role, loading } = useUserRole();
-  const isManager = role === 'ceo' || role === 'pmo_manager';
+  const isManager = true;
 
   return (
     <div className="min-h-screen bg-background">

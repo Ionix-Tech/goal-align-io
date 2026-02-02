@@ -637,8 +637,8 @@ const ProjectDetail = () => {
 
   const isEditMode = project.status === 'draft';
   const isReviewMode = project.status === 'review';
-  const canEdit = isEditMode && (user?.id === project.created_by || role === 'ceo');
-  const canApprove = isReviewMode && role === 'ceo';
+  const canEdit = isEditMode;
+  const canApprove = isReviewMode;
 
   return (
     <AppLayout
@@ -1314,7 +1314,7 @@ const ProjectDetail = () => {
               <Card className="p-6">
                 <ProjectComments
                   comments={project.comments}
-                  canComment={role === 'ceo' || user?.id === project.created_by}
+                  canComment={true}
                   newComment={newComment}
                   onCommentChange={setNewComment}
                   onAddComment={async () => {

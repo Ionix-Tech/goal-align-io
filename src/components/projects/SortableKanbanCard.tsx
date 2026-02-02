@@ -26,7 +26,7 @@ export function SortableKanbanCard({ project, onClick }: SortableKanbanCardProps
     transition,
   };
 
-  const shouldPulse = role === 'ceo' && project.status === 'review';
+  const shouldPulse = project.status === 'review';
 
   return (
     <div

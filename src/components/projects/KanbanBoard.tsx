@@ -125,7 +125,7 @@ export function KanbanBoard({ projectsByStatus, onProjectClick }: KanbanBoardPro
       <div className="flex gap-4 overflow-x-auto pb-4">
         {STATUS_COLUMNS.map((column) => {
           const projects = projectsByStatus[column.id] || [];
-          const badge = role === 'ceo' && column.id === 'review' ? reviewCount : undefined;
+          const badge = column.id === 'review' ? reviewCount : undefined;
 
           return (
             <KanbanColumn

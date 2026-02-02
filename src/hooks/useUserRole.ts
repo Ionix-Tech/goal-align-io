@@ -49,7 +49,7 @@ export function useUserRole() {
     fetchRole();
   }, [user]);
 
-  const isManager = role === 'ceo' || role === 'pmo_manager';
+  const isManager = true; // All users have full access
   
   return { role, loading, isManager };
 }

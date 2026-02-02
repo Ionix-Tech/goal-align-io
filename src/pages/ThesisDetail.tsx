@@ -82,7 +82,7 @@ export default function ThesisDetail() {
   const { data: initiatives, isLoading: initiativesLoading } = useThesisProjects(id);
   const { data: pillars = [] } = usePillars();
 
-  const canManage = role === "ceo" || role === "pmo_manager";
+  const canManage = true;
 
   // Mutation para desvincular iniciativa
   const unlinkMutation = useMutation({

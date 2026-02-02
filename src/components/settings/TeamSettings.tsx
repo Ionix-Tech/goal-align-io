@@ -74,8 +74,8 @@ export function TeamSettings() {
     );
   }
 
-  const canEditRoles = currentUserRole === 'ceo';
-  const canCreateUsers = currentUserRole === 'ceo' || currentUserRole === 'pmo_manager';
+  const canEditRoles = true;
+  const canCreateUsers = true;
 
   return (
     <>

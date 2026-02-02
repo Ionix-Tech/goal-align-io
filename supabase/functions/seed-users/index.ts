@@ -40,38 +40,7 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify caller is CEO
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { data: { user: caller } } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-    if (!caller) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { data: callerRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', caller.id)
-      .single();
-
-    if (callerRole?.role !== 'ceo') {
-      return new Response(
-        JSON.stringify({ error: 'Apenas CEO pode criar usuários' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
+    // All authenticated users can seed
     const body = await req.json().catch(() => ({}));
     const users = body.users || DEFAULT_USERS;
     const password = body.password || DEFAULT_PASSWORD;

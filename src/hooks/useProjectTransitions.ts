@@ -50,10 +50,7 @@ export function useProjectTransitions() {
       }
     }
 
-    // Validação: apenas CEO pode aprovar projetos vindos de 'review'
-    if (to === 'approved' && from === 'review' && role !== 'ceo') {
-      return { allowed: false, reason: 'Apenas CEO pode aprovar projetos' };
-    }
+    // All users can approve projects
 
     // Validação: marcar como finalizado
     if (to === 'completed' && from === 'approved') {
@@ -61,25 +58,11 @@ export function useProjectTransitions() {
       return { allowed: true };
     }
 
-    // Validação: não permitir editar projetos finalizados (exceto CEO)
-    if (from === 'completed' && role !== 'ceo') {
-      return { 
-        allowed: false, 
-        reason: 'Projetos finalizados não podem ser alterados. Apenas CEO pode modificá-los.' 
-      };
-    }
+    // All users can modify completed projects
 
-    // Validação: apenas CEO pode arquivar projetos em revisão
-    if (to === 'archived' && from === 'review' && role !== 'ceo') {
-      return { allowed: false, reason: 'Apenas CEO pode arquivar projetos em análise' };
-    }
+    // All users can archive projects in review
 
-    // Validação: apenas CEO ou criador/gestor podem voltar para draft
-    if (to === 'draft' && from === 'review') {
-      if (role !== 'ceo' && user?.id !== project.created_by && user?.id !== project.assigned_to) {
-        return { allowed: false, reason: 'Sem permissão para esta ação' };
-      }
-    }
+    // All users can return projects to draft
 
     return { allowed: true };
   };
