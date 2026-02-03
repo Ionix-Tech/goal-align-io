@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
-import { SeedUsersButton } from "@/components/admin/SeedUsersButton";
 
 const menuItems = [
   { 
@@ -170,13 +169,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {open && (
-          <SidebarGroup>
-            <div className="px-3 py-2">
-              <SeedUsersButton />
-            </div>
-          </SidebarGroup>
-        )}
       </SidebarContent>
 
       <InitiativeTypeSelector 
