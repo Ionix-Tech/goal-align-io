@@ -749,10 +749,9 @@ export function A3Wizard() {
         );
       case 5:
         return (
-          <Step5Execution 
+          <Step5Execution
             data={data}
             addAction={addAction}
-            addActionWithData={addActionWithData}
             updateAction={updateAction}
             removeAction={removeAction}
             addWhyLink={addWhyLink}

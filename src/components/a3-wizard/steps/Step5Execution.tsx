@@ -11,14 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { A3WizardData, WizardAction, WizardWhyLink, ActionPriority } from "@/hooks/useA3WizardState";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useA3Copilot } from "@/hooks/useA3Copilot";
-import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink, Sparkles, Loader2, ArrowUp, ArrowRight, ArrowDown, Wand2 } from "lucide-react";
+import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink, Loader2, ArrowUp, ArrowRight, ArrowDown, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Step5ExecutionProps {
   data: A3WizardData;
   addAction: () => void;
-  addActionWithData: (actionData: Partial<WizardAction>) => void;
   updateAction: (id: string, updates: Partial<WizardAction>) => void;
   removeAction: (id: string) => void;
   addWhyLink: () => void;
@@ -39,18 +38,17 @@ const priorityOptions: { value: ActionPriority; label: string; icon: React.React
   { value: "low", label: "Baixa", icon: <ArrowDown className="w-3 h-3" />, color: "text-muted-foreground" },
 ];
 
-export function Step5Execution({ 
-  data, 
-  addAction, 
-  addActionWithData,
-  updateAction, 
+export function Step5Execution({
+  data,
+  addAction,
+  updateAction,
   removeAction,
   addWhyLink,
   updateWhyLink,
   removeWhyLink
 }: Step5ExecutionProps) {
   const { data: teamMembers = [] } = useTeamMembers();
-  const { suggestActions, improveAction, isLoading: isAISuggestingActions } = useA3Copilot();
+  const { improveAction } = useA3Copilot();
   const [improvingActionId, setImprovingActionId] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<'none' | 'chronology'>('none');
 
@@ -79,29 +77,6 @@ export function Step5Execution({
   });
 
   const uncoveredCount = coverage.filter(c => !c.covered).length;
-
-  // Handle AI suggestion
-  const handleSuggestActions = async () => {
-    try {
-      const suggestions = await suggestActions(data);
-      if (suggestions && suggestions.length > 0) {
-        suggestions.forEach(suggestion => {
-          addActionWithData({
-            description: suggestion.description,
-            priority: ((suggestion as any).priority as ActionPriority) || "medium",
-            estimatedHours: (suggestion as any).estimatedHours || null,
-            linkedRequirements: suggestion.linkedRequirements || [],
-          });
-        });
-        toast.success(`${suggestions.length} ações sugeridas pela IA!`);
-      } else {
-        toast.info("A IA não conseguiu gerar sugestões. Tente adicionar mais contexto ao projeto.");
-      }
-    } catch (error) {
-      console.error("Error suggesting actions:", error);
-      toast.error("Erro ao sugerir ações com IA");
-    }
-  };
 
   // Handle AI improve action
   const handleImproveAction = async (actionId: string) => {
@@ -152,32 +127,15 @@ export function Step5Execution({
       {/* Actions Section */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-                  5
-                </span>
-                Plano de Ação
-              </CardTitle>
-              <CardDescription className="mt-2">
-                O que vamos fazer? Defina as ações e vincule aos requisitos que serão impactados.
-              </CardDescription>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={handleSuggestActions}
-              disabled={isAISuggestingActions}
-              className="gap-2"
-            >
-              {isAISuggestingActions ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-              Sugerir com IA
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <span className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+              5
+            </span>
+            Plano de Ação
+          </CardTitle>
+          <CardDescription className="mt-2">
+            O que vamos fazer? Defina as ações e vincule aos requisitos que serão impactados.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Summary bar */}
@@ -521,7 +479,7 @@ export function Step5Execution({
           💡 Dica
         </h4>
         <p className="text-sm text-muted-foreground">
-          Use o botão "Sugerir com IA" para gerar ações baseadas no objetivo e requisitos do projeto. A IA vinculará automaticamente cada ação aos requisitos relevantes.
+          Vincule cada ação aos requisitos que ela impacta. Isso garante rastreabilidade entre o que foi planejado e o que será executado.
         </p>
       </div>
     </div>
