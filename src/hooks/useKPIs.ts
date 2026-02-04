@@ -99,13 +99,14 @@ export function useKPIs(filters?: KPIFilters) {
       const { data, error } = await query;
 
       if (error) throw error;
-      
+
       // Cast and sort monthly values by month
       return (data as unknown as KPI[]).map(kpi => ({
         ...kpi,
         monthly_values: kpi.monthly_values?.sort((a, b) => a.month - b.month) || []
       }));
-    }
+    },
+    enabled: filters !== undefined
   });
 }
 
