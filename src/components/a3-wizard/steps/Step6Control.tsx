@@ -11,7 +11,8 @@ import { ptBR } from "date-fns/locale";
 import { useMemo } from "react";
 import { WizardIndicatorManager } from "./WizardIndicatorManager";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useThesisDetails } from "@/hooks/useThesisDetails";
+import { useKPIs } from "@/hooks/useKPIs";
+import { useAllTheses } from "@/hooks/usePillars";
 
 interface Step6ControlProps {
   data: A3WizardData;
@@ -22,32 +23,37 @@ interface Step6ControlProps {
   removeExtraMilestone: (id: string) => void;
 }
 
-export function Step6Control({ 
-  data, 
-  updateData, 
-  setIndicators, 
+export function Step6Control({
+  data,
+  updateData,
+  setIndicators,
   addExtraMilestone,
   updateExtraMilestone,
   removeExtraMilestone
 }: Step6ControlProps) {
-  const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
+  const { data: allTheses = [] } = useAllTheses();
+  const thesisDetails = allTheses.find(t => t.id === data.thesisId);
+
+  // Buscar KPIs estratégicos vinculados ao objetivo selecionado
+  const kpiFilters = data.thesisId ? { objective_id: data.thesisId, kpi_type: 'strategic' as const } : undefined;
+  const { data: strategicKPIs = [] } = useKPIs(kpiFilters);
 
   // KPIs disponíveis para adicionar (não selecionados ainda)
-  const availableKPIs = thesisDetails?.kpis?.filter(
+  const availableKPIs = strategicKPIs.filter(
     kpi => !data.strategicKpis.some(selected => selected.kpiId === kpi.id)
-  ) || [];
+  );
 
   const handleAddKPI = (kpiId: string) => {
-    const kpi = thesisDetails?.kpis?.find(k => k.id === kpiId);
+    const kpi = strategicKPIs.find(k => k.id === kpiId);
     if (!kpi) return;
-    
+
     const newKPI: StrategicKPI = {
       id: crypto.randomUUID(),
       kpiId: kpi.id,
       kpiName: kpi.name
     };
-    
-    updateData({ 
+
+    updateData({
       strategicKpis: [...data.strategicKpis, newKPI],
       strategicIndicator: data.strategicKpis.length === 0 ? kpi.name : data.strategicIndicator
     });
@@ -141,20 +147,20 @@ export function Step6Control({
               {data.strategicKpis.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {data.strategicKpis.map((kpi) => {
-                    const kpiDetails = thesisDetails?.kpis?.find(k => k.id === kpi.kpiId);
+                    const kpiDetails = strategicKPIs.find(k => k.id === kpi.kpiId);
                     return (
-                      <Badge 
-                        key={kpi.kpiId} 
-                        variant="secondary" 
+                      <Badge
+                        key={kpi.kpiId}
+                        variant="secondary"
                         className="flex items-center gap-1 pr-1"
                       >
                         {kpi.kpiName}
                         {kpiDetails?.unit && (
                           <span className="text-muted-foreground">({kpiDetails.unit})</span>
                         )}
-                        {kpiDetails?.target_value != null && (
+                        {kpiDetails?.default_target != null && (
                           <span className="text-muted-foreground">
-                            → Meta: {kpiDetails.target_value}
+                            → Meta: {kpiDetails.default_target}
                           </span>
                         )}
                         <button
