@@ -444,7 +444,8 @@ const ProjectDetail = () => {
         if (milestonesError) throw milestonesError;
       }
 
-      await supabase.from('project_members').delete().eq('project_id', projectId);
+      const { error: deleteMemError } = await supabase.from('project_members').delete().eq('project_id', projectId);
+      if (deleteMemError) console.error('Erro ao deletar membros:', deleteMemError);
 
       if (selectedMembers.length > 0) {
         const { error: membersError } = await supabase

@@ -32,12 +32,6 @@ interface ActionSuggestion {
   linkedRequirements: string[];
 }
 
-interface IndicatorSuggestion {
-  name: string;
-  unit: string;
-  linkedRequirements: string[];
-}
-
 interface ValidationResult {
   isValid: boolean;
   issues: string[];
@@ -138,11 +132,6 @@ export function useA3Copilot() {
     return response?.generatedContent?.actions || [];
   }, [callCopilot]);
 
-  const suggestIndicators = useCallback(async (data: Partial<A3WizardData>): Promise<IndicatorSuggestion[]> => {
-    const response = await callCopilot("suggest_indicators", 6, data);
-    return response?.generatedContent?.indicators || [];
-  }, [callCopilot]);
-
   const validateStep = useCallback(async (step: number, data: Partial<A3WizardData>): Promise<ValidationResult | null> => {
     const response = await callCopilot("validate_step", step, data);
     return response?.generatedContent || null;
@@ -171,7 +160,6 @@ export function useA3Copilot() {
     expandCurrentSituation,
     generateTargetSituation,
     suggestActions,
-    suggestIndicators,
     validateStep,
     askQuestion,
     reset

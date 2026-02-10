@@ -468,25 +468,32 @@ const CreateProject = ({ mode = 'create' }: CreateProjectProps) => {
       }
 
       // 4. Salvar membros (deletar anteriores se existirem)
+      console.log('[SAVE] selectedMembers:', selectedMembers);
+      const { error: deleteMemError } = await supabase
+        .from('project_members')
+        .delete()
+        .eq('project_id', projectId);
+
+      if (deleteMemError) console.error('[SAVE] Erro ao deletar membros:', deleteMemError);
+      else console.log('[SAVE] Membros anteriores deletados com sucesso');
+
       if (selectedMembers.length > 0) {
-        // Deletar membros anteriores
-        await supabase
-          .from('project_members')
-          .delete()
-          .eq('project_id', projectId);
+        const membersToInsert = selectedMembers.map(memberId => ({
+          project_id: projectId,
+          user_id: memberId,
+          added_by: user?.id
+        }));
+        console.log('[SAVE] Inserindo membros:', membersToInsert);
 
-        // Inserir novos
-        const { error: membersError } = await supabase
+        const { data: membersResult, error: membersError } = await supabase
           .from('project_members')
-          .insert(
-            selectedMembers.map(memberId => ({
-              project_id: projectId,
-              user_id: memberId,
-              added_by: user?.id
-            }))
-          );
+          .insert(membersToInsert)
+          .select();
 
+        console.log('[SAVE] Resultado insert membros:', { membersResult, membersError });
         if (membersError) throw membersError;
+      } else {
+        console.log('[SAVE] Nenhum membro selecionado, pulando insert');
       }
 
       // 5. Salvar situações com indicadores e anexos

@@ -1,16 +1,28 @@
 import { useState, useMemo } from 'react';
-import { useKPIDetails, KPIMonthlyValue, KPIStatus } from '@/hooks/useKPIs';
+import { useKPIDetails, useUpdateKPI, useDeleteKPI, KPIMonthlyValue, KPIStatus, KPIDirection } from '@/hooks/useKPIs';
 import { useUpdateKPIMonthlyValue } from '@/hooks/useKPIMonthlyValues';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Target, Building2, Crosshair, Edit2, Check, X, Link2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Building2, Crosshair, Edit2, Check, X, Link2, Trash2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useNavigate } from 'react-router-dom';
@@ -43,11 +55,18 @@ const directionLabels: Record<string, string> = {
 export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogProps) {
   const { data: kpi, isLoading } = useKPIDetails(kpiId || undefined);
   const updateMonthlyValue = useUpdateKPIMonthlyValue();
+  const updateKPI = useUpdateKPI();
+  const deleteKPI = useDeleteKPI();
   const { isManager } = useUserRole();
   const navigate = useNavigate();
 
   const [editingMonth, setEditingMonth] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ target: string; actual: string }>({ target: '', actual: '' });
+
+  // KPI metadata editing
+  const [isEditingMeta, setIsEditingMeta] = useState(false);
+  const [metaValues, setMetaValues] = useState({ name: '', description: '', unit: '', direction: '' as KPIDirection });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Calculate summary stats
   const summary = useMemo(() => {
@@ -112,6 +131,40 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
     setEditValues({ target: '', actual: '' });
   };
 
+  const handleMetaEditStart = () => {
+    if (!kpi) return;
+    setMetaValues({
+      name: kpi.name,
+      description: kpi.description || '',
+      unit: kpi.unit,
+      direction: kpi.direction
+    });
+    setIsEditingMeta(true);
+  };
+
+  const handleMetaSave = async () => {
+    if (!kpi || !metaValues.name.trim()) return;
+    await updateKPI.mutateAsync({
+      id: kpi.id,
+      name: metaValues.name.trim(),
+      description: metaValues.description.trim() || undefined,
+      unit: metaValues.unit.trim(),
+      direction: metaValues.direction
+    });
+    setIsEditingMeta(false);
+  };
+
+  const handleMetaCancel = () => {
+    setIsEditingMeta(false);
+  };
+
+  const handleDelete = async () => {
+    if (!kpi) return;
+    await deleteKPI.mutateAsync(kpi.id);
+    setShowDeleteConfirm(false);
+    onOpenChange(false);
+  };
+
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,16 +182,70 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-3">
-            {kpi.direction === 'higher_better' ? (
-              <TrendingUp className="h-6 w-6 text-green-600" />
-            ) : (
-              <TrendingDown className="h-6 w-6 text-blue-600" />
-            )}
-            <div>
-              <DialogTitle className="text-xl">{kpi.name}</DialogTitle>
-              <p className="text-sm text-muted-foreground">{kpi.description}</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {(isEditingMeta ? metaValues.direction : kpi.direction) === 'higher_better' ? (
+                <TrendingUp className="h-6 w-6 text-green-600" />
+              ) : (
+                <TrendingDown className="h-6 w-6 text-blue-600" />
+              )}
+              <div className="flex-1">
+                {isEditingMeta ? (
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs">Nome</Label>
+                      <Input
+                        value={metaValues.name}
+                        onChange={(e) => setMetaValues({ ...metaValues, name: e.target.value })}
+                        className="h-9 text-lg font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Descrição</Label>
+                      <Input
+                        value={metaValues.description}
+                        onChange={(e) => setMetaValues({ ...metaValues, description: e.target.value })}
+                        placeholder="Descrição do indicador"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <DialogTitle className="text-xl">{kpi.name}</DialogTitle>
+                    <p className="text-sm text-muted-foreground">{kpi.description}</p>
+                  </>
+                )}
+              </div>
             </div>
+            {isManager && !isEditingMeta && (
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleMetaEditStart} title="Editar">
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  title="Excluir"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {isEditingMeta && (
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="sm" onClick={handleMetaSave} disabled={updateKPI.isPending || !metaValues.name.trim()} className="gap-1">
+                  <Check className="h-4 w-4" />
+                  Salvar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleMetaCancel} className="gap-1">
+                  <X className="h-4 w-4" />
+                  Cancelar
+                </Button>
+              </div>
+            )}
           </div>
         </DialogHeader>
 
@@ -150,11 +257,31 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Unidade</p>
-            <p className="font-medium">{kpi.unit}</p>
+            {isEditingMeta ? (
+              <Input
+                value={metaValues.unit}
+                onChange={(e) => setMetaValues({ ...metaValues, unit: e.target.value })}
+                className="h-8 w-24 text-sm"
+              />
+            ) : (
+              <p className="font-medium">{kpi.unit}</p>
+            )}
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Direção</p>
-            <p className="font-medium text-sm">{directionLabels[kpi.direction]}</p>
+            {isEditingMeta ? (
+              <Select value={metaValues.direction} onValueChange={(v: KPIDirection) => setMetaValues({ ...metaValues, direction: v })}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="higher_better">Maior é melhor</SelectItem>
+                  <SelectItem value="lower_better">Menor é melhor</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="font-medium text-sm">{directionLabels[kpi.direction]}</p>
+            )}
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Responsável</p>
@@ -375,6 +502,29 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
           </TabsContent>
         </Tabs>
       </DialogContent>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir "{kpi.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá <strong>desativar</strong> o indicador permanentemente.
+              Ele não aparecerá mais na listagem de KPIs.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+              disabled={deleteKPI.isPending}
+            >
+              Excluir indicador
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

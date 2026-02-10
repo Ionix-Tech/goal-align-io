@@ -14,6 +14,7 @@ type ProjectStatus = Database['public']['Enums']['project_status'];
 interface KanbanBoardProps {
   projectsByStatus: Record<ProjectStatus, any[]>;
   onProjectClick: (project: any) => void;
+  onDeleteProject?: (projectId: string) => void;
 }
 
 const STATUS_COLUMNS = [
@@ -25,7 +26,7 @@ const STATUS_COLUMNS = [
   { id: 'archived' as ProjectStatus, title: 'Arquivados', icon: Archive }
 ];
 
-export function KanbanBoard({ projectsByStatus, onProjectClick }: KanbanBoardProps) {
+export function KanbanBoard({ projectsByStatus, onProjectClick, onDeleteProject }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { canTransition, transition } = useProjectTransitions();
   const { role } = useUserRole();
@@ -142,6 +143,7 @@ export function KanbanBoard({ projectsByStatus, onProjectClick }: KanbanBoardPro
                   key={project.id}
                   project={project}
                   onClick={() => onProjectClick(project)}
+                  onDelete={onDeleteProject}
                 />
               ))}
             </KanbanColumn>

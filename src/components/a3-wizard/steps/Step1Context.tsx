@@ -37,10 +37,6 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
   const kpiFilters = data.thesisId ? { objective_id: data.thesisId, kpi_type: 'strategic' as const } : undefined;
   const { data: strategicKPIs = [], isLoading: isLoadingKPIs } = useKPIs(kpiFilters);
 
-  const availableKPIs = strategicKPIs.filter(
-    kpi => !data.strategicKpis.some(selected => selected.kpiId === kpi.id)
-  );
-
   const handleObjectiveChange = (value: string) => {
     const selectedThesis = allTheses.find(t => t.id === value);
     updateData({ 
@@ -51,7 +47,7 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
     });
   };
 
-  const handleAddKPI = (kpiId: string) => {
+  const handleSelectKPI = (kpiId: string) => {
     const kpi = strategicKPIs.find(k => k.id === kpiId);
     if (!kpi) return;
 
@@ -62,17 +58,15 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
     };
 
     updateData({
-      strategicKpis: [...data.strategicKpis, newKPI],
-      // Also update legacy field for backwards compatibility
-      strategicIndicator: data.strategicKpis.length === 0 ? kpi.name : data.strategicIndicator
+      strategicKpis: [newKPI],
+      strategicIndicator: kpi.name
     });
   };
 
-  const handleRemoveKPI = (kpiId: string) => {
-    const updatedKpis = data.strategicKpis.filter(k => k.kpiId !== kpiId);
-    updateData({ 
-      strategicKpis: updatedKpis,
-      strategicIndicator: updatedKpis.length > 0 ? updatedKpis[0].kpiName : ""
+  const handleRemoveKPI = () => {
+    updateData({
+      strategicKpis: [],
+      strategicIndicator: ""
     });
   };
 
@@ -159,9 +153,8 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Indicadores (KRs) Estratégicos Impactados</Label>
-              
-              {/* Selected KPIs as badges */}
+              <Label>Indicador (KR) Estratégico Impactado</Label>
+
               {data.strategicKpis.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
                   {data.strategicKpis.map((kpi) => {
@@ -176,7 +169,7 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
                         {kpiDetails?.unit && <span className="text-muted-foreground">({kpiDetails.unit})</span>}
                         <button
                           type="button"
-                          onClick={() => handleRemoveKPI(kpi.kpiId)}
+                          onClick={() => handleRemoveKPI()}
                           className="ml-1 rounded-full hover:bg-muted p-0.5"
                         >
                           <X className="h-3 w-3" />
@@ -186,19 +179,18 @@ export function Step1Context({ data, updateData }: Step1ContextProps) {
                   })}
                 </div>
               )}
-              
-              {/* Dropdown to add more KPIs */}
+
               {!data.thesisId ? (
                 <p className="text-sm text-muted-foreground">Selecione um objetivo primeiro</p>
               ) : isLoadingKPIs ? (
                 <p className="text-sm text-muted-foreground">Carregando indicadores...</p>
-              ) : availableKPIs.length > 0 ? (
-                <Select onValueChange={handleAddKPI}>
+              ) : data.strategicKpis.length === 0 && strategicKPIs.length > 0 ? (
+                <Select onValueChange={handleSelectKPI}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Adicionar indicador..." />
+                    <SelectValue placeholder="Selecionar indicador..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableKPIs.map((kpi) => (
+                    {strategicKPIs.map((kpi) => (
                       <SelectItem key={kpi.id} value={kpi.id}>
                         {kpi.name} {kpi.unit && `(${kpi.unit})`}
                       </SelectItem>

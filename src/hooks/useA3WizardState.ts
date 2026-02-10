@@ -60,10 +60,12 @@ export interface StrategicKPI {
 
 export interface WizardAttachment {
   id: string;
-  file: File;
+  file?: File;
   name: string;
   size: number;
   type: string;
+  filePath?: string;
+  uploaded?: boolean;
 }
 
 export interface A3WizardData {
@@ -333,6 +335,30 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           label: link.label || ''
         }));
 
+        // Load members
+        const { data: membersData } = await supabase
+          .from('project_members')
+          .select('user_id')
+          .eq('project_id', options.initialProjectId);
+
+        // Load attachments
+        const { data: attachmentsData } = await supabase
+          .from('project_attachments')
+          .select('id, file_name, file_path, file_size, file_type, category')
+          .eq('project_id', options.initialProjectId);
+
+        const mapAttachments = (category: string): WizardAttachment[] =>
+          (attachmentsData || [])
+            .filter((a: any) => a.category === category)
+            .map((a: any) => ({
+              id: a.id,
+              name: a.file_name,
+              size: a.file_size,
+              type: a.file_type,
+              filePath: a.file_path,
+              uploaded: true
+            }));
+
         // Load strategic KPIs from new table
         const { data: strategicKpisData } = await supabase
           .from('project_strategic_kpis')
@@ -352,11 +378,11 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
           strategicKpis: mappedStrategicKpis,
           category: project.category || "",
           assignedTo: project.assigned_to || "",
-          members: [],
+          members: (membersData || []).map(m => m.user_id),
           pillarId: "", // Will be populated from thesis relation if needed
           thesisId: project.thesis_id || "",
-          currentSituationAttachments: [], // Attachments loaded from storage separately if needed
-          targetSituationAttachments: [], // Attachments loaded from storage separately if needed
+          currentSituationAttachments: mapAttachments('current_situation'),
+          targetSituationAttachments: mapAttachments('target_situation'),
           isCritical: project.is_critical || false,
           criticalReason: (project as any).critical_reason || "",
           requirements: (requirements || []).map(r => ({

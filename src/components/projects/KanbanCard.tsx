@@ -1,10 +1,22 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { FileText, Lightbulb, Flame } from "lucide-react";
+import { FileText, Lightbulb, Flame, Trash2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { THESIS_TYPE_COLORS } from "@/config/thesisTemplates";
 import { getCategoryConfig } from "@/config/categories";
@@ -34,6 +46,7 @@ interface KanbanCardProps {
     milestones: Array<{ id: string; completed: boolean | null }>;
   };
   onClick?: () => void;
+  onDelete?: (projectId: string) => void;
   className?: string;
   isDragging?: boolean;
 }
@@ -44,10 +57,12 @@ const PILLAR_CONFIG: Record<StrategicPillar, { label: string; color: string }> =
   new_business: { label: 'Novos Negócios', color: 'bg-purple-100 text-purple-800' }
 };
 
-export function KanbanCard({ project, onClick, className, isDragging }: KanbanCardProps) {
+export function KanbanCard({ project, onClick, onDelete, className, isDragging }: KanbanCardProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const completedIndicators = project.indicators?.length || 0;
   const totalIndicators = completedIndicators;
-  
+
   const completedMilestones = project.milestones?.filter(m => m.completed).length || 0;
   const totalMilestones = project.milestones?.length || 0;
 
@@ -70,7 +85,7 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
   return (
     <Card
       className={cn(
-        "p-4 cursor-pointer hover:shadow-md transition-all",
+        "p-4 cursor-pointer hover:shadow-md transition-all group/card",
         isDragging && "opacity-50 rotate-2",
         className
       )}
@@ -146,16 +161,58 @@ export function KanbanCard({ project, onClick, className, isDragging }: KanbanCa
             <span className="text-xs text-muted-foreground">Não atribuído</span>
           )}
 
-          {project.updated_at && (
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(project.updated_at), {
-                addSuffix: true,
-                locale: ptBR
-              })}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {project.updated_at && (
+              <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(project.updated_at), {
+                  addSuffix: true,
+                  locale: ptBR
+                })}
+              </span>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover/card:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDeleteConfirm(true);
+                }}
+                title="Excluir"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir "{project.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <strong>irreversível</strong>. Todos os dados do projeto serão
+              permanentemente excluídos, incluindo indicadores, milestones, anexos,
+              membros e comentários.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(project.id);
+              }}
+            >
+              Excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

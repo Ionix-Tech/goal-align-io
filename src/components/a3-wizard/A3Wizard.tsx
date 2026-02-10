@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Save, Loader2, Check, Cloud } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useA3WizardState, WizardAction, WizardIndicator } from "@/hooks/useA3WizardState";
+import { useA3WizardState, WizardAction, WizardIndicator, WizardAttachment } from "@/hooks/useA3WizardState";
 import { useDebounce } from "@/hooks/useDebounce";
 import { A3WizardProgress } from "./A3WizardProgress";
 import { WizardFeedbackPanel } from "./WizardFeedbackPanel";
@@ -76,6 +76,85 @@ export function A3Wizard() {
     return true;
   };
 
+  // Helper: persist attachments to Supabase Storage and DB
+  const persistAttachments = async (
+    projectId: string,
+    attachments: WizardAttachment[],
+    category: string,
+    currentUserId: string
+  ): Promise<WizardAttachment[]> => {
+    // Get existing DB attachments for this category
+    const { data: existingDb } = await supabase
+      .from('project_attachments')
+      .select('id, file_path')
+      .eq('project_id', projectId)
+      .eq('category', category);
+
+    const existingIds = new Set(attachments.filter(a => a.uploaded).map(a => a.id));
+
+    // Delete removed attachments
+    for (const dbAtt of (existingDb || [])) {
+      if (!existingIds.has(dbAtt.id)) {
+        await supabase.storage.from('project-attachments').remove([dbAtt.file_path]);
+        await supabase.from('project_attachments').delete().eq('id', dbAtt.id);
+      }
+    }
+
+    // Upload new attachments (those without uploaded flag)
+    const updated: WizardAttachment[] = [];
+    for (const att of attachments) {
+      if (att.uploaded) {
+        updated.push(att);
+        continue;
+      }
+      if (!att.file) continue;
+
+      const fileExt = att.name.split('.').pop();
+      const filePath = `projects/${projectId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-attachments')
+        .upload(filePath, att.file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        updated.push(att);
+        continue;
+      }
+
+      const { data: record, error: dbError } = await supabase
+        .from('project_attachments')
+        .insert({
+          project_id: projectId,
+          file_name: att.name,
+          file_path: filePath,
+          file_size: att.size,
+          file_type: att.type,
+          uploaded_by: currentUserId,
+          category
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('DB insert error:', dbError);
+        updated.push(att);
+        continue;
+      }
+
+      updated.push({
+        id: record.id,
+        name: att.name,
+        size: att.size,
+        type: att.type,
+        filePath,
+        uploaded: true
+      });
+    }
+
+    return updated;
+  };
+
   // Auto-save function (silent, no toast)
   const performAutoSave = useCallback(async () => {
     if (!userId || isInitialLoad.current) return;
@@ -144,6 +223,86 @@ export function A3Wizard() {
           }
         }
 
+        // --- SAVE MEMBERS (AUTO-SAVE) ---
+        await supabase.from('project_members').delete().eq('project_id', currentProjectId);
+        if (dataRef.current.members.length > 0) {
+          await supabase.from('project_members').insert(
+            dataRef.current.members.map(memberId => ({
+              project_id: currentProjectId,
+              user_id: memberId,
+              added_by: userId
+            }))
+          );
+        }
+
+        // --- SAVE ACTIONS/TASKS (AUTO-SAVE) ---
+        {
+          const { data: existingTasks } = await supabase
+            .from('project_tasks')
+            .select('id')
+            .eq('project_id', currentProjectId);
+
+          if (existingTasks && existingTasks.length > 0) {
+            const taskIds = existingTasks.map(t => t.id);
+            await supabase.from('requirement_task_links').delete().in('task_id', taskIds);
+            await supabase.from('task_indicator_links').delete().in('task_id', taskIds);
+            await supabase.from('project_tasks').delete().eq('project_id', currentProjectId);
+          }
+
+          const { data: milestonesData } = await supabase
+            .from('project_milestones')
+            .select('id, milestone_type')
+            .eq('project_id', currentProjectId);
+
+          const getMilestoneId = (linked: string | null): string | null => {
+            if (!linked) return null;
+            if (linked === 'm1') return milestonesData?.find(m => m.milestone_type === 'decolagem')?.id || null;
+            if (linked === 'm2') return milestonesData?.find(m => m.milestone_type === 'voo')?.id || null;
+            if (linked === 'm3') return milestonesData?.find(m => m.milestone_type === 'escala')?.id || null;
+            return linked;
+          };
+
+          const { data: savedReqsForTasks } = await supabase
+            .from('project_requirements')
+            .select('id, code')
+            .eq('project_id', currentProjectId);
+          const reqIdByCodeForTasks = new Map<string, string>();
+          (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
+
+          for (const action of dataRef.current.actions) {
+            if (!action.description.trim()) continue;
+            const milestoneId = getMilestoneId(action.linkedMilestone);
+
+            const { data: newTask, error: taskError } = await supabase
+              .from('project_tasks')
+              .insert({
+                project_id: currentProjectId,
+                title: action.description,
+                assigned_to: action.responsibleId || null,
+                start_date: action.startDate || null,
+                due_date: action.dueDate || null,
+                status: action.status || 'not_started',
+                priority: 'medium',
+                created_by: userId,
+                milestone_id: milestoneId
+              })
+              .select()
+              .single();
+
+            if (taskError) continue;
+
+            for (const reqCode of action.linkedRequirements) {
+              const reqId = reqIdByCodeForTasks.get(reqCode);
+              if (reqId) {
+                await supabase.from('requirement_task_links').insert({ task_id: newTask.id, requirement_id: reqId });
+              }
+            }
+            for (const indicatorId of action.linkedIndicators) {
+              await supabase.from('task_indicator_links').insert({ task_id: newTask.id, indicator_id: indicatorId });
+            }
+          }
+        }
+
         // --- SAVE INDICATORS (AUTO-SAVE) ---
         if (dataRef.current.indicators.length > 0) {
           // Get existing indicators to delete
@@ -205,7 +364,21 @@ export function A3Wizard() {
             }
           }
         }
-        
+
+        // --- SAVE ATTACHMENTS (AUTO-SAVE) ---
+        const updatedCurrentAtts = await persistAttachments(
+          currentProjectId, dataRef.current.currentSituationAttachments, 'current_situation', userId!
+        );
+        const updatedTargetAtts = await persistAttachments(
+          currentProjectId, dataRef.current.targetSituationAttachments, 'target_situation', userId!
+        );
+        // Update refs so we don't re-upload next time
+        dataRef.current = {
+          ...dataRef.current,
+          currentSituationAttachments: updatedCurrentAtts,
+          targetSituationAttachments: updatedTargetAtts
+        };
+
         setAutoSaveStatus('saved');
       } else {
         // Create new project
@@ -329,6 +502,86 @@ export function A3Wizard() {
           }
         }
 
+        // --- SAVE MEMBERS (MANUAL SAVE) ---
+        await supabase.from('project_members').delete().eq('project_id', currentProjectId);
+        if (data.members.length > 0) {
+          await supabase.from('project_members').insert(
+            data.members.map(memberId => ({
+              project_id: currentProjectId,
+              user_id: memberId,
+              added_by: userId
+            }))
+          );
+        }
+
+        // --- SAVE ACTIONS/TASKS (MANUAL SAVE) ---
+        {
+          const { data: existingTasks } = await supabase
+            .from('project_tasks')
+            .select('id')
+            .eq('project_id', currentProjectId);
+
+          if (existingTasks && existingTasks.length > 0) {
+            const taskIds = existingTasks.map(t => t.id);
+            await supabase.from('requirement_task_links').delete().in('task_id', taskIds);
+            await supabase.from('task_indicator_links').delete().in('task_id', taskIds);
+            await supabase.from('project_tasks').delete().eq('project_id', currentProjectId);
+          }
+
+          const { data: milestonesData } = await supabase
+            .from('project_milestones')
+            .select('id, milestone_type')
+            .eq('project_id', currentProjectId);
+
+          const getMilestoneId = (linked: string | null): string | null => {
+            if (!linked) return null;
+            if (linked === 'm1') return milestonesData?.find(m => m.milestone_type === 'decolagem')?.id || null;
+            if (linked === 'm2') return milestonesData?.find(m => m.milestone_type === 'voo')?.id || null;
+            if (linked === 'm3') return milestonesData?.find(m => m.milestone_type === 'escala')?.id || null;
+            return linked;
+          };
+
+          const { data: savedReqsForTasks } = await supabase
+            .from('project_requirements')
+            .select('id, code')
+            .eq('project_id', currentProjectId);
+          const reqIdByCodeForTasks = new Map<string, string>();
+          (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
+
+          for (const action of data.actions) {
+            if (!action.description.trim()) continue;
+            const milestoneId = getMilestoneId(action.linkedMilestone);
+
+            const { data: newTask, error: taskError } = await supabase
+              .from('project_tasks')
+              .insert({
+                project_id: currentProjectId,
+                title: action.description,
+                assigned_to: action.responsibleId || null,
+                start_date: action.startDate || null,
+                due_date: action.dueDate || null,
+                status: action.status || 'not_started',
+                priority: 'medium',
+                created_by: userId,
+                milestone_id: milestoneId
+              })
+              .select()
+              .single();
+
+            if (taskError) continue;
+
+            for (const reqCode of action.linkedRequirements) {
+              const reqId = reqIdByCodeForTasks.get(reqCode);
+              if (reqId) {
+                await supabase.from('requirement_task_links').insert({ task_id: newTask.id, requirement_id: reqId });
+              }
+            }
+            for (const indicatorId of action.linkedIndicators) {
+              await supabase.from('task_indicator_links').insert({ task_id: newTask.id, indicator_id: indicatorId });
+            }
+          }
+        }
+
         // --- SAVE INDICATORS (MANUAL SAVE) ---
         if (data.indicators.length > 0) {
           // Get existing indicators to delete
@@ -390,7 +643,19 @@ export function A3Wizard() {
             }
           }
         }
-        
+
+        // --- SAVE ATTACHMENTS (MANUAL SAVE) ---
+        const updatedCurrentAtts = await persistAttachments(
+          currentProjectId, data.currentSituationAttachments, 'current_situation', userId!
+        );
+        const updatedTargetAtts = await persistAttachments(
+          currentProjectId, data.targetSituationAttachments, 'target_situation', userId!
+        );
+        updateData({
+          currentSituationAttachments: updatedCurrentAtts,
+          targetSituationAttachments: updatedTargetAtts
+        });
+
         toast.success("Progresso salvo");
       } else {
         // Create new project
@@ -842,18 +1107,6 @@ export function A3Wizard() {
     });
   };
 
-  const handleApplyIndicators = (indicators: { name: string; unit: string; linkedRequirements: string[] }[]) => {
-    const newIndicators: WizardIndicator[] = indicators.map(ind => ({
-      id: crypto.randomUUID(),
-      name: ind.name,
-      unit: ind.unit,
-      currentValue: "",
-      targetValue: "",
-      linkedRequirementCodes: ind.linkedRequirements
-    }));
-    setIndicators([...data.indicators, ...newIndicators]);
-  };
-
   return (
     <div className="container max-w-6xl mx-auto py-6 px-4">
       <div className="flex gap-6">
@@ -951,7 +1204,6 @@ export function A3Wizard() {
             onApplySuggestion={handleApplySuggestion}
             onApplyRequirements={handleApplyRequirements}
             onApplyActions={handleApplyActions}
-            onApplyIndicators={handleApplyIndicators}
           />
         </div>
       </div>

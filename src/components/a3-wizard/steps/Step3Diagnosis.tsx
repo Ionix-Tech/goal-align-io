@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Document, Page, pdfjs } from 'react-pdf';
+import { supabase } from "@/integrations/supabase/client";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -25,25 +26,34 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void }) {
+function AttachmentThumbnail({ attachment, onClick }: { attachment: WizardAttachment; onClick: () => void }) {
   const [preview, setPreview] = useState<string | null>(null);
-  const isImage = file.type.startsWith('image/');
-  const isPdf = file.type.includes('pdf');
+  const isImage = attachment.type.startsWith('image/');
+  const isPdf = attachment.type.includes('pdf');
 
   useEffect(() => {
     if (!isImage) return;
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file, isImage]);
+    let revoke: (() => void) | null = null;
+
+    if (attachment.uploaded && attachment.filePath) {
+      supabase.storage.from('project-attachments').createSignedUrl(attachment.filePath, 300)
+        .then(({ data }) => { if (data) setPreview(data.signedUrl); });
+    } else if (attachment.file) {
+      const url = URL.createObjectURL(attachment.file);
+      setPreview(url);
+      revoke = () => URL.revokeObjectURL(url);
+    }
+
+    return () => { if (revoke) revoke(); };
+  }, [attachment, isImage]);
 
   if (isImage && preview) {
     return (
-      <div 
+      <div
         className="w-12 h-12 rounded overflow-hidden bg-muted cursor-pointer hover:ring-2 hover:ring-primary transition-all relative group"
         onClick={onClick}
       >
-        <img src={preview} alt={file.name} className="w-full h-full object-cover" />
+        <img src={preview} alt={attachment.name} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <ZoomIn className="w-4 h-4 text-white" />
         </div>
@@ -53,7 +63,7 @@ function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void
 
   if (isPdf) {
     return (
-      <div 
+      <div
         className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all relative group"
         onClick={onClick}
       >
@@ -67,7 +77,7 @@ function LocalFileThumbnail({ file, onClick }: { file: File; onClick: () => void
 
   return (
     <div className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center">
-      {getFileIcon(file.type)}
+      {getFileIcon(attachment.type)}
     </div>
   );
 }
@@ -77,9 +87,9 @@ interface Step3DiagnosisProps {
   updateData: (updates: Partial<A3WizardData>) => void;
 }
 
-type PreviewState = 
+type PreviewState =
   | { type: 'image'; url: string; name: string }
-  | { type: 'pdf'; file: File; name: string };
+  | { type: 'pdf'; file?: File; url?: string; name: string };
 
 export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
   // Use centralized state from wizard
@@ -110,19 +120,36 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
     });
   };
 
-  const openPreview = (attachment: WizardAttachment) => {
+  const openPreview = async (attachment: WizardAttachment) => {
     const isImage = attachment.type.startsWith('image/');
     const isPdf = attachment.type.includes('pdf');
-    
+
+    if (attachment.uploaded && attachment.filePath) {
+      const { data: signedData } = await supabase.storage
+        .from('project-attachments')
+        .createSignedUrl(attachment.filePath, 300);
+      const signedUrl = signedData?.signedUrl;
+      if (!signedUrl) return;
+
+      if (isPdf) {
+        setPreviewFile({ type: 'pdf', url: signedUrl, name: attachment.name });
+        setCurrentPage(1);
+        setNumPages(0);
+        setPdfError(false);
+      } else if (isImage) {
+        setPreviewFile({ type: 'image', url: signedUrl, name: attachment.name });
+      }
+      return;
+    }
+
+    if (!attachment.file) return;
+
     if (isPdf) {
       setPreviewFile({ type: 'pdf', file: attachment.file, name: attachment.name });
       setCurrentPage(1);
       setNumPages(0);
       setPdfError(false);
-      return;
-    }
-    
-    if (isImage) {
+    } else if (isImage) {
       const url = URL.createObjectURL(attachment.file);
       setPreviewFile({ type: 'image', url, name: attachment.name });
     }
@@ -152,6 +179,11 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
 
   const downloadPdf = () => {
     if (previewFile?.type === 'pdf') {
+      if (previewFile.url) {
+        window.open(previewFile.url, '_blank');
+        return;
+      }
+      if (!previewFile.file) return;
       const url = URL.createObjectURL(previewFile.file);
       const a = document.createElement('a');
       a.href = url;
@@ -215,7 +247,7 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
                 {attachments.map((attachment) => (
                   <div key={attachment.id} className="flex items-center gap-3 bg-muted/50 rounded-lg p-2">
-                    <LocalFileThumbnail file={attachment.file} onClick={() => openPreview(attachment)} />
+                    <AttachmentThumbnail attachment={attachment} onClick={() => openPreview(attachment)} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm truncate">{attachment.name}</p>
                       <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
@@ -263,7 +295,7 @@ export function Step3Diagnosis({ data, updateData }: Step3DiagnosisProps) {
               <>
                 <div className="overflow-auto max-h-[60vh] border rounded-lg bg-muted/30">
                   <Document
-                    file={previewFile.file}
+                    file={previewFile.url || previewFile.file}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                     loading={

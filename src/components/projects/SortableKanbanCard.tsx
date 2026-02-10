@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils';
 interface SortableKanbanCardProps {
   project: any;
   onClick?: () => void;
+  onDelete?: (projectId: string) => void;
 }
 
-export function SortableKanbanCard({ project, onClick }: SortableKanbanCardProps) {
+export function SortableKanbanCard({ project, onClick, onDelete }: SortableKanbanCardProps) {
   const { role } = useUserRole();
   const {
     attributes,
@@ -48,6 +49,7 @@ export function SortableKanbanCard({ project, onClick }: SortableKanbanCardProps
       <KanbanCard
         project={project}
         onClick={onClick}
+        onDelete={onDelete}
         isDragging={isDragging}
         className={cn(
           shouldPulse && "ring-2 ring-orange-500 ring-offset-2 animate-pulse"

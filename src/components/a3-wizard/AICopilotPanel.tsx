@@ -22,7 +22,6 @@ interface AICopilotPanelProps {
   onApplySuggestion: (field: string, value: any) => void;
   onApplyRequirements: (requirements: { description: string }[]) => void;
   onApplyActions: (actions: { description: string; linkedRequirements: string[] }[]) => void;
-  onApplyIndicators: (indicators: { name: string; unit: string; linkedRequirements: string[] }[]) => void;
 }
 
 const stepIcons: Record<number, React.ReactNode> = {
@@ -51,7 +50,6 @@ export function AICopilotPanel({
   onApplySuggestion,
   onApplyRequirements,
   onApplyActions,
-  onApplyIndicators
 }: AICopilotPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [question, setQuestion] = useState("");
@@ -73,7 +71,6 @@ export function AICopilotPanel({
     expandCurrentSituation,
     generateTargetSituation,
     suggestActions,
-    suggestIndicators,
     askQuestion,
     reset
   } = useA3Copilot();
@@ -177,18 +174,6 @@ export function AICopilotPanel({
     if (actions.length > 0) {
       onApplyActions(actions);
       toast.success(`${actions.length} ações sugeridas!`);
-    }
-  };
-
-  const handleSuggestIndicators = async () => {
-    if (data.requirements.length === 0) {
-      toast.error("Defina requisitos primeiro.");
-      return;
-    }
-    const indicators = await suggestIndicators(data);
-    if (indicators.length > 0) {
-      onApplyIndicators(indicators);
-      toast.success(`${indicators.length} indicadores sugeridos!`);
     }
   };
 
@@ -307,12 +292,11 @@ export function AICopilotPanel({
         ];
       case 6:
         return [
-          { label: "Sugerir Indicadores", action: handleSuggestIndicators, icon: <Target className="w-4 h-4" />, isTip: false },
-          { 
-            label: "Ver Exemplo", 
+          {
+            label: "Ver Exemplo",
             action: () => handleShowTip(
               "📌 Exemplo de indicador:\n\nNome: Tempo Médio de Atendimento\nAtual: 15 min | Meta: 8 min"
-            ), 
+            ),
             icon: <FileText className="w-4 h-4" />,
             isTip: true
           }

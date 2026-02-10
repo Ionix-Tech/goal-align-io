@@ -9,6 +9,9 @@ import { ConvertIdeaDialog } from "@/components/projects/ConvertIdeaDialog";
 import { IdeaDetailsDialog } from "@/components/ideas/IdeaDetailsDialog";
 import { useProjects } from "@/hooks/useProjects";
 import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { ProjectCategory } from "@/config/categories";
 
@@ -117,6 +120,27 @@ const Prioritization = () => {
   const handleCloseConvertDialog = () => {
     setShowConvertDialog(false);
     setSelectedIdea(null);
+  };
+
+  const queryClient = useQueryClient();
+  const canDelete = role === 'ceo' || role === 'pmo_manager';
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!canDelete) return;
+
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+
+    if (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Erro ao excluir projeto: ' + error.message);
+      return;
+    }
+
+    toast.success('Projeto excluído com sucesso.');
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
   };
 
   // Calculate stats with type separation
@@ -266,9 +290,10 @@ const Prioritization = () => {
                 Carregando projetos...
               </div>
             ) : (
-              <KanbanBoard 
+              <KanbanBoard
                 projectsByStatus={projectsByStatus}
                 onProjectClick={handleProjectClick}
+                onDeleteProject={canDelete ? handleDeleteProject : undefined}
               />
             )}
           </TabsContent>
