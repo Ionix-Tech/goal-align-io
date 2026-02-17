@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useKPIDetails, useUpdateKPI, useDeleteKPI, KPIMonthlyValue, KPIStatus, KPIDirection } from '@/hooks/useKPIs';
 import { useUpdateKPIMonthlyValue } from '@/hooks/useKPIMonthlyValues';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Target, Building2, Crosshair, Edit2, Check, X, Link2, Trash2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useNavigate } from 'react-router-dom';
 
 interface KPIDetailDialogProps {
@@ -58,6 +59,7 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
   const updateKPI = useUpdateKPI();
   const deleteKPI = useDeleteKPI();
   const { isManager } = useUserRole();
+  const { data: teamMembers } = useTeamMembers();
   const navigate = useNavigate();
 
   const [editingMonth, setEditingMonth] = useState<number | null>(null);
@@ -65,8 +67,17 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
 
   // KPI metadata editing
   const [isEditingMeta, setIsEditingMeta] = useState(false);
-  const [metaValues, setMetaValues] = useState({ name: '', description: '', unit: '', direction: '' as KPIDirection });
+  const [metaValues, setMetaValues] = useState({ name: '', description: '', unit: '', direction: '' as KPIDirection, owner_id: '', display_format: 'percentage' as 'percentage' | 'absolute', ytd_mode: 'accumulated' as 'accumulated' | 'average' });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Reset all editing state when switching between KPIs
+  useEffect(() => {
+    setEditingMonth(null);
+    setEditValues({ target: '', actual: '' });
+    setIsEditingMeta(false);
+    setMetaValues({ name: '', description: '', unit: '', direction: '' as KPIDirection, owner_id: '', display_format: 'percentage' as 'percentage' | 'absolute', ytd_mode: 'accumulated' as 'accumulated' | 'average' });
+    setShowDeleteConfirm(false);
+  }, [kpiId]);
 
   // Calculate summary stats
   const summary = useMemo(() => {
@@ -137,7 +148,10 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
       name: kpi.name,
       description: kpi.description || '',
       unit: kpi.unit,
-      direction: kpi.direction
+      direction: kpi.direction,
+      owner_id: kpi.owner_id || '',
+      display_format: kpi.display_format || 'percentage',
+      ytd_mode: kpi.ytd_mode || 'accumulated'
     });
     setIsEditingMeta(true);
   };
@@ -149,8 +163,11 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
       name: metaValues.name.trim(),
       description: metaValues.description.trim() || undefined,
       unit: metaValues.unit.trim(),
-      direction: metaValues.direction
-    });
+      direction: metaValues.direction,
+      owner_id: metaValues.owner_id,
+      display_format: metaValues.display_format,
+      ytd_mode: metaValues.ytd_mode
+    } as any);
     setIsEditingMeta(false);
   };
 
@@ -250,7 +267,7 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
         </DialogHeader>
 
         {/* KPI Info */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-4">
           <div>
             <p className="text-xs text-muted-foreground">Tipo</p>
             <Badge variant="outline">{typeLabels[kpi.kpi_type]}</Badge>
@@ -258,11 +275,16 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
           <div>
             <p className="text-xs text-muted-foreground">Unidade</p>
             {isEditingMeta ? (
-              <Input
-                value={metaValues.unit}
-                onChange={(e) => setMetaValues({ ...metaValues, unit: e.target.value })}
-                className="h-8 w-24 text-sm"
-              />
+              <Select value={metaValues.unit} onValueChange={(v) => setMetaValues({ ...metaValues, unit: v })}>
+                <SelectTrigger className="h-8 w-24 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="R$">R$</SelectItem>
+                  <SelectItem value="%">%</SelectItem>
+                  <SelectItem value="#">#</SelectItem>
+                </SelectContent>
+              </Select>
             ) : (
               <p className="font-medium">{kpi.unit}</p>
             )}
@@ -285,7 +307,52 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Responsável</p>
-            <p className="font-medium text-sm">{kpi.owner?.full_name}</p>
+            {isEditingMeta ? (
+              <Select value={metaValues.owner_id} onValueChange={(v) => setMetaValues({ ...metaValues, owner_id: v })}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Selecionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {(teamMembers || []).map(member => (
+                    <SelectItem key={member.id} value={member.id}>{member.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="font-medium text-sm">{kpi.owner?.full_name}</p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Exibição</p>
+            {isEditingMeta ? (
+              <Select value={metaValues.display_format} onValueChange={(v: 'percentage' | 'absolute') => setMetaValues({ ...metaValues, display_format: v })}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">% Atingimento</SelectItem>
+                  <SelectItem value="absolute">Valor Absoluto</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="font-medium text-sm">{kpi.display_format === 'absolute' ? 'Absoluto' : 'Percentual'}</p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">YTD</p>
+            {isEditingMeta ? (
+              <Select value={metaValues.ytd_mode} onValueChange={(v: 'accumulated' | 'average') => setMetaValues({ ...metaValues, ytd_mode: v })}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="accumulated">Acumulado</SelectItem>
+                  <SelectItem value="average">Média</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="font-medium text-sm">{kpi.ytd_mode === 'average' ? 'Média' : 'Acumulado'}</p>
+            )}
           </div>
         </div>
 

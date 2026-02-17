@@ -1,10 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ArrowRight, Link as LinkIcon, Trash2 } from "lucide-react";
+import { Plus, ArrowRight, Link as LinkIcon, Trash2, ImageIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useProjectSituations, useDeleteSituation } from "@/hooks/useProjectSituations";
 import { AddSituationDialog } from "./AddSituationDialog";
+
+function SituationThumbnail({ filePath }: { filePath: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.storage
+      .from('project-attachments')
+      .createSignedUrl(filePath, 3600)
+      .then(({ data }) => { if (data?.signedUrl) setUrl(data.signedUrl); });
+  }, [filePath]);
+  if (!url) return null;
+  return <img src={url} alt="" className="h-16 w-auto rounded border object-contain mt-1" />;
+}
 
 interface SituationManagementProps {
   projectId: string;
@@ -91,6 +104,9 @@ export function SituationManagement({ projectId }: SituationManagementProps) {
                               Situação Atual
                             </p>
                             <p className="text-sm">{situation.current_problem}</p>
+                            {situation.current_image_path && (
+                              <SituationThumbnail filePath={situation.current_image_path} />
+                            )}
                           </div>
 
                           {/* Arrow */}
@@ -104,6 +120,9 @@ export function SituationManagement({ projectId }: SituationManagementProps) {
                               Situação Alvo
                             </p>
                             <p className="text-sm">{situation.target_goal}</p>
+                            {situation.target_image_path && (
+                              <SituationThumbnail filePath={situation.target_image_path} />
+                            )}
                           </div>
                         </div>
 

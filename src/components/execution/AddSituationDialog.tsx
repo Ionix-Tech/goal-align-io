@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -6,14 +6,105 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateSituation, useUpdateSituation } from "@/hooks/useProjectSituations";
 import { useUploadAttachment } from "@/hooks/useSituationAttachments";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, X, Upload } from "lucide-react";
+import { Loader2, X, Upload, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddSituationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
   editingSituation?: any;
+}
+
+function ImageUploadBox({
+  label,
+  imageFile,
+  existingPath,
+  onFileSelect,
+  onRemove,
+}: {
+  label: string;
+  imageFile: File | null;
+  existingPath: string | null;
+  onFileSelect: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (imageFile) {
+      const url = URL.createObjectURL(imageFile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else if (existingPath) {
+      supabase.storage
+        .from('project-attachments')
+        .createSignedUrl(existingPath, 3600)
+        .then(({ data }) => {
+          if (data?.signedUrl) setPreviewUrl(data.signedUrl);
+        });
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [imageFile, existingPath]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Imagem excede o limite de 10MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem");
+      return;
+    }
+    onFileSelect(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {previewUrl ? (
+        <div className="relative group">
+          <img
+            src={previewUrl}
+            alt={label}
+            className="w-full h-40 object-contain rounded-lg border bg-muted/30"
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={onRemove}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer"
+          onClick={() => inputRef.current?.click()}
+        >
+          <ImagePlus className="h-8 w-8" />
+          <span className="text-sm">Clique para adicionar imagem</span>
+          <span className="text-xs">PNG, JPG (max 10MB)</span>
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        onChange={handleChange}
+        className="hidden"
+      />
+    </div>
+  );
 }
 
 export function AddSituationDialog({
@@ -26,6 +117,12 @@ export function AddSituationDialog({
   const [currentProblem, setCurrentProblem] = useState("");
   const [targetGoal, setTargetGoal] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [currentImageFile, setCurrentImageFile] = useState<File | null>(null);
+  const [targetImageFile, setTargetImageFile] = useState<File | null>(null);
+  const [existingCurrentImagePath, setExistingCurrentImagePath] = useState<string | null>(null);
+  const [existingTargetImagePath, setExistingTargetImagePath] = useState<string | null>(null);
+  const [removedCurrentImage, setRemovedCurrentImage] = useState(false);
+  const [removedTargetImage, setRemovedTargetImage] = useState(false);
 
   const createSituation = useCreateSituation();
   const updateSituation = useUpdateSituation();
@@ -35,18 +132,24 @@ export function AddSituationDialog({
     if (editingSituation) {
       setCurrentProblem(editingSituation.current_problem || "");
       setTargetGoal(editingSituation.target_goal || "");
+      setExistingCurrentImagePath(editingSituation.current_image_path || null);
+      setExistingTargetImagePath(editingSituation.target_image_path || null);
     } else {
       setCurrentProblem("");
       setTargetGoal("");
       setAttachments([]);
+      setExistingCurrentImagePath(null);
+      setExistingTargetImagePath(null);
     }
+    setCurrentImageFile(null);
+    setTargetImageFile(null);
+    setRemovedCurrentImage(false);
+    setRemovedTargetImage(false);
   }, [editingSituation, open]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      
-      // Validate file sizes (50MB max each)
       const validFiles = newFiles.filter(file => {
         if (file.size > 50 * 1024 * 1024) {
           toast.error(`Arquivo ${file.name} excede o limite de 50MB`);
@@ -54,7 +157,6 @@ export function AddSituationDialog({
         }
         return true;
       });
-
       setAttachments([...attachments, ...validFiles]);
     }
   };
@@ -62,6 +164,16 @@ export function AddSituationDialog({
   const removeAttachment = (index: number) => {
     setAttachments(attachments.filter((_, i) => i !== index));
   };
+
+  async function uploadImage(file: File, situationId: string, type: 'current' | 'target'): Promise<string> {
+    const ext = file.name.split('.').pop();
+    const path = `situations/${situationId}/${type}_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from('project-attachments')
+      .upload(path, file);
+    if (error) throw error;
+    return path;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,12 +190,24 @@ export function AddSituationDialog({
 
     try {
       if (editingSituation) {
-        // Update existing situation
+        // Upload new images if selected
+        let currentImagePath = removedCurrentImage ? null : existingCurrentImagePath;
+        let targetImagePath = removedTargetImage ? null : existingTargetImagePath;
+
+        if (currentImageFile) {
+          currentImagePath = await uploadImage(currentImageFile, editingSituation.id, 'current');
+        }
+        if (targetImageFile) {
+          targetImagePath = await uploadImage(targetImageFile, editingSituation.id, 'target');
+        }
+
         await updateSituation.mutateAsync({
           situationId: editingSituation.id,
           projectId,
           currentProblem: currentProblem.trim(),
-          targetGoal: targetGoal.trim()
+          targetGoal: targetGoal.trim(),
+          currentImagePath,
+          targetImagePath,
         });
       } else {
         // Create new situation
@@ -95,10 +219,31 @@ export function AddSituationDialog({
           linkedTasks: undefined
         });
 
-        // Upload attachments if any
+        // Upload situation images
+        let currentImagePath: string | null = null;
+        let targetImagePath: string | null = null;
+
+        if (currentImageFile) {
+          currentImagePath = await uploadImage(currentImageFile, result.id, 'current');
+        }
+        if (targetImageFile) {
+          targetImagePath = await uploadImage(targetImageFile, result.id, 'target');
+        }
+
+        // Update situation with image paths if any were uploaded
+        if (currentImagePath || targetImagePath) {
+          await updateSituation.mutateAsync({
+            situationId: result.id,
+            projectId,
+            currentImagePath,
+            targetImagePath,
+          });
+        }
+
+        // Upload general attachments if any
         if (attachments.length > 0 && result.id) {
           await Promise.all(
-            attachments.map(file => 
+            attachments.map(file =>
               uploadAttachment.mutateAsync({
                 situationId: result.id,
                 file,
@@ -120,7 +265,7 @@ export function AddSituationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingSituation ? "Editar Situação" : "Adicionar Nova Situação"}
@@ -142,6 +287,13 @@ export function AddSituationDialog({
               rows={3}
               className="resize-none"
             />
+            <ImageUploadBox
+              label="Imagem da Situação Atual (AS-IS)"
+              imageFile={currentImageFile}
+              existingPath={removedCurrentImage ? null : existingCurrentImagePath}
+              onFileSelect={(file) => { setCurrentImageFile(file); setRemovedCurrentImage(false); }}
+              onRemove={() => { setCurrentImageFile(null); setExistingCurrentImagePath(null); setRemovedCurrentImage(true); }}
+            />
           </div>
 
           {/* Target Goal */}
@@ -157,6 +309,13 @@ export function AddSituationDialog({
               required
               rows={3}
               className="resize-none"
+            />
+            <ImageUploadBox
+              label="Imagem da Situação Alvo (TO-BE)"
+              imageFile={targetImageFile}
+              existingPath={removedTargetImage ? null : existingTargetImagePath}
+              onFileSelect={(file) => { setTargetImageFile(file); setRemovedTargetImage(false); }}
+              onRemove={() => { setTargetImageFile(null); setExistingTargetImagePath(null); setRemovedTargetImage(true); }}
             />
           </div>
 

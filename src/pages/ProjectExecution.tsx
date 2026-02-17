@@ -32,12 +32,13 @@ import { SituationManagement } from "@/components/execution/SituationManagement"
 import { useProjectSituations } from "@/hooks/useProjectSituations";
 import { useA3ReportData } from "@/hooks/useA3ReportData";
 import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
+import { A3PresentationView } from "@/components/execution/A3PresentationView";
 import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachmentsCard";
 import { LinkedIdeasCard } from "@/components/execution/LinkedIdeasCard";
 import { GanttChart } from "@/components/execution/GanttChart";
 import { ProjectKanban } from "@/components/execution/ProjectKanban";
 import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
-import { Target, FileCheck, AlertCircle } from "lucide-react";
+import { Target, FileCheck, AlertCircle, Monitor } from "lucide-react";
 import { format } from "date-fns";
 import { ActionMatrix } from "@/components/execution/ActionMatrix";
 
@@ -81,6 +82,7 @@ const ProjectExecution = () => {
   const [showAddIndicatorDialog, setShowAddIndicatorDialog] = useState(false);
   const [showAddRequirementDialog, setShowAddRequirementDialog] = useState(false);
   const [showEditRequirementsDialog, setShowEditRequirementsDialog] = useState(false);
+  const [showPresentationView, setShowPresentationView] = useState(false);
 
   const [selectedMilestone, setSelectedMilestone] = useState<{ id: string; title: string; progress: number } | null>(null);
   const [selectedIndicator, setSelectedIndicator] = useState<{ id: string; name: string; targetValue?: string; unit?: string | null } | null>(null);
@@ -225,14 +227,24 @@ const ProjectExecution = () => {
               </div>
             </div>
             
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleExportReport}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Exportar Relatório A3
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setShowPresentationView(true)}
+              >
+                <Monitor className="mr-2 h-4 w-4" />
+                Apresentar A3
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportReport}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Exportar PDF
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -830,6 +842,14 @@ const ProjectExecution = () => {
         onOpenChange={setShowEditRequirementsDialog}
         projectId={project.id}
         requirements={requirements || []}
+      />
+
+      {/* Apresentação A3 fullscreen */}
+      <A3PresentationView
+        open={showPresentationView}
+        onOpenChange={setShowPresentationView}
+        project={project}
+        situations={situations || []}
       />
 
       {/* Relatório A3 para impressão (oculto na tela) */}

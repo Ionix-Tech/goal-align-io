@@ -24,6 +24,8 @@ export interface KPI {
   owner_id: string;
   year: number;
   is_active: boolean;
+  display_format: 'percentage' | 'absolute';
+  ytd_mode: 'accumulated' | 'average';
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -180,6 +182,8 @@ export interface CreateKPIInput {
   default_target?: number;
   owner_id: string;
   year: number;
+  display_format?: 'percentage' | 'absolute';
+  ytd_mode?: 'accumulated' | 'average';
 }
 
 export function useCreateKPI() {

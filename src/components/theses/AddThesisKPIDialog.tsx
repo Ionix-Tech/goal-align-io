@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateThesisKPI } from "@/hooks/useThesisKPIs";
 
 const formSchema = z.object({
@@ -145,9 +146,18 @@ export function AddThesisKPIDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unidade (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: %, R$, unidades" {...field} />
-                  </FormControl>
+                  <Select value={field.value || ''} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="R$">R$</SelectItem>
+                      <SelectItem value="%">%</SelectItem>
+                      <SelectItem value="#">#</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

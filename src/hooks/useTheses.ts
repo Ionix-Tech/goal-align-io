@@ -60,7 +60,42 @@ export function useTheses(filters?: UseThesesFilters) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Thesis[];
+
+      const theses = data as Thesis[];
+
+      // Enrich with kpi_count and project_count
+      if (theses.length > 0) {
+        const thesisIds = theses.map(t => t.id);
+
+        const { data: kpiRows } = await supabase
+          .from('kpis')
+          .select('objective_id')
+          .in('objective_id', thesisIds)
+          .eq('is_active', true);
+
+        const { data: projectRows } = await supabase
+          .from('projects')
+          .select('thesis_id')
+          .in('thesis_id', thesisIds);
+
+        const kpiCountMap: Record<string, number> = {};
+        (kpiRows || []).forEach((k: any) => {
+          kpiCountMap[k.objective_id] = (kpiCountMap[k.objective_id] || 0) + 1;
+        });
+
+        const projectCountMap: Record<string, number> = {};
+        (projectRows || []).forEach((p: any) => {
+          projectCountMap[p.thesis_id] = (projectCountMap[p.thesis_id] || 0) + 1;
+        });
+
+        return theses.map(t => ({
+          ...t,
+          kpi_count: kpiCountMap[t.id] || 0,
+          project_count: projectCountMap[t.id] || 0,
+        }));
+      }
+
+      return theses;
     }
   });
 }

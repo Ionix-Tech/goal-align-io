@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { KPI, KPIStatus } from '@/hooks/useKPIs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Target, Building2, Crosshair } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Building2, Crosshair, Eye, EyeOff } from 'lucide-react';
 
 interface KPIConsolidatedGridProps {
   kpis: KPI[];
@@ -41,6 +41,8 @@ const typeLabels: Record<string, string> = {
 };
 
 export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPIConsolidatedGridProps) {
+  const [expandedKpiId, setExpandedKpiId] = useState<string | null>(null);
+
   // Calculate YTD for each KPI
   const kpisWithYTD = useMemo(() => {
     const currentMonth = new Date().getMonth() + 1;
@@ -48,19 +50,26 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
     return kpis.map(kpi => {
       const monthlyValues = kpi.monthly_values || [];
       const ytdValues = monthlyValues.filter(v => v.year === year && v.month <= currentMonth);
-      
+      const isAverage = kpi.ytd_mode === 'average';
+
       let ytdTarget = 0, ytdActual = 0;
+      let countTarget = 0, countActual = 0;
       ytdValues.forEach(v => {
-        if (v.target_value) ytdTarget += v.target_value;
-        if (v.actual_value) ytdActual += v.actual_value;
+        if (v.target_value) { ytdTarget += v.target_value; countTarget++; }
+        if (v.actual_value) { ytdActual += v.actual_value; countActual++; }
       });
+
+      if (isAverage) {
+        ytdTarget = countTarget > 0 ? ytdTarget / countTarget : 0;
+        ytdActual = countActual > 0 ? ytdActual / countActual : 0;
+      }
 
       let ytdAchievement: number | null = null;
       let ytdStatus: KPIStatus | null = null;
 
       if (ytdTarget > 0) {
         ytdAchievement = (ytdActual / ytdTarget) * 100;
-        
+
         if (kpi.direction === 'higher_better') {
           if (ytdAchievement >= 100) ytdStatus = 'green';
           else if (ytdAchievement >= 90) ytdStatus = 'yellow';
@@ -72,7 +81,7 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
         }
       }
 
-      return { ...kpi, ytdAchievement, ytdStatus };
+      return { ...kpi, ytdAchievement, ytdStatus, ytdActual, ytdTarget };
     });
   }, [kpis, year]);
 
@@ -115,23 +124,37 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
           </TableHeader>
           <TableBody>
             {kpisWithYTD.map(kpi => (
-              <TableRow 
-                key={kpi.id}
+              <React.Fragment key={kpi.id}>
+              <TableRow
                 className="cursor-pointer hover:bg-muted/30"
                 onClick={() => onKPIClick(kpi.id)}
               >
                 {/* KPI Name */}
                 <TableCell className="sticky left-0 bg-background z-10">
                   <div className="flex items-center gap-2">
+                    <button
+                      className="shrink-0 p-0.5 rounded hover:bg-muted transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedKpiId(expandedKpiId === kpi.id ? null : kpi.id);
+                      }}
+                      title="Ver metas mensais"
+                    >
+                      {expandedKpiId === kpi.id ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
                     {kpi.direction === 'higher_better' ? (
-                      <TrendingUp className="h-4 w-4 text-green-600" />
+                      <TrendingUp className="h-4 w-4 text-green-600 shrink-0" />
                     ) : (
-                      <TrendingDown className="h-4 w-4 text-blue-600" />
+                      <TrendingDown className="h-4 w-4 text-blue-600 shrink-0" />
                     )}
                     <div>
-                      <p className="font-medium truncate max-w-[200px]">{kpi.name}</p>
+                      <p className="font-medium truncate max-w-[180px]">{kpi.name}</p>
                       {kpi.owner && (
-                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        <p className="text-xs text-muted-foreground truncate max-w-[180px]">
                           {kpi.owner.full_name}
                         </p>
                       )}
@@ -158,10 +181,11 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
                   const achievement = monthValue?.target_value && monthValue?.actual_value
                     ? Math.round((monthValue.actual_value / monthValue.target_value) * 100)
                     : null;
+                  const isAbsolute = kpi.display_format === 'absolute';
 
                   return (
-                    <TableCell 
-                      key={monthIndex} 
+                    <TableCell
+                      key={monthIndex}
                       className={cn(
                         "text-center px-1 text-xs",
                         monthValue?.status && statusBgColors[monthValue.status]
@@ -173,10 +197,18 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
                             {monthValue?.status && (
                               <div className={cn("h-2 w-2 rounded-full mb-0.5", statusColors[monthValue.status])} />
                             )}
-                            {achievement !== null ? (
-                              <span className="font-medium">{achievement}%</span>
+                            {isAbsolute ? (
+                              monthValue?.actual_value !== null && monthValue?.actual_value !== undefined ? (
+                                <span className="font-medium">{monthValue.actual_value.toLocaleString()}</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              achievement !== null ? (
+                                <span className="font-medium">{achievement}%</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )
                             )}
                           </div>
                         </TooltipTrigger>
@@ -185,7 +217,7 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
                             <p><strong>Meta:</strong> {monthValue?.target_value ?? 'N/A'} {kpi.unit}</p>
                             <p><strong>Real:</strong> {monthValue?.actual_value ?? 'N/A'} {kpi.unit}</p>
                             {achievement !== null && (
-                              <p><strong>Gap:</strong> {achievement - 100}%</p>
+                              <p><strong>Atingimento:</strong> {achievement}%</p>
                             )}
                           </div>
                         </TooltipContent>
@@ -195,22 +227,44 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
                 })}
 
                 {/* YTD */}
-                <TableCell 
+                <TableCell
                   className={cn(
                     "text-center font-bold",
                     kpi.ytdStatus && statusBgColors[kpi.ytdStatus]
                   )}
                 >
-                  {kpi.ytdAchievement !== null ? (
-                    <div className="flex flex-col items-center">
-                      {kpi.ytdStatus && (
-                        <div className={cn("h-2 w-2 rounded-full mb-0.5", statusColors[kpi.ytdStatus])} />
-                      )}
-                      <span>{Math.round(kpi.ytdAchievement)}%</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex flex-col items-center">
+                        {kpi.ytdStatus && (
+                          <div className={cn("h-2 w-2 rounded-full mb-0.5", statusColors[kpi.ytdStatus])} />
+                        )}
+                        {kpi.display_format === 'absolute' ? (
+                          kpi.ytdActual !== undefined ? (
+                            <span>{kpi.ytdActual.toLocaleString()}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )
+                        ) : (
+                          kpi.ytdAchievement !== null ? (
+                            <span>{Math.round(kpi.ytdAchievement)}%</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-sm space-y-1">
+                        <p><strong>Método:</strong> {kpi.ytd_mode === 'average' ? 'Média' : 'Acumulado'}</p>
+                        <p><strong>Meta YTD:</strong> {kpi.ytdTarget?.toLocaleString() ?? 'N/A'} {kpi.unit}</p>
+                        <p><strong>Real YTD:</strong> {kpi.ytdActual?.toLocaleString() ?? 'N/A'} {kpi.unit}</p>
+                        {kpi.ytdAchievement !== null && (
+                          <p><strong>Atingimento:</strong> {Math.round(kpi.ytdAchievement)}%</p>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
                 </TableCell>
 
                 {/* Projects Count */}
@@ -218,6 +272,47 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
                   {kpi.project_links?.length || 0}
                 </TableCell>
               </TableRow>
+
+              {/* Expanded row with Meta/Real details */}
+              {expandedKpiId === kpi.id && (
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  <TableCell className="sticky left-0 bg-muted/20 z-10 text-xs text-muted-foreground py-1" colSpan={1}>
+                    <div className="flex flex-col gap-0.5 pl-6">
+                      <span className="text-muted-foreground">Meta</span>
+                      <span className="font-medium text-foreground">Real</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1" />
+                  <TableCell className="py-1" />
+                  {MONTHS.map((_, monthIndex) => {
+                    const monthValue = kpi.monthly_values?.find(v => v.month === monthIndex + 1 && v.year === year);
+                    return (
+                      <TableCell key={monthIndex} className="text-center px-1 text-xs py-1">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-muted-foreground">
+                            {monthValue?.target_value != null ? monthValue.target_value.toLocaleString() : '-'}
+                          </span>
+                          <span className="font-medium">
+                            {monthValue?.actual_value != null ? monthValue.actual_value.toLocaleString() : '-'}
+                          </span>
+                        </div>
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="text-center text-xs py-1">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-muted-foreground">
+                        {kpi.ytdTarget != null ? kpi.ytdTarget.toLocaleString() : '-'}
+                      </span>
+                      <span className="font-medium">
+                        {kpi.ytdActual != null ? kpi.ytdActual.toLocaleString() : '-'}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1" />
+                </TableRow>
+              )}
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>

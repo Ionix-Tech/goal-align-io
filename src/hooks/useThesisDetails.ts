@@ -51,14 +51,52 @@ export function useThesisDetails(thesisId: string | undefined) {
 
       if (thesisError) throw thesisError;
 
-      // Buscar KPIs
-      const { data: kpis, error: kpisError } = await supabase
+      // Buscar KPIs do sistema legado (thesis_kpis)
+      const { data: legacyKpis, error: legacyKpisError } = await supabase
         .from('thesis_kpis')
         .select('*')
         .eq('thesis_id', thesisId)
         .order('display_order', { ascending: true });
 
-      if (kpisError) throw kpisError;
+      if (legacyKpisError) throw legacyKpisError;
+
+      // Buscar KPIs do sistema novo (tabela kpis com objective_id)
+      const { data: newKpis, error: newKpisError } = await supabase
+        .from('kpis')
+        .select('*, monthly_values:kpi_monthly_values(*)')
+        .eq('objective_id', thesisId)
+        .eq('is_active', true)
+        .order('name');
+
+      if (newKpisError) throw newKpisError;
+
+      // Converter KPIs novos para o formato ThesisKPI
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      const convertedNewKpis: ThesisKPI[] = (newKpis || []).map((nk: any) => {
+        const monthlyValues = (nk.monthly_values || []) as any[];
+        const sorted = monthlyValues
+          .filter((v: any) => v.year === currentYear)
+          .sort((a: any, b: any) => b.month - a.month);
+        const latestActual = sorted.find((v: any) => v.actual_value !== null);
+        const currentMonthVal = sorted.find((v: any) => v.month === currentMonth);
+        const latestTarget = sorted.find((v: any) => v.target_value !== null);
+
+        return {
+          id: nk.id,
+          thesis_id: thesisId,
+          name: nk.name,
+          description: nk.description,
+          current_value: latestActual?.actual_value ?? null,
+          target_value: currentMonthVal?.target_value ?? latestTarget?.target_value ?? nk.default_target ?? 0,
+          unit: nk.unit,
+          display_order: 0,
+          created_at: nk.created_at,
+          updated_at: nk.updated_at,
+        };
+      });
+
+      const kpis = [...(legacyKpis || []), ...convertedNewKpis];
 
       // Buscar template fields
       const { data: templateFields, error: fieldsError } = await supabase

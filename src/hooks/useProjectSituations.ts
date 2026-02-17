@@ -12,6 +12,8 @@ export interface ProjectSituation {
   created_by: string;
   created_at: string;
   updated_at: string;
+  current_image_path?: string | null;
+  target_image_path?: string | null;
   linked_tasks?: any[];
   indicators?: any[];
   attachments?: any[];
@@ -171,18 +173,24 @@ export function useUpdateSituation() {
       projectId,
       currentProblem,
       targetGoal,
-      linkedTasks
+      linkedTasks,
+      currentImagePath,
+      targetImagePath,
     }: {
       situationId: string;
       projectId: string;
       currentProblem?: string;
       targetGoal?: string;
       linkedTasks?: string[];
+      currentImagePath?: string | null;
+      targetImagePath?: string | null;
     }) => {
       // Update situation
       const updateData: any = { updated_at: new Date().toISOString() };
       if (currentProblem !== undefined) updateData.current_problem = currentProblem;
       if (targetGoal !== undefined) updateData.target_goal = targetGoal;
+      if (currentImagePath !== undefined) updateData.current_image_path = currentImagePath;
+      if (targetImagePath !== undefined) updateData.target_image_path = targetImagePath;
 
       const { error } = await supabase
         .from('project_situations')

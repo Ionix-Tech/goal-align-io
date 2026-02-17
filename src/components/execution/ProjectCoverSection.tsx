@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Target, FileCheck, AlertCircle, TrendingUp, BarChart3, Compass, Plus, Pencil } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { ProjectDetails } from "@/hooks/useProjectDetails";
 import type { ProjectRequirement } from "@/hooks/useRequirements";
 
@@ -14,6 +16,8 @@ interface ProjectCoverSectionProps {
     id: string;
     current_problem: string;
     target_goal: string;
+    current_image_path?: string | null;
+    target_image_path?: string | null;
     indicators?: Array<{
       id: string;
       name: string;
@@ -36,6 +40,16 @@ interface ProjectCoverSectionProps {
   } | null;
   onAddRequirement?: () => void;
   onEditRequirements?: () => void;
+}
+
+function CoverSituationImage({ filePath }: { filePath: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.storage.from('project-attachments').createSignedUrl(filePath, 3600)
+      .then(({ data }) => { if (data?.signedUrl) setUrl(data.signedUrl); });
+  }, [filePath]);
+  if (!url) return null;
+  return <img src={url} alt="" className="w-full max-h-32 object-contain rounded border mt-2" />;
 }
 
 export function ProjectCoverSection({ 
@@ -235,6 +249,9 @@ export function ProjectCoverSection({
                       <p className="text-sm bg-destructive/10 p-3 rounded-md border border-destructive/20">
                         {situation.current_problem}
                       </p>
+                      {situation.current_image_path && (
+                        <CoverSituationImage filePath={situation.current_image_path} />
+                      )}
                     </div>
 
                     {/* Situação Alvo */}
@@ -246,6 +263,9 @@ export function ProjectCoverSection({
                       <p className="text-sm bg-green-50 dark:bg-green-950/20 p-3 rounded-md border border-green-200 dark:border-green-900/30">
                         {situation.target_goal}
                       </p>
+                      {situation.target_image_path && (
+                        <CoverSituationImage filePath={situation.target_image_path} />
+                      )}
                     </div>
                   </div>
 

@@ -24,6 +24,7 @@ import Intelligence from "./pages/Intelligence";
 import Settings from "./pages/Settings";
 import KPIs from "./pages/KPIs";
 import NotFound from "./pages/NotFound";
+import Changelog from "./pages/Changelog";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/intelligence" element={<ProtectedRoute><AppLayout><Intelligence /></AppLayout></ProtectedRoute>} />
           <Route path="/kpis" element={<ProtectedRoute><AppLayout><KPIs /></AppLayout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
+          <Route path="/changelog" element={<ProtectedRoute><AppLayout><Changelog /></AppLayout></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

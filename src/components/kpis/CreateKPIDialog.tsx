@@ -15,7 +15,7 @@ interface CreateKPIDialogProps {
   onOpenChange: (open: boolean) => void;
   defaultType: KPIType;
   pillars: { id: string; name: string }[];
-  theses: { id: string; name: string }[];
+  theses: { id: string; name: string; pillar_id?: string | null }[];
   areas: { id: string; name: string; code: string }[];
   teamMembers: { id: string; full_name: string }[];
   existingKPIs: KPI[];
@@ -90,9 +90,6 @@ export function CreateKPIDialog({
 
     // Type-specific validations
     if (formData.kpi_type === 'strategic') {
-      if (!formData.pillar_id) {
-        newErrors.pillar_id = 'Pilar é obrigatório para KPI Estratégico';
-      }
       if (!formData.objective_id) {
         newErrors.objective_id = 'Objetivo é obrigatório para KPI Estratégico';
       }
@@ -222,30 +219,19 @@ export function CreateKPIDialog({
 
           {/* Strategic KPI Fields */}
           {formData.kpi_type === 'strategic' && (
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+            <div className="p-4 bg-muted/30 rounded-lg space-y-3">
               <div className="space-y-2">
-                <Label>Pilar *</Label>
-                <Select
-                  value={formData.pillar_id}
-                  onValueChange={(value) => setFormData({ ...formData, pillar_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o pilar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pillars.map(pillar => (
-                      <SelectItem key={pillar.id} value={pillar.id}>{pillar.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.pillar_id && <p className="text-xs text-destructive">{errors.pillar_id}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Objetivo *</Label>
+                <Label>Objetivo Estratégico *</Label>
                 <Select
                   value={formData.objective_id}
-                  onValueChange={(value) => setFormData({ ...formData, objective_id: value })}
+                  onValueChange={(value) => {
+                    const thesis = theses.find(t => t.id === value);
+                    setFormData({
+                      ...formData,
+                      objective_id: value,
+                      pillar_id: thesis?.pillar_id || ''
+                    });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o objetivo" />
@@ -258,6 +244,11 @@ export function CreateKPIDialog({
                 </Select>
                 {errors.objective_id && <p className="text-xs text-destructive">{errors.objective_id}</p>}
               </div>
+              {formData.pillar_id && (
+                <p className="text-xs text-muted-foreground">
+                  Pilar: <strong>{pillars.find(p => p.id === formData.pillar_id)?.name}</strong>
+                </p>
+              )}
             </div>
           )}
 
@@ -349,11 +340,19 @@ export function CreateKPIDialog({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Unidade *</Label>
-              <Input
+              <Select
                 value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                placeholder="R$, %, #, dias"
-              />
+                onValueChange={(value) => setFormData({ ...formData, unit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="R$">R$</SelectItem>
+                  <SelectItem value="%">%</SelectItem>
+                  <SelectItem value="#">#</SelectItem>
+                </SelectContent>
+              </Select>
               {errors.unit && <p className="text-xs text-destructive">{errors.unit}</p>}
             </div>
 

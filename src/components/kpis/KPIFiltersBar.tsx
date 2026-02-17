@@ -7,7 +7,7 @@ interface KPIFiltersBarProps {
   filters: KPIFilters;
   onFiltersChange: (filters: KPIFilters) => void;
   pillars: { id: string; name: string }[];
-  theses: { id: string; name: string }[];
+  theses: { id: string; name: string; pillar_id?: string | null }[];
   areas: { id: string; name: string }[];
   teamMembers: { id: string; full_name: string }[];
 }
@@ -73,9 +73,10 @@ export function KPIFiltersBar({
       {/* Pillar Filter */}
       <Select
         value={filters.pillar_id || 'all'}
-        onValueChange={(value) => onFiltersChange({ 
-          ...filters, 
-          pillar_id: value === 'all' ? undefined : value 
+        onValueChange={(value) => onFiltersChange({
+          ...filters,
+          pillar_id: value === 'all' ? undefined : value,
+          objective_id: undefined
         })}
       >
         <SelectTrigger className="w-[180px]">
@@ -102,9 +103,11 @@ export function KPIFiltersBar({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos os objetivos</SelectItem>
-          {theses.map(thesis => (
-            <SelectItem key={thesis.id} value={thesis.id}>{thesis.name}</SelectItem>
-          ))}
+          {theses
+            .filter(t => !filters.pillar_id || t.pillar_id === filters.pillar_id)
+            .map(thesis => (
+              <SelectItem key={thesis.id} value={thesis.id}>{thesis.name}</SelectItem>
+            ))}
         </SelectContent>
       </Select>
 

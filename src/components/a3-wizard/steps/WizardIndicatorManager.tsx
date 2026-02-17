@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Link2, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -208,12 +209,19 @@ export function WizardIndicatorManager({
               </div>
               <div>
                 <Label className="text-xs">Unidade</Label>
-                <Input
+                <Select
                   value={newIndicator.unit}
-                  onChange={(e) => setNewIndicator(prev => ({ ...prev, unit: e.target.value }))}
-                  placeholder="Ex: %, un, R$"
-                  className="h-8 text-sm"
-                />
+                  onValueChange={(value) => setNewIndicator(prev => ({ ...prev, unit: value }))}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="R$">R$</SelectItem>
+                    <SelectItem value="%">%</SelectItem>
+                    <SelectItem value="#">#</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
