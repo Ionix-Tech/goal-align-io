@@ -1,4 +1,4 @@
-import { Plus, Target, ClipboardCheck, Brain, ChevronRight, ListOrdered, FolderKanban, FileText, Settings, BarChart3 } from "lucide-react";
+import { Plus, Target, ClipboardCheck, Brain, ChevronRight, ListOrdered, FolderKanban, FileText, Settings, BarChart3, ScrollText } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { InitiativeTypeSelector } from "@/components/projects/InitiativeTypeSelector";
@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { FreitasLogo } from "@/components/icons/FreitasLogo";
@@ -171,9 +172,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <InitiativeTypeSelector 
-        open={showTypeSelector} 
-        onClose={() => setShowTypeSelector(false)} 
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive('/changelog')}>
+              <NavLink to="/changelog">
+                <ScrollText className="h-4 w-4" />
+                {open && <span className="text-xs text-muted-foreground">Changelog</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <InitiativeTypeSelector
+        open={showTypeSelector}
+        onClose={() => setShowTypeSelector(false)}
       />
     </Sidebar>
   );
