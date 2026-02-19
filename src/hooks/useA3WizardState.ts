@@ -185,10 +185,14 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
 
         if (tasksError) throw tasksError;
 
-        // Load requirement-task links
-        const { data: taskLinks } = await supabase
-          .from('requirement_task_links')
-          .select('task_id, requirement_id');
+        // Load requirement-task links (filtered by this project's tasks)
+        const taskIds = (tasks || []).map(t => t.id);
+        const { data: taskLinks } = taskIds.length > 0
+          ? await supabase
+              .from('requirement_task_links')
+              .select('task_id, requirement_id')
+              .in('task_id', taskIds)
+          : { data: [] };
 
         // Load indicators
         const { data: indicators, error: indError } = await supabase
@@ -198,10 +202,14 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
 
         if (indError) throw indError;
 
-        // Load requirement-indicator links
-        const { data: indicatorLinks } = await supabase
-          .from('requirement_indicator_links')
-          .select('indicator_id, requirement_id');
+        // Load requirement-indicator links (filtered by this project's indicators)
+        const indicatorIds = (indicators || []).map(i => i.id);
+        const { data: indicatorLinks } = indicatorIds.length > 0
+          ? await supabase
+              .from('requirement_indicator_links')
+              .select('indicator_id, requirement_id')
+              .in('indicator_id', indicatorIds)
+          : { data: [] };
 
         // Load why links
         const { data: whyLinks, error: whyError } = await supabase
@@ -267,10 +275,13 @@ export function useA3WizardState(options: UseA3WizardStateOptions = {}) {
             targetDate: m.target_date
           }));
 
-        // Load task-indicator links
-        const { data: taskIndicatorLinks } = await supabase
-          .from('task_indicator_links')
-          .select('task_id, indicator_id');
+        // Load task-indicator links (filtered by this project's tasks)
+        const { data: taskIndicatorLinks } = taskIds.length > 0
+          ? await supabase
+              .from('task_indicator_links')
+              .select('task_id, indicator_id')
+              .in('task_id', taskIds)
+          : { data: [] };
 
         // Map tasks to actions
         const actions: WizardAction[] = (tasks || []).map(task => {

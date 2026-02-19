@@ -55,12 +55,11 @@ export function A3Wizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const isInitialLoad = useRef(true);
+  const isSavingRef = useRef(false);
   const dataRef = useRef(data);
-  
-  // Keep dataRef in sync
-  useEffect(() => {
-    dataRef.current = data;
-  }, [data]);
+  dataRef.current = data;
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
 
   const canNavigateTo = (step: number): boolean => {
     if (step < currentStep) return true;
@@ -159,7 +158,9 @@ export function A3Wizard() {
   const performAutoSave = useCallback(async () => {
     if (!userId || isInitialLoad.current) return;
     if (!dataRef.current.name?.trim()) return; // Don't save without a name
-    
+    if (isSavingRef.current) return; // Skip if manual save or another auto-save is in progress
+
+    isSavingRef.current = true;
     setAutoSaveStatus('saving');
     try {
       const currentProjectId = projectId || urlProjectId;
@@ -177,7 +178,7 @@ export function A3Wizard() {
             thesis_id: dataRef.current.thesisId || null,
             current_situation_description: dataRef.current.currentSituationDescription,
             target_situation_description: dataRef.current.targetSituationDescription,
-            current_step: currentStep,
+            current_step: currentStepRef.current,
             is_critical: dataRef.current.isCritical,
             critical_reason: dataRef.current.criticalReason || null,
             updated_at: new Date().toISOString()
@@ -282,7 +283,7 @@ export function A3Wizard() {
                 start_date: action.startDate || null,
                 due_date: action.dueDate || null,
                 status: action.status || 'not_started',
-                priority: 'medium',
+                priority: action.priority || 'medium',
                 created_by: userId,
                 milestone_id: milestoneId
               })
@@ -365,6 +366,24 @@ export function A3Wizard() {
           }
         }
 
+        // --- SAVE STRATEGIC KPIs (AUTO-SAVE) ---
+        await supabase
+          .from('project_strategic_kpis')
+          .delete()
+          .eq('project_id', currentProjectId);
+
+        if (dataRef.current.strategicKpis.length > 0) {
+          await supabase
+            .from('project_strategic_kpis')
+            .insert(
+              dataRef.current.strategicKpis.map(kpi => ({
+                project_id: currentProjectId,
+                kpi_id: kpi.kpiId,
+                kpi_name: kpi.kpiName
+              }))
+            );
+        }
+
         // --- SAVE ATTACHMENTS (AUTO-SAVE) ---
         const updatedCurrentAtts = await persistAttachments(
           currentProjectId, dataRef.current.currentSituationAttachments, 'current_situation', userId!
@@ -393,7 +412,7 @@ export function A3Wizard() {
             thesis_id: dataRef.current.thesisId || null,
             current_situation_description: dataRef.current.currentSituationDescription,
             target_situation_description: dataRef.current.targetSituationDescription,
-            current_step: currentStep,
+            current_step: currentStepRef.current,
             is_critical: dataRef.current.isCritical,
             critical_reason: dataRef.current.criticalReason || null,
             status: 'draft',
@@ -407,13 +426,29 @@ export function A3Wizard() {
         setProjectId(newProject.id);
         // Update URL without reload
         window.history.replaceState(null, '', `/create-a3/${newProject.id}`);
+
+        // Save strategic KPIs for new project
+        if (dataRef.current.strategicKpis.length > 0) {
+          await supabase
+            .from('project_strategic_kpis')
+            .insert(
+              dataRef.current.strategicKpis.map(kpi => ({
+                project_id: newProject.id,
+                kpi_id: kpi.kpiId,
+                kpi_name: kpi.kpiName
+              }))
+            );
+        }
+
         setAutoSaveStatus('saved');
       }
     } catch (error) {
       console.error('Auto-save error:', error);
       setAutoSaveStatus('error');
+    } finally {
+      isSavingRef.current = false;
     }
-  }, [userId, projectId, urlProjectId, currentStep, setProjectId]);
+  }, [userId, projectId, urlProjectId, setProjectId]);
 
   // Debounced auto-save (2 seconds)
   const debouncedAutoSave = useDebounce(performAutoSave, 2000);
@@ -438,6 +473,7 @@ export function A3Wizard() {
       return;
     }
 
+    isSavingRef.current = true;
     setIsSaving(true);
     try {
       const currentProjectId = projectId || urlProjectId;
@@ -561,7 +597,7 @@ export function A3Wizard() {
                 start_date: action.startDate || null,
                 due_date: action.dueDate || null,
                 status: action.status || 'not_started',
-                priority: 'medium',
+                priority: action.priority || 'medium',
                 created_by: userId,
                 milestone_id: milestoneId
               })
@@ -644,6 +680,24 @@ export function A3Wizard() {
           }
         }
 
+        // --- SAVE STRATEGIC KPIs (MANUAL SAVE) ---
+        await supabase
+          .from('project_strategic_kpis')
+          .delete()
+          .eq('project_id', currentProjectId);
+
+        if (data.strategicKpis.length > 0) {
+          await supabase
+            .from('project_strategic_kpis')
+            .insert(
+              data.strategicKpis.map(kpi => ({
+                project_id: currentProjectId,
+                kpi_id: kpi.kpiId,
+                kpi_name: kpi.kpiName
+              }))
+            );
+        }
+
         // --- SAVE ATTACHMENTS (MANUAL SAVE) ---
         const updatedCurrentAtts = await persistAttachments(
           currentProjectId, data.currentSituationAttachments, 'current_situation', userId!
@@ -682,12 +736,27 @@ export function A3Wizard() {
 
         if (error) throw error;
         setProjectId(newProject.id);
+
+        // Save strategic KPIs for new project
+        if (data.strategicKpis.length > 0) {
+          await supabase
+            .from('project_strategic_kpis')
+            .insert(
+              data.strategicKpis.map(kpi => ({
+                project_id: newProject.id,
+                kpi_id: kpi.kpiId,
+                kpi_name: kpi.kpiName
+              }))
+            );
+        }
+
         toast.success("Projeto criado como rascunho");
       }
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   };
 
@@ -708,158 +777,9 @@ export function A3Wizard() {
         return;
       }
 
-      // Get requirement IDs for linking
-      const { data: savedReqs } = await supabase
-        .from('project_requirements')
-        .select('id, code')
-        .eq('project_id', currentProjectId);
-
-      const reqIdByCode = new Map<string, string>();
-      (savedReqs || []).forEach(r => reqIdByCode.set(r.code, r.id));
-
-      // --- PERSIST TASKS ---
-      // Delete existing tasks and their links for this project
-      const { data: existingTasks } = await supabase
-        .from('project_tasks')
-        .select('id')
-        .eq('project_id', currentProjectId);
-
-      if (existingTasks && existingTasks.length > 0) {
-        const taskIds = existingTasks.map(t => t.id);
-        await supabase
-          .from('requirement_task_links')
-          .delete()
-          .in('task_id', taskIds);
-        await supabase
-          .from('task_indicator_links')
-          .delete()
-          .in('task_id', taskIds);
-        await supabase
-          .from('project_tasks')
-          .delete()
-          .eq('project_id', currentProjectId);
-      }
-
-      // Load milestones to get IDs for linking
-      const { data: milestonesData } = await supabase
-        .from('project_milestones')
-        .select('id, milestone_type')
-        .eq('project_id', currentProjectId);
-
-      const getMilestoneId = (linkedMilestone: string | null): string | null => {
-        if (!linkedMilestone) return null;
-        
-        // Check fixed milestones
-        if (linkedMilestone === 'm1') {
-          return milestonesData?.find(m => m.milestone_type === 'decolagem')?.id || null;
-        }
-        if (linkedMilestone === 'm2') {
-          return milestonesData?.find(m => m.milestone_type === 'voo')?.id || null;
-        }
-        if (linkedMilestone === 'm3') {
-          return milestonesData?.find(m => m.milestone_type === 'escala')?.id || null;
-        }
-        
-        // It's an extra milestone ID
-        return linkedMilestone;
-      };
-
-      // Insert new tasks
-      for (const action of data.actions) {
-        if (!action.description.trim()) continue;
-
-        const milestoneId = getMilestoneId(action.linkedMilestone);
-
-        const { data: newTask, error: taskError } = await supabase
-          .from('project_tasks')
-          .insert({
-            project_id: currentProjectId,
-            title: action.description,
-            assigned_to: action.responsibleId || null,
-            start_date: action.startDate || null,
-            due_date: action.dueDate || null,
-            status: action.status || 'not_started',
-            priority: 'medium',
-            created_by: userId,
-            milestone_id: milestoneId
-          })
-          .select()
-          .single();
-
-        if (taskError) throw taskError;
-
-        // Insert requirement links
-        for (const reqCode of action.linkedRequirements) {
-          const reqId = reqIdByCode.get(reqCode);
-          if (reqId) {
-            await supabase
-              .from('requirement_task_links')
-              .insert({
-                task_id: newTask.id,
-                requirement_id: reqId
-              });
-          }
-        }
-
-        // Insert indicator links
-        for (const indicatorId of action.linkedIndicators) {
-          await supabase
-            .from('task_indicator_links')
-            .insert({
-              task_id: newTask.id,
-              indicator_id: indicatorId
-            });
-        }
-      }
-
-      // --- PERSIST INDICATORS ---
-      // Delete existing indicators and their links
-      const { data: existingIndicators } = await supabase
-        .from('project_indicators')
-        .select('id')
-        .eq('project_id', currentProjectId);
-
-      if (existingIndicators && existingIndicators.length > 0) {
-        const indIds = existingIndicators.map(i => i.id);
-        await supabase
-          .from('requirement_indicator_links')
-          .delete()
-          .in('indicator_id', indIds);
-        await supabase
-          .from('project_indicators')
-          .delete()
-          .eq('project_id', currentProjectId);
-      }
-
-      // Insert new indicators
-      for (const indicator of data.indicators) {
-        const { data: newIndicator, error: indError } = await supabase
-          .from('project_indicators')
-          .insert({
-            project_id: currentProjectId,
-            name: indicator.name,
-            unit: indicator.unit || null,
-            current_state: indicator.currentValue,
-            target_state: indicator.targetValue
-          })
-          .select()
-          .single();
-
-        if (indError) throw indError;
-
-        // Insert requirement links
-        for (const reqCode of indicator.linkedRequirementCodes) {
-          const reqId = reqIdByCode.get(reqCode);
-          if (reqId) {
-            await supabase
-              .from('requirement_indicator_links')
-              .insert({
-                indicator_id: newIndicator.id,
-                requirement_id: reqId
-              });
-          }
-        }
-      }
+      // Tasks and indicators are already persisted by saveProgress() above.
+      // Below we persist data that saveProgress does NOT handle:
+      // whyLinks, milestones, strategicKpis, and status change.
 
       // --- PERSIST WHY LINKS ---
       // Delete existing why links

@@ -9,6 +9,18 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.9.3",
+    date: "2026-02-19",
+    changes: [
+      { type: 'fix', description: 'Indicador estratégico (KR) selecionado no Step 1 do Wizard agora persiste no Step 6 mesmo após recarregar a página' },
+      { type: 'fix', description: 'Corrigido bug no Wizard A3: ações do plano de ação eram apagadas ao navegar entre passos (voltar/avançar)' },
+      { type: 'fix', description: 'Corrigido queries sem filtro de projeto em requirement_task_links e task_indicator_links (carregava dados de todos os projetos)' },
+      { type: 'fix', description: 'Prioridade das ações agora é salva corretamente (antes era sempre gravada como "medium")' },
+      { type: 'fix', description: 'Removida duplicação de persistência de tasks/indicators no submit do wizard (double-write)' },
+      { type: 'fix', description: 'Adicionada proteção contra auto-save e save manual rodando simultaneamente' },
+    ],
+  },
+  {
     version: "0.9.1",
     date: "2026-02-17",
     changes: [
