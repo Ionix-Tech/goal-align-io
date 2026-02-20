@@ -13,6 +13,7 @@ const changelog: ChangelogEntry[] = [
     date: "2026-02-20",
     changes: [
       { type: 'fix', description: 'Dropdown de área na criação de KPI de Área e Controle agora exibe as áreas corretamente (tabela areas populada com as mesmas categorias do wizard de projetos)' },
+      { type: 'fix', description: 'Corrigido bug crítico: ações do Plano de Ação eram apagadas ao salvar de outro passo do Wizard (ex: Situação Alvo) após deixar o COMPASS aberto por muito tempo' },
     ],
   },
   {
