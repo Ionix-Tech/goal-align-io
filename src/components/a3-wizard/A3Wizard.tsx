@@ -238,16 +238,20 @@ export function A3Wizard() {
 
         // --- SAVE ACTIONS/TASKS (AUTO-SAVE) ---
         {
+          const validActions = dataRef.current.actions.filter(a => a.description.trim());
           const { data: existingTasks } = await supabase
             .from('project_tasks')
             .select('id')
             .eq('project_id', currentProjectId);
 
-          if (existingTasks && existingTasks.length > 0) {
+          // Guard: never delete existing tasks if state has no valid actions to replace them
+          if (existingTasks && existingTasks.length > 0 && validActions.length > 0) {
             const taskIds = existingTasks.map(t => t.id);
             await supabase.from('requirement_task_links').delete().in('task_id', taskIds);
             await supabase.from('task_indicator_links').delete().in('task_id', taskIds);
             await supabase.from('project_tasks').delete().eq('project_id', currentProjectId);
+          } else if (existingTasks && existingTasks.length > 0 && validActions.length === 0) {
+            // Skip action save entirely — preserve existing tasks in DB
           }
 
           const { data: milestonesData } = await supabase
@@ -270,8 +274,7 @@ export function A3Wizard() {
           const reqIdByCodeForTasks = new Map<string, string>();
           (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
 
-          for (const action of dataRef.current.actions) {
-            if (!action.description.trim()) continue;
+          for (const action of validActions) {
             const milestoneId = getMilestoneId(action.linkedMilestone);
 
             const { data: newTask, error: taskError } = await supabase
@@ -552,12 +555,14 @@ export function A3Wizard() {
 
         // --- SAVE ACTIONS/TASKS (MANUAL SAVE) ---
         {
+          const validActions = data.actions.filter(a => a.description.trim());
           const { data: existingTasks } = await supabase
             .from('project_tasks')
             .select('id')
             .eq('project_id', currentProjectId);
 
-          if (existingTasks && existingTasks.length > 0) {
+          // Guard: never delete existing tasks if state has no valid actions to replace them
+          if (existingTasks && existingTasks.length > 0 && validActions.length > 0) {
             const taskIds = existingTasks.map(t => t.id);
             await supabase.from('requirement_task_links').delete().in('task_id', taskIds);
             await supabase.from('task_indicator_links').delete().in('task_id', taskIds);
@@ -584,8 +589,7 @@ export function A3Wizard() {
           const reqIdByCodeForTasks = new Map<string, string>();
           (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
 
-          for (const action of data.actions) {
-            if (!action.description.trim()) continue;
+          for (const action of validActions) {
             const milestoneId = getMilestoneId(action.linkedMilestone);
 
             const { data: newTask, error: taskError } = await supabase
