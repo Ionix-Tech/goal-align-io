@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.9.4",
+    date: "2026-02-20",
+    changes: [
+      { type: 'fix', description: 'Dropdown de área na criação de KPI de Área e Controle agora exibe as áreas corretamente (tabela areas populada com as mesmas categorias do wizard de projetos)' },
+    ],
+  },
+  {
     version: "0.9.3",
     date: "2026-02-19",
     changes: [
