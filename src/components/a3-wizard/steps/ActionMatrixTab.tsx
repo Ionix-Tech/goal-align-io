@@ -8,7 +8,7 @@ import {
   Settings, PlaneTakeoff, Plane, Rocket, Milestone
 } from "lucide-react";
 import { A3WizardData, WizardAction } from "@/hooks/useA3WizardState";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useProjectTeamMembers } from "@/hooks/useTeamMembers";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { ActionLinkPopover } from "./ActionLinkPopover";
 
 interface ActionMatrixTabProps {
   data: A3WizardData;
+  projectId: string | null;
   updateAction: (id: string, updates: Partial<WizardAction>) => void;
 }
 
@@ -29,10 +30,10 @@ interface ActionGroup {
   actions: WizardAction[];
 }
 
-export function ActionMatrixTab({ data, updateAction }: ActionMatrixTabProps) {
+export function ActionMatrixTab({ data, projectId, updateAction }: ActionMatrixTabProps) {
   const [groupBy, setGroupBy] = useState<GroupByType>("requirements");
   const [editingActionId, setEditingActionId] = useState<string | null>(null);
-  const { data: teamMembers } = useTeamMembers();
+  const { data: teamMembers } = useProjectTeamMembers(projectId);
 
   const getResponsibleName = (id: string) => {
     const member = teamMembers?.find(m => m.id === id);

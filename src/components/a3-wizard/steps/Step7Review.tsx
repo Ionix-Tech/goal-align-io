@@ -15,7 +15,7 @@ import { ptBR } from "date-fns/locale";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useThesisDetails } from "@/hooks/useThesisDetails";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useProjectTeamMembers } from "@/hooks/useTeamMembers";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { ActionMatrixTab } from "./ActionMatrixTab";
@@ -23,6 +23,7 @@ import { AIAnalysisTab } from "./AIAnalysisTab";
 
 interface Step7ReviewProps {
   data: A3WizardData;
+  projectId: string | null;
   goToStep: (step: number) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -38,10 +39,11 @@ const checklistItems = [
   { id: "actions", label: "Ações planejadas com responsáveis e prazos" },
 ];
 
-export function Step7Review({ 
-  data, 
-  goToStep, 
-  onSubmit, 
+export function Step7Review({
+  data,
+  projectId,
+  goToStep,
+  onSubmit,
   isSubmitting,
   updateAction
 }: Step7ReviewProps) {
@@ -52,7 +54,7 @@ export function Step7Review({
   const [activeTab, setActiveTab] = useState("review");
   
   const { data: thesisDetails } = useThesisDetails(data.thesisId || undefined);
-  const { data: teamMembers } = useTeamMembers();
+  const { data: teamMembers } = useProjectTeamMembers(projectId);
 
   const toggleChecklistItem = (id: string) => {
     setCheckedItems(prev => 
@@ -655,9 +657,10 @@ export function Step7Review({
         </TabsContent>
 
         <TabsContent value="matrix" className="mt-4">
-          <ActionMatrixTab 
-            data={data} 
-            updateAction={updateAction} 
+          <ActionMatrixTab
+            data={data}
+            projectId={projectId}
+            updateAction={updateAction}
           />
         </TabsContent>
 

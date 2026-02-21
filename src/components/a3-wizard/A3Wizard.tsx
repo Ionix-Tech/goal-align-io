@@ -236,7 +236,7 @@ export function A3Wizard() {
           );
         }
 
-        // --- SAVE ACTIONS/TASKS (AUTO-SAVE) ---
+        // --- SAVE ACTIONS/TASKS (AUTO-SAVE) --- upsert pattern
         {
           const validActions = dataRef.current.actions.filter(a => a.description.trim());
           const { data: existingTasks } = await supabase
@@ -244,15 +244,8 @@ export function A3Wizard() {
             .select('id')
             .eq('project_id', currentProjectId);
 
-          // Guard: never delete existing tasks if state has no valid actions to replace them
-          if (existingTasks && existingTasks.length > 0 && validActions.length > 0) {
-            const taskIds = existingTasks.map(t => t.id);
-            await supabase.from('requirement_task_links').delete().in('task_id', taskIds);
-            await supabase.from('task_indicator_links').delete().in('task_id', taskIds);
-            await supabase.from('project_tasks').delete().eq('project_id', currentProjectId);
-          } else if (existingTasks && existingTasks.length > 0 && validActions.length === 0) {
-            // Skip action save entirely — preserve existing tasks in DB
-          }
+          const existingTaskIds = new Set((existingTasks || []).map(t => t.id));
+          const stateActionIds = new Set(validActions.map(a => a.id));
 
           const { data: milestonesData } = await supabase
             .from('project_milestones')
@@ -274,35 +267,59 @@ export function A3Wizard() {
           const reqIdByCodeForTasks = new Map<string, string>();
           (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
 
+          // DELETE tasks that were removed from state
+          const tasksToDelete = [...existingTaskIds].filter(id => !stateActionIds.has(id));
+          if (tasksToDelete.length > 0) {
+            await supabase.from('requirement_task_links').delete().in('task_id', tasksToDelete);
+            await supabase.from('task_indicator_links').delete().in('task_id', tasksToDelete);
+            await supabase.from('project_tasks').delete().in('id', tasksToDelete);
+          }
+
           for (const action of validActions) {
             const milestoneId = getMilestoneId(action.linkedMilestone);
+            const taskPayload = {
+              title: action.description,
+              assigned_to: action.responsibleId || null,
+              start_date: action.startDate || null,
+              due_date: action.dueDate || null,
+              status: action.status || 'not_started',
+              priority: action.priority || 'medium',
+              milestone_id: milestoneId
+            };
 
-            const { data: newTask, error: taskError } = await supabase
-              .from('project_tasks')
-              .insert({
-                project_id: currentProjectId,
-                title: action.description,
-                assigned_to: action.responsibleId || null,
-                start_date: action.startDate || null,
-                due_date: action.dueDate || null,
-                status: action.status || 'not_started',
-                priority: action.priority || 'medium',
-                created_by: userId,
-                milestone_id: milestoneId
-              })
-              .select()
-              .single();
+            let taskId: string;
 
-            if (taskError) continue;
+            if (existingTaskIds.has(action.id)) {
+              // UPDATE existing task
+              await supabase.from('project_tasks').update(taskPayload).eq('id', action.id);
+              taskId = action.id;
+              // Clear old links for this task, then reinsert
+              await supabase.from('requirement_task_links').delete().eq('task_id', taskId);
+              await supabase.from('task_indicator_links').delete().eq('task_id', taskId);
+            } else {
+              // INSERT new task
+              const { data: newTask, error: taskError } = await supabase
+                .from('project_tasks')
+                .insert({
+                  ...taskPayload,
+                  project_id: currentProjectId,
+                  created_by: userId
+                })
+                .select()
+                .single();
+
+              if (taskError) continue;
+              taskId = newTask.id;
+            }
 
             for (const reqCode of action.linkedRequirements) {
               const reqId = reqIdByCodeForTasks.get(reqCode);
               if (reqId) {
-                await supabase.from('requirement_task_links').insert({ task_id: newTask.id, requirement_id: reqId });
+                await supabase.from('requirement_task_links').insert({ task_id: taskId, requirement_id: reqId });
               }
             }
             for (const indicatorId of action.linkedIndicators) {
-              await supabase.from('task_indicator_links').insert({ task_id: newTask.id, indicator_id: indicatorId });
+              await supabase.from('task_indicator_links').insert({ task_id: taskId, indicator_id: indicatorId });
             }
           }
         }
@@ -476,35 +493,48 @@ export function A3Wizard() {
       return;
     }
 
+    // Cancel any pending autosave and wait if one is in-flight
+    debouncedAutoSave.cancel();
+    if (isSavingRef.current) {
+      // Wait for in-flight autosave to complete (max 5s)
+      let waited = 0;
+      while (isSavingRef.current && waited < 5000) {
+        await new Promise(r => setTimeout(r, 100));
+        waited += 100;
+      }
+    }
+
     isSavingRef.current = true;
     setIsSaving(true);
     try {
+      // Use dataRef.current for freshest state (avoids stale closure)
+      const currentData = dataRef.current;
       const currentProjectId = projectId || urlProjectId;
-      
+
       if (currentProjectId) {
         // Update existing project
         const { error } = await supabase
           .from('projects')
           .update({
-            name: data.name,
-            objective: data.objective,
-            strategic_indicator: data.strategicIndicator,
-            category: (data.category || null) as any,
-            assigned_to: data.assignedTo || null,
-            thesis_id: data.thesisId || null,
-            current_situation_description: data.currentSituationDescription,
-            target_situation_description: data.targetSituationDescription,
-            current_step: currentStep,
-            is_critical: data.isCritical,
-            critical_reason: data.criticalReason || null,
+            name: currentData.name,
+            objective: currentData.objective,
+            strategic_indicator: currentData.strategicIndicator,
+            category: (currentData.category || null) as any,
+            assigned_to: currentData.assignedTo || null,
+            thesis_id: currentData.thesisId || null,
+            current_situation_description: currentData.currentSituationDescription,
+            target_situation_description: currentData.targetSituationDescription,
+            current_step: currentStepRef.current,
+            is_critical: currentData.isCritical,
+            critical_reason: currentData.criticalReason || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', currentProjectId);
 
         if (error) throw error;
-        
+
         // Update or create requirements
-        for (const req of data.requirements) {
+        for (const req of currentData.requirements) {
           // Check if requirement exists (by code for this project)
           const { data: existingReq } = await supabase
             .from('project_requirements')
@@ -543,9 +573,9 @@ export function A3Wizard() {
 
         // --- SAVE MEMBERS (MANUAL SAVE) ---
         await supabase.from('project_members').delete().eq('project_id', currentProjectId);
-        if (data.members.length > 0) {
+        if (currentData.members.length > 0) {
           await supabase.from('project_members').insert(
-            data.members.map(memberId => ({
+            currentData.members.map(memberId => ({
               project_id: currentProjectId,
               user_id: memberId,
               added_by: userId
@@ -553,21 +583,16 @@ export function A3Wizard() {
           );
         }
 
-        // --- SAVE ACTIONS/TASKS (MANUAL SAVE) ---
+        // --- SAVE ACTIONS/TASKS (MANUAL SAVE) --- upsert pattern
         {
-          const validActions = data.actions.filter(a => a.description.trim());
+          const validActions = currentData.actions.filter(a => a.description.trim());
           const { data: existingTasks } = await supabase
             .from('project_tasks')
             .select('id')
             .eq('project_id', currentProjectId);
 
-          // Guard: never delete existing tasks if state has no valid actions to replace them
-          if (existingTasks && existingTasks.length > 0 && validActions.length > 0) {
-            const taskIds = existingTasks.map(t => t.id);
-            await supabase.from('requirement_task_links').delete().in('task_id', taskIds);
-            await supabase.from('task_indicator_links').delete().in('task_id', taskIds);
-            await supabase.from('project_tasks').delete().eq('project_id', currentProjectId);
-          }
+          const existingTaskIds = new Set((existingTasks || []).map(t => t.id));
+          const stateActionIds = new Set(validActions.map(a => a.id));
 
           const { data: milestonesData } = await supabase
             .from('project_milestones')
@@ -589,41 +614,65 @@ export function A3Wizard() {
           const reqIdByCodeForTasks = new Map<string, string>();
           (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
 
+          // DELETE tasks that were removed from state
+          const tasksToDelete = [...existingTaskIds].filter(id => !stateActionIds.has(id));
+          if (tasksToDelete.length > 0) {
+            await supabase.from('requirement_task_links').delete().in('task_id', tasksToDelete);
+            await supabase.from('task_indicator_links').delete().in('task_id', tasksToDelete);
+            await supabase.from('project_tasks').delete().in('id', tasksToDelete);
+          }
+
           for (const action of validActions) {
             const milestoneId = getMilestoneId(action.linkedMilestone);
+            const taskPayload = {
+              title: action.description,
+              assigned_to: action.responsibleId || null,
+              start_date: action.startDate || null,
+              due_date: action.dueDate || null,
+              status: action.status || 'not_started',
+              priority: action.priority || 'medium',
+              milestone_id: milestoneId
+            };
 
-            const { data: newTask, error: taskError } = await supabase
-              .from('project_tasks')
-              .insert({
-                project_id: currentProjectId,
-                title: action.description,
-                assigned_to: action.responsibleId || null,
-                start_date: action.startDate || null,
-                due_date: action.dueDate || null,
-                status: action.status || 'not_started',
-                priority: action.priority || 'medium',
-                created_by: userId,
-                milestone_id: milestoneId
-              })
-              .select()
-              .single();
+            let taskId: string;
 
-            if (taskError) continue;
+            if (existingTaskIds.has(action.id)) {
+              // UPDATE existing task
+              await supabase.from('project_tasks').update(taskPayload).eq('id', action.id);
+              taskId = action.id;
+              // Clear old links for this task, then reinsert
+              await supabase.from('requirement_task_links').delete().eq('task_id', taskId);
+              await supabase.from('task_indicator_links').delete().eq('task_id', taskId);
+            } else {
+              // INSERT new task
+              const { data: newTask, error: taskError } = await supabase
+                .from('project_tasks')
+                .insert({
+                  ...taskPayload,
+                  project_id: currentProjectId,
+                  created_by: userId
+                })
+                .select()
+                .single();
+
+              if (taskError) continue;
+              taskId = newTask.id;
+            }
 
             for (const reqCode of action.linkedRequirements) {
               const reqId = reqIdByCodeForTasks.get(reqCode);
               if (reqId) {
-                await supabase.from('requirement_task_links').insert({ task_id: newTask.id, requirement_id: reqId });
+                await supabase.from('requirement_task_links').insert({ task_id: taskId, requirement_id: reqId });
               }
             }
             for (const indicatorId of action.linkedIndicators) {
-              await supabase.from('task_indicator_links').insert({ task_id: newTask.id, indicator_id: indicatorId });
+              await supabase.from('task_indicator_links').insert({ task_id: taskId, indicator_id: indicatorId });
             }
           }
         }
 
         // --- SAVE INDICATORS (MANUAL SAVE) ---
-        if (data.indicators.length > 0) {
+        if (currentData.indicators.length > 0) {
           // Get existing indicators to delete
           const { data: existingIndicators } = await supabase
             .from('project_indicators')
@@ -652,7 +701,7 @@ export function A3Wizard() {
           (savedReqs || []).forEach(r => reqIdByCode.set(r.code, r.id));
 
           // Insert indicators
-          for (const indicator of data.indicators) {
+          for (const indicator of currentData.indicators) {
             if (!indicator.name.trim()) continue;
 
             const { data: newIndicator, error: indError } = await supabase
@@ -690,11 +739,11 @@ export function A3Wizard() {
           .delete()
           .eq('project_id', currentProjectId);
 
-        if (data.strategicKpis.length > 0) {
+        if (currentData.strategicKpis.length > 0) {
           await supabase
             .from('project_strategic_kpis')
             .insert(
-              data.strategicKpis.map(kpi => ({
+              currentData.strategicKpis.map(kpi => ({
                 project_id: currentProjectId,
                 kpi_id: kpi.kpiId,
                 kpi_name: kpi.kpiName
@@ -704,10 +753,10 @@ export function A3Wizard() {
 
         // --- SAVE ATTACHMENTS (MANUAL SAVE) ---
         const updatedCurrentAtts = await persistAttachments(
-          currentProjectId, data.currentSituationAttachments, 'current_situation', userId!
+          currentProjectId, currentData.currentSituationAttachments, 'current_situation', userId!
         );
         const updatedTargetAtts = await persistAttachments(
-          currentProjectId, data.targetSituationAttachments, 'target_situation', userId!
+          currentProjectId, currentData.targetSituationAttachments, 'target_situation', userId!
         );
         updateData({
           currentSituationAttachments: updatedCurrentAtts,
@@ -720,17 +769,17 @@ export function A3Wizard() {
         const { data: newProject, error } = await supabase
           .from('projects')
           .insert([{
-            name: data.name || "Novo Projeto A3",
-            objective: data.objective,
-            strategic_indicator: data.strategicIndicator,
-            category: (data.category || null) as any,
-            assigned_to: data.assignedTo || null,
-            thesis_id: data.thesisId || null,
-            current_situation_description: data.currentSituationDescription,
-            target_situation_description: data.targetSituationDescription,
-            current_step: currentStep,
-            is_critical: data.isCritical,
-            critical_reason: data.criticalReason || null,
+            name: currentData.name || "Novo Projeto A3",
+            objective: currentData.objective,
+            strategic_indicator: currentData.strategicIndicator,
+            category: (currentData.category || null) as any,
+            assigned_to: currentData.assignedTo || null,
+            thesis_id: currentData.thesisId || null,
+            current_situation_description: currentData.currentSituationDescription,
+            target_situation_description: currentData.targetSituationDescription,
+            current_step: currentStepRef.current,
+            is_critical: currentData.isCritical,
+            critical_reason: currentData.criticalReason || null,
             status: 'draft',
             initiative_type: 'project',
             created_by: userId
@@ -742,11 +791,11 @@ export function A3Wizard() {
         setProjectId(newProject.id);
 
         // Save strategic KPIs for new project
-        if (data.strategicKpis.length > 0) {
+        if (currentData.strategicKpis.length > 0) {
           await supabase
             .from('project_strategic_kpis')
             .insert(
-              data.strategicKpis.map(kpi => ({
+              currentData.strategicKpis.map(kpi => ({
                 project_id: newProject.id,
                 kpi_id: kpi.kpiId,
                 kpi_name: kpi.kpiName
@@ -940,6 +989,7 @@ export function A3Wizard() {
         return (
           <Step5Execution
             data={data}
+            projectId={projectId || urlProjectId || null}
             addAction={addAction}
             updateAction={updateAction}
             removeAction={removeAction}
@@ -963,6 +1013,7 @@ export function A3Wizard() {
         return (
           <Step7Review
             data={data}
+            projectId={projectId || urlProjectId || null}
             goToStep={goToStep}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
@@ -1008,19 +1059,18 @@ export function A3Wizard() {
 
   const handleApplyActions = (actions: { description: string; linkedRequirements: string[] }[]) => {
     // Capture the IDs we'll need to update AFTER adding
-    const startIndex = data.actions.length;
-    
+    const startIndex = dataRef.current.actions.length;
+
     // First, add all empty actions
     actions.forEach(() => {
       addAction();
     });
-    
+
     // Then update each action with generated content using staggered timeouts
     actions.forEach((action, i) => {
       setTimeout(() => {
-        // Get the current state of actions to find the correct ID
-        // The action at startIndex + i should be the one we just created
-        const targetAction = data.actions[startIndex + i];
+        // Use dataRef.current to get the LATEST state, not a stale closure
+        const targetAction = dataRef.current.actions[startIndex + i];
         if (targetAction) {
           updateAction(targetAction.id, {
             description: action.description,

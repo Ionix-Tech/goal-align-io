@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { A3WizardData, WizardAction, WizardWhyLink, ActionPriority } from "@/hooks/useA3WizardState";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useProjectTeamMembers } from "@/hooks/useTeamMembers";
 import { useA3Copilot } from "@/hooks/useA3Copilot";
 import { Plus, Trash2, AlertCircle, CheckCircle, Link, ExternalLink, Loader2, ArrowUp, ArrowRight, ArrowDown, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 interface Step5ExecutionProps {
   data: A3WizardData;
+  projectId: string | null;
   addAction: () => void;
   updateAction: (id: string, updates: Partial<WizardAction>) => void;
   removeAction: (id: string) => void;
@@ -40,6 +41,7 @@ const priorityOptions: { value: ActionPriority; label: string; icon: React.React
 
 export function Step5Execution({
   data,
+  projectId,
   addAction,
   updateAction,
   removeAction,
@@ -47,7 +49,7 @@ export function Step5Execution({
   updateWhyLink,
   removeWhyLink
 }: Step5ExecutionProps) {
-  const { data: teamMembers = [] } = useTeamMembers();
+  const { data: teamMembers = [] } = useProjectTeamMembers(projectId);
   const { improveAction } = useA3Copilot();
   const [improvingActionId, setImprovingActionId] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<'none' | 'chronology'>('none');
