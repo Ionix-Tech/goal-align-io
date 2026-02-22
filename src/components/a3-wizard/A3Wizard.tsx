@@ -833,6 +833,7 @@ export function A3Wizard() {
       // Tasks and indicators are already persisted by saveProgress() above.
       // Below we persist data that saveProgress does NOT handle:
       // whyLinks, milestones, strategicKpis, and status change.
+      const submitData = dataRef.current;
 
       // --- PERSIST WHY LINKS ---
       // Delete existing why links
@@ -842,7 +843,7 @@ export function A3Wizard() {
         .eq('project_id', currentProjectId);
 
       // Insert new why links
-      for (const link of data.whyLinks) {
+      for (const link of submitData.whyLinks) {
         if (!link.url.trim()) continue;
 
         await supabase
@@ -862,9 +863,9 @@ export function A3Wizard() {
 
       // Fixed milestones (M1, M2, M3)
       const fixedMilestones = [
-        { title: "M1 - Decolagem", target_date: data.m1Date, milestone_type: 'decolagem' as const },
-        { title: "M2 - Voo", target_date: data.m2Date, milestone_type: 'voo' as const },
-        { title: "M3 - Escala", target_date: data.m3Date, milestone_type: 'escala' as const }
+        { title: "M1 - Decolagem", target_date: submitData.m1Date, milestone_type: 'decolagem' as const },
+        { title: "M2 - Voo", target_date: submitData.m2Date, milestone_type: 'voo' as const },
+        { title: "M3 - Escala", target_date: submitData.m3Date, milestone_type: 'escala' as const }
       ];
 
       for (const milestone of fixedMilestones) {
@@ -899,7 +900,7 @@ export function A3Wizard() {
       }
 
       // Insert new extra milestones
-      for (const milestone of data.extraMilestones) {
+      for (const milestone of submitData.extraMilestones) {
         if (!milestone.title.trim() || !milestone.targetDate) continue;
         
         await supabase
@@ -921,7 +922,7 @@ export function A3Wizard() {
         .eq('project_id', currentProjectId);
 
       // Insert new strategic KPIs
-      for (const kpi of data.strategicKpis) {
+      for (const kpi of submitData.strategicKpis) {
         await supabase
           .from('project_strategic_kpis')
           .insert({

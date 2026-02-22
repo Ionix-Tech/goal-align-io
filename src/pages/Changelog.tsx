@@ -10,12 +10,13 @@ interface ChangelogEntry {
 const changelog: ChangelogEntry[] = [
   {
     version: "0.9.5",
-    date: "2026-02-20",
+    date: "2026-02-22",
     changes: [
       { type: 'fix', description: 'Corrigido bug crítico: ações do Plano de Ação desapareciam ao salvar (ex: criar 4 ações e só 1 persistir). Substituído padrão "deletar tudo + reinserir" por upsert por ID' },
       { type: 'fix', description: 'Corrigida race condition entre auto-save e save manual que podia causar perda de dados nas ações' },
       { type: 'fix', description: 'Dropdown de Responsável nas ações agora mostra apenas membros da equipe do projeto (antes mostrava todos os usuários do sistema)' },
       { type: 'fix', description: 'Corrigido bug no copiloto IA: ações geradas pela IA não eram salvas por referência de estado stale (closure desatualizada)' },
+      { type: 'fix', description: 'Corrigido envio para aprovação (handleSubmit) que usava dados stale para whyLinks, milestones e KPIs estratégicos' },
     ],
   },
   {
