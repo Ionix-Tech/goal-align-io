@@ -30,7 +30,7 @@ const menuItems = [
     subitems: [
       { title: "Objetivos", url: "/theses", icon: FileText },
       { title: "Priorização", url: "/prioritization", icon: ListOrdered },
-      { title: "Portfólio", url: "/portfolio", icon: FolderKanban },
+      { title: "Portfólio", url: "/portfolio", icon: FolderKanban, badge: "Beta" },
     ]
   },
   { 
@@ -144,6 +144,11 @@ export function AppSidebar() {
                                     <NavLink to={subitem.url}>
                                       <subitem.icon className="h-4 w-4" />
                                       <span>{subitem.title}</span>
+                                      {(subitem as any).badge && (
+                                        <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                                          {(subitem as any).badge}
+                                        </span>
+                                      )}
                                     </NavLink>
                                   </SidebarMenuButton>
                                 </SidebarMenuItem>
