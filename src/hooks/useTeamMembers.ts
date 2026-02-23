@@ -43,6 +43,18 @@ export function useProjectTeamMembers(projectId: string | null | undefined) {
       if (membersError) throw membersError;
 
       const memberIds = (members || []).map(m => m.user_id);
+
+      // Also include the project leader (assigned_to) if not already in the list
+      const { data: project } = await supabase
+        .from('projects')
+        .select('assigned_to')
+        .eq('id', projectId)
+        .single();
+
+      if (project?.assigned_to && !memberIds.includes(project.assigned_to)) {
+        memberIds.push(project.assigned_to);
+      }
+
       if (memberIds.length === 0) return [];
 
       const { data, error } = await supabase
