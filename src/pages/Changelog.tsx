@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.9.6",
+    date: "2026-02-23",
+    changes: [
+      { type: 'fix', description: 'Líder do projeto agora aparece como opção no dropdown de Responsável nas ações do Plano de Ação (antes só membros da equipe explicitamente adicionados apareciam)' },
+    ],
+  },
+  {
     version: "0.9.5",
     date: "2026-02-22",
     changes: [
