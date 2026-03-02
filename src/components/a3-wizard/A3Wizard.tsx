@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Save, Loader2, Check, Cloud } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import { Step7Review } from "./steps/Step7Review";
 
 export function A3Wizard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { id: urlProjectId } = useParams<{ id: string }>();
   
   const {
@@ -377,6 +379,8 @@ export function A3Wizard() {
             }))
           );
         }
+        // Invalidate so Step5/Step7 dropdowns pick up the updated members
+        queryClient.invalidateQueries({ queryKey: ['project-team-members', currentProjectId] });
 
         // --- SAVE ACTIONS/TASKS (AUTO-SAVE) ---
         await persistActions(currentProjectId, dataRef.current.actions, userId!);
@@ -639,6 +643,7 @@ export function A3Wizard() {
             }))
           );
         }
+        queryClient.invalidateQueries({ queryKey: ['project-team-members', currentProjectId] });
 
         // --- SAVE ACTIONS/TASKS (MANUAL SAVE) ---
         await persistActions(currentProjectId, currentData.actions, userId!);
