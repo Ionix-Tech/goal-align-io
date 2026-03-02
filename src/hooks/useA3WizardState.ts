@@ -85,11 +85,11 @@ export interface A3WizardData {
   // Step 2: Requisitos
   requirements: Omit<ProjectRequirement, 'id' | 'project_id' | 'created_at' | 'updated_at'>[];
   
-  // Step 3: Diagnóstico
+  // Step 3: Situação Atual
   currentSituationDescription: string;
   currentSituationAttachments: WizardAttachment[]; // Centralized attachment state
   
-  // Step 4: Estratégia
+  // Step 4: Situação Alvo
   targetSituationDescription: string;
   targetSituationAttachments: WizardAttachment[]; // Centralized attachment state
   

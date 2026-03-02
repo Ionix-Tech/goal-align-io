@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.9.7",
+    date: "2026-03-02",
+    changes: [
+      { type: 'feature', description: 'Adicionada área responsável "Marketing" nas categorias de projeto' },
+      { type: 'improvement', description: 'Renomeados passos do A3: "Diagnóstico" → "Situação Atual" e "Estratégia" → "Situação Alvo" para maior clareza' },
+      { type: 'improvement', description: 'Refatoração interna do salvamento de ações do Plano de Ação (persistActions extraído como helper compartilhado entre auto-save e save manual)' },
+    ],
+  },
+  {
     version: "0.9.6",
     date: "2026-02-23",
     changes: [

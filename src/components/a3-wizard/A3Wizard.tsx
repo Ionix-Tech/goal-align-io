@@ -61,6 +61,148 @@ export function A3Wizard() {
   const currentStepRef = useRef(currentStep);
   currentStepRef.current = currentStep;
 
+  // Track mapping from local IDs to DB IDs for newly inserted tasks
+  const localToDbIdMap = useRef(new Map<string, string>());
+
+  // Shared helper: persist actions/tasks to Supabase
+  const persistActions = async (
+    currentProjectId: string,
+    actions: WizardAction[],
+    currentUserId: string
+  ): Promise<void> => {
+    const validActions = actions.filter(a => a.description.trim());
+    const { data: existingTasks } = await supabase
+      .from('project_tasks')
+      .select('id')
+      .eq('project_id', currentProjectId);
+
+    const existingTaskIds = new Set((existingTasks || []).map(t => t.id));
+
+    // Build effective IDs: local IDs that were previously inserted get mapped to their DB IDs
+    const effectiveIdMap = new Map<string, string>();
+    for (const action of validActions) {
+      const dbId = localToDbIdMap.current.get(action.id);
+      effectiveIdMap.set(action.id, dbId && existingTaskIds.has(dbId) ? dbId : action.id);
+    }
+    const effectiveDbIds = new Set([...effectiveIdMap.values()]);
+
+    const { data: milestonesData } = await supabase
+      .from('project_milestones')
+      .select('id, milestone_type')
+      .eq('project_id', currentProjectId);
+
+    const getMilestoneId = (linked: string | null): string | null => {
+      if (!linked) return null;
+      if (linked === 'm1') return milestonesData?.find(m => m.milestone_type === 'decolagem')?.id || null;
+      if (linked === 'm2') return milestonesData?.find(m => m.milestone_type === 'voo')?.id || null;
+      if (linked === 'm3') return milestonesData?.find(m => m.milestone_type === 'escala')?.id || null;
+      return linked;
+    };
+
+    const { data: savedReqsForTasks } = await supabase
+      .from('project_requirements')
+      .select('id, code')
+      .eq('project_id', currentProjectId);
+    const reqIdByCodeForTasks = new Map<string, string>();
+    (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
+
+    // DELETE tasks that were removed from state
+    const tasksToDelete = [...existingTaskIds].filter(id => !effectiveDbIds.has(id));
+    if (tasksToDelete.length > 0) {
+      await supabase.from('requirement_task_links').delete().in('task_id', tasksToDelete);
+      await supabase.from('task_indicator_links').delete().in('task_id', tasksToDelete);
+      await supabase.from('project_tasks').delete().in('id', tasksToDelete);
+    }
+
+    // Collect all link inserts to batch them
+    const allReqLinks: { task_id: string; requirement_id: string }[] = [];
+    const allIndLinks: { task_id: string; indicator_id: string }[] = [];
+    const idsToDeleteLinks: string[] = [];
+
+    for (const action of validActions) {
+      const effectiveId = effectiveIdMap.get(action.id)!;
+      const milestoneId = getMilestoneId(action.linkedMilestone);
+      const taskPayload = {
+        title: action.description,
+        assigned_to: action.responsibleId || null,
+        start_date: action.startDate || null,
+        due_date: action.dueDate || null,
+        status: action.status || 'not_started',
+        priority: action.priority || 'medium',
+        milestone_id: milestoneId
+      };
+
+      let taskId: string;
+
+      if (existingTaskIds.has(effectiveId)) {
+        // UPDATE existing task
+        const { error: updateError } = await supabase.from('project_tasks').update(taskPayload).eq('id', effectiveId);
+        if (updateError) {
+          console.error(`Failed to update task ${effectiveId}:`, updateError);
+          continue;
+        }
+        taskId = effectiveId;
+        idsToDeleteLinks.push(taskId);
+      } else {
+        // INSERT new task
+        const { data: newTask, error: taskError } = await supabase
+          .from('project_tasks')
+          .insert({
+            ...taskPayload,
+            project_id: currentProjectId,
+            created_by: currentUserId
+          })
+          .select()
+          .single();
+
+        if (taskError || !newTask) {
+          console.error(`Failed to insert task "${action.description}":`, taskError);
+          continue;
+        }
+        taskId = newTask.id;
+        // Track the mapping so next save knows this local ID = this DB ID
+        localToDbIdMap.current.set(action.id, taskId);
+      }
+
+      // Collect links for batch insert
+      for (const reqCode of action.linkedRequirements) {
+        const reqId = reqIdByCodeForTasks.get(reqCode);
+        if (reqId) {
+          allReqLinks.push({ task_id: taskId, requirement_id: reqId });
+        }
+      }
+      for (const indicatorId of action.linkedIndicators) {
+        allIndLinks.push({ task_id: taskId, indicator_id: indicatorId });
+      }
+    }
+
+    // Batch delete old links for updated tasks
+    if (idsToDeleteLinks.length > 0) {
+      await supabase.from('requirement_task_links').delete().in('task_id', idsToDeleteLinks);
+      await supabase.from('task_indicator_links').delete().in('task_id', idsToDeleteLinks);
+    }
+
+    // Batch insert all links with error handling
+    if (allReqLinks.length > 0) {
+      const { error: reqLinkError } = await supabase
+        .from('requirement_task_links')
+        .insert(allReqLinks);
+      if (reqLinkError) {
+        console.error('Failed to insert requirement-task links:', reqLinkError);
+        throw new Error(`Falha ao salvar vínculos de requisitos: ${reqLinkError.message}`);
+      }
+    }
+    if (allIndLinks.length > 0) {
+      const { error: indLinkError } = await supabase
+        .from('task_indicator_links')
+        .insert(allIndLinks);
+      if (indLinkError) {
+        console.error('Failed to insert task-indicator links:', indLinkError);
+        throw new Error(`Falha ao salvar vínculos de indicadores: ${indLinkError.message}`);
+      }
+    }
+  };
+
   const canNavigateTo = (step: number): boolean => {
     if (step < currentStep) return true;
     if (step === currentStep) return true;
@@ -236,93 +378,8 @@ export function A3Wizard() {
           );
         }
 
-        // --- SAVE ACTIONS/TASKS (AUTO-SAVE) --- upsert pattern
-        {
-          const validActions = dataRef.current.actions.filter(a => a.description.trim());
-          const { data: existingTasks } = await supabase
-            .from('project_tasks')
-            .select('id')
-            .eq('project_id', currentProjectId);
-
-          const existingTaskIds = new Set((existingTasks || []).map(t => t.id));
-          const stateActionIds = new Set(validActions.map(a => a.id));
-
-          const { data: milestonesData } = await supabase
-            .from('project_milestones')
-            .select('id, milestone_type')
-            .eq('project_id', currentProjectId);
-
-          const getMilestoneId = (linked: string | null): string | null => {
-            if (!linked) return null;
-            if (linked === 'm1') return milestonesData?.find(m => m.milestone_type === 'decolagem')?.id || null;
-            if (linked === 'm2') return milestonesData?.find(m => m.milestone_type === 'voo')?.id || null;
-            if (linked === 'm3') return milestonesData?.find(m => m.milestone_type === 'escala')?.id || null;
-            return linked;
-          };
-
-          const { data: savedReqsForTasks } = await supabase
-            .from('project_requirements')
-            .select('id, code')
-            .eq('project_id', currentProjectId);
-          const reqIdByCodeForTasks = new Map<string, string>();
-          (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
-
-          // DELETE tasks that were removed from state
-          const tasksToDelete = [...existingTaskIds].filter(id => !stateActionIds.has(id));
-          if (tasksToDelete.length > 0) {
-            await supabase.from('requirement_task_links').delete().in('task_id', tasksToDelete);
-            await supabase.from('task_indicator_links').delete().in('task_id', tasksToDelete);
-            await supabase.from('project_tasks').delete().in('id', tasksToDelete);
-          }
-
-          for (const action of validActions) {
-            const milestoneId = getMilestoneId(action.linkedMilestone);
-            const taskPayload = {
-              title: action.description,
-              assigned_to: action.responsibleId || null,
-              start_date: action.startDate || null,
-              due_date: action.dueDate || null,
-              status: action.status || 'not_started',
-              priority: action.priority || 'medium',
-              milestone_id: milestoneId
-            };
-
-            let taskId: string;
-
-            if (existingTaskIds.has(action.id)) {
-              // UPDATE existing task
-              await supabase.from('project_tasks').update(taskPayload).eq('id', action.id);
-              taskId = action.id;
-              // Clear old links for this task, then reinsert
-              await supabase.from('requirement_task_links').delete().eq('task_id', taskId);
-              await supabase.from('task_indicator_links').delete().eq('task_id', taskId);
-            } else {
-              // INSERT new task
-              const { data: newTask, error: taskError } = await supabase
-                .from('project_tasks')
-                .insert({
-                  ...taskPayload,
-                  project_id: currentProjectId,
-                  created_by: userId
-                })
-                .select()
-                .single();
-
-              if (taskError) continue;
-              taskId = newTask.id;
-            }
-
-            for (const reqCode of action.linkedRequirements) {
-              const reqId = reqIdByCodeForTasks.get(reqCode);
-              if (reqId) {
-                await supabase.from('requirement_task_links').insert({ task_id: taskId, requirement_id: reqId });
-              }
-            }
-            for (const indicatorId of action.linkedIndicators) {
-              await supabase.from('task_indicator_links').insert({ task_id: taskId, indicator_id: indicatorId });
-            }
-          }
-        }
+        // --- SAVE ACTIONS/TASKS (AUTO-SAVE) ---
+        await persistActions(currentProjectId, dataRef.current.actions, userId!);
 
         // --- SAVE INDICATORS (AUTO-SAVE) ---
         if (dataRef.current.indicators.length > 0) {
@@ -583,93 +640,8 @@ export function A3Wizard() {
           );
         }
 
-        // --- SAVE ACTIONS/TASKS (MANUAL SAVE) --- upsert pattern
-        {
-          const validActions = currentData.actions.filter(a => a.description.trim());
-          const { data: existingTasks } = await supabase
-            .from('project_tasks')
-            .select('id')
-            .eq('project_id', currentProjectId);
-
-          const existingTaskIds = new Set((existingTasks || []).map(t => t.id));
-          const stateActionIds = new Set(validActions.map(a => a.id));
-
-          const { data: milestonesData } = await supabase
-            .from('project_milestones')
-            .select('id, milestone_type')
-            .eq('project_id', currentProjectId);
-
-          const getMilestoneId = (linked: string | null): string | null => {
-            if (!linked) return null;
-            if (linked === 'm1') return milestonesData?.find(m => m.milestone_type === 'decolagem')?.id || null;
-            if (linked === 'm2') return milestonesData?.find(m => m.milestone_type === 'voo')?.id || null;
-            if (linked === 'm3') return milestonesData?.find(m => m.milestone_type === 'escala')?.id || null;
-            return linked;
-          };
-
-          const { data: savedReqsForTasks } = await supabase
-            .from('project_requirements')
-            .select('id, code')
-            .eq('project_id', currentProjectId);
-          const reqIdByCodeForTasks = new Map<string, string>();
-          (savedReqsForTasks || []).forEach(r => reqIdByCodeForTasks.set(r.code, r.id));
-
-          // DELETE tasks that were removed from state
-          const tasksToDelete = [...existingTaskIds].filter(id => !stateActionIds.has(id));
-          if (tasksToDelete.length > 0) {
-            await supabase.from('requirement_task_links').delete().in('task_id', tasksToDelete);
-            await supabase.from('task_indicator_links').delete().in('task_id', tasksToDelete);
-            await supabase.from('project_tasks').delete().in('id', tasksToDelete);
-          }
-
-          for (const action of validActions) {
-            const milestoneId = getMilestoneId(action.linkedMilestone);
-            const taskPayload = {
-              title: action.description,
-              assigned_to: action.responsibleId || null,
-              start_date: action.startDate || null,
-              due_date: action.dueDate || null,
-              status: action.status || 'not_started',
-              priority: action.priority || 'medium',
-              milestone_id: milestoneId
-            };
-
-            let taskId: string;
-
-            if (existingTaskIds.has(action.id)) {
-              // UPDATE existing task
-              await supabase.from('project_tasks').update(taskPayload).eq('id', action.id);
-              taskId = action.id;
-              // Clear old links for this task, then reinsert
-              await supabase.from('requirement_task_links').delete().eq('task_id', taskId);
-              await supabase.from('task_indicator_links').delete().eq('task_id', taskId);
-            } else {
-              // INSERT new task
-              const { data: newTask, error: taskError } = await supabase
-                .from('project_tasks')
-                .insert({
-                  ...taskPayload,
-                  project_id: currentProjectId,
-                  created_by: userId
-                })
-                .select()
-                .single();
-
-              if (taskError) continue;
-              taskId = newTask.id;
-            }
-
-            for (const reqCode of action.linkedRequirements) {
-              const reqId = reqIdByCodeForTasks.get(reqCode);
-              if (reqId) {
-                await supabase.from('requirement_task_links').insert({ task_id: taskId, requirement_id: reqId });
-              }
-            }
-            for (const indicatorId of action.linkedIndicators) {
-              await supabase.from('task_indicator_links').insert({ task_id: taskId, indicator_id: indicatorId });
-            }
-          }
-        }
+        // --- SAVE ACTIONS/TASKS (MANUAL SAVE) ---
+        await persistActions(currentProjectId, currentData.actions, userId!);
 
         // --- SAVE INDICATORS (MANUAL SAVE) ---
         if (currentData.indicators.length > 0) {

@@ -1,4 +1,4 @@
-import { Building2, Users, FileText, TrendingUp, Factory, Truck, Monitor, Brain, Lightbulb } from 'lucide-react';
+import { Building2, Users, FileText, TrendingUp, Factory, Truck, Monitor, Brain, Lightbulb, Megaphone } from 'lucide-react';
 
 export const PROJECT_CATEGORIES = [
   { 
@@ -49,9 +49,15 @@ export const PROJECT_CATEGORIES = [
     icon: Brain,
     colorClass: 'bg-cyan-100 text-cyan-700 border-cyan-300'
   },
-  { 
-    value: 'business_design', 
-    label: 'Business Design', 
+  {
+    value: 'marketing',
+    label: 'Marketing',
+    icon: Megaphone,
+    colorClass: 'bg-pink-100 text-pink-700 border-pink-300'
+  },
+  {
+    value: 'business_design',
+    label: 'Business Design',
     icon: Lightbulb,
     colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-300'
   },

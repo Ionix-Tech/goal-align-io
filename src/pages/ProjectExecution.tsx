@@ -520,12 +520,12 @@ const ProjectExecution = () => {
               </CardContent>
             </Card>
 
-            {/* 3. Diagnóstico */}
+            {/* 3. Situação Atual */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
-                  Diagnóstico
+                  Situação Atual
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -547,12 +547,12 @@ const ProjectExecution = () => {
               </CardContent>
             </Card>
 
-            {/* 4. Estratégia */}
+            {/* 4. Situação Alvo */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</span>
-                  Estratégia
+                  Situação Alvo
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
