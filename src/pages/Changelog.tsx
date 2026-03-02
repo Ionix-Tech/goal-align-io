@@ -9,6 +9,18 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.9.8",
+    date: "2026-03-02",
+    changes: [
+      { type: 'feature', description: 'Mosaico de imagens para Situação Atual e Situação Alvo na visualização do projeto' },
+      { type: 'fix', description: 'Dropdown de Responsável nas ações da Execução do Projeto não exibia opções (vazio)' },
+      { type: 'fix', description: 'Membros da equipe não carregavam nos passos 5 e 7 do Wizard A3' },
+      { type: 'improvement', description: 'Indicador estratégico no Step 6 (Controle) agora é seleção única em vez de múltipla — mais alinhado ao modelo A3' },
+      { type: 'improvement', description: 'Dropdown de Responsável exibe todos os usuários como fallback quando o projeto ainda não possui membros' },
+      { type: 'improvement', description: 'Setup de testes unitários com Vitest + Testing Library' },
+    ],
+  },
+  {
     version: "0.9.7",
     date: "2026-03-02",
     changes: [

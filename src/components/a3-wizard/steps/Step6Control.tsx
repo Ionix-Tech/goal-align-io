@@ -38,12 +38,7 @@ export function Step6Control({
   const kpiFilters = data.thesisId ? { objective_id: data.thesisId, kpi_type: 'strategic' as const } : undefined;
   const { data: strategicKPIs = [] } = useKPIs(kpiFilters);
 
-  // KPIs disponíveis para adicionar (não selecionados ainda)
-  const availableKPIs = strategicKPIs.filter(
-    kpi => !data.strategicKpis.some(selected => selected.kpiId === kpi.id)
-  );
-
-  const handleAddKPI = (kpiId: string) => {
+  const handleSelectKPI = (kpiId: string) => {
     const kpi = strategicKPIs.find(k => k.id === kpiId);
     if (!kpi) return;
 
@@ -54,16 +49,15 @@ export function Step6Control({
     };
 
     updateData({
-      strategicKpis: [...data.strategicKpis, newKPI],
-      strategicIndicator: data.strategicKpis.length === 0 ? kpi.name : data.strategicIndicator
+      strategicKpis: [newKPI],
+      strategicIndicator: kpi.name
     });
   };
 
-  const handleRemoveKPI = (kpiId: string) => {
-    const updatedKpis = data.strategicKpis.filter(k => k.kpiId !== kpiId);
-    updateData({ 
-      strategicKpis: updatedKpis,
-      strategicIndicator: updatedKpis.length > 0 ? updatedKpis[0].kpiName : ""
+  const handleRemoveKPI = () => {
+    updateData({
+      strategicKpis: [],
+      strategicIndicator: ""
     });
   };
 
@@ -165,7 +159,7 @@ export function Step6Control({
                         )}
                         <button
                           type="button"
-                          onClick={() => handleRemoveKPI(kpi.kpiId)}
+                          onClick={() => handleRemoveKPI()}
                           className="ml-1 rounded-full hover:bg-muted p-0.5"
                         >
                           <X className="h-3 w-3" />
@@ -176,14 +170,14 @@ export function Step6Control({
                 </div>
               )}
 
-              {/* Dropdown para adicionar mais KPIs */}
-              {data.thesisId && availableKPIs.length > 0 && (
-                <Select onValueChange={handleAddKPI}>
+              {/* Dropdown para selecionar indicador (single-select) */}
+              {data.thesisId && data.strategicKpis.length === 0 && strategicKPIs.length > 0 && (
+                <Select onValueChange={handleSelectKPI}>
                   <SelectTrigger className="w-full md:w-auto">
-                    <SelectValue placeholder="Adicionar indicador..." />
+                    <SelectValue placeholder="Selecionar indicador..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableKPIs.map((kpi) => (
+                    {strategicKPIs.map((kpi) => (
                       <SelectItem key={kpi.id} value={kpi.id}>
                         {kpi.name} {kpi.unit && `(${kpi.unit})`}
                       </SelectItem>
@@ -192,8 +186,8 @@ export function Step6Control({
                 </Select>
               )}
 
-              {/* Mensagem se não houver KPIs e nem disponíveis */}
-              {data.strategicKpis.length === 0 && availableKPIs.length === 0 && data.thesisId && (
+              {/* Mensagem se não houver KPIs disponíveis */}
+              {data.strategicKpis.length === 0 && strategicKPIs.length === 0 && data.thesisId && (
                 <p className="text-sm text-muted-foreground italic">
                   Não há indicadores estratégicos cadastrados neste objetivo.
                 </p>

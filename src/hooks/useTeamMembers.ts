@@ -55,7 +55,15 @@ export function useProjectTeamMembers(projectId: string | null | undefined) {
         memberIds.push(project.assigned_to);
       }
 
-      if (memberIds.length === 0) return [];
+      if (memberIds.length === 0) {
+        // Fallback: if project has no members yet, return all profiles
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .order('full_name');
+        if (error) throw error;
+        return data || [];
+      }
 
       const { data, error } = await supabase
         .from('profiles')
