@@ -123,6 +123,9 @@ export interface ProjectDetails {
   attachments?: Array<{
     id: string;
     file_name: string;
+    file_path: string;
+    file_type: string;
+    category: string | null;
   }>;
 }
 
@@ -193,7 +196,7 @@ export function useProjectDetails(projectId: string | null) {
           .order('created_at', { ascending: true }),
         supabase
           .from('project_attachments')
-          .select('id, file_name')
+          .select('id, file_name, file_path, file_type, category')
           .eq('project_id', projectId)
       ]);
 

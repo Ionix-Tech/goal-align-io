@@ -8,6 +8,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { ProjectDetails } from "@/hooks/useProjectDetails";
 import type { ProjectRequirement } from "@/hooks/useRequirements";
+import type { CategoryImage } from "@/hooks/useProjectCategoryAttachments";
+import { ImageMosaic } from "./ImageMosaic";
 
 interface ProjectCoverSectionProps {
   project: ProjectDetails;
@@ -40,6 +42,8 @@ interface ProjectCoverSectionProps {
   } | null;
   onAddRequirement?: () => void;
   onEditRequirements?: () => void;
+  currentImages?: CategoryImage[];
+  targetImages?: CategoryImage[];
 }
 
 function CoverSituationImage({ filePath }: { filePath: string }) {
@@ -52,14 +56,16 @@ function CoverSituationImage({ filePath }: { filePath: string }) {
   return <img src={url} alt="" className="w-full max-h-32 object-contain rounded border mt-2" />;
 }
 
-export function ProjectCoverSection({ 
-  project, 
-  requirements, 
+export function ProjectCoverSection({
+  project,
+  requirements,
   situations,
   thesis,
   linkedKPI,
   onAddRequirement,
-  onEditRequirements
+  onEditRequirements,
+  currentImages = [],
+  targetImages = [],
 }: ProjectCoverSectionProps) {
   return (
     <div className="space-y-6">
@@ -226,7 +232,7 @@ export function ProjectCoverSection({
       )}
 
       {/* Situação Atual vs Futura */}
-      {situations.length > 0 && (
+      {(situations.length > 0 || currentImages.length > 0 || targetImages.length > 0) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -281,6 +287,33 @@ export function ProjectCoverSection({
                   )}
                 </div>
               ))}
+
+              {/* Wizard-uploaded images (from project_attachments with category) */}
+              {(currentImages.length > 0 || targetImages.length > 0) && (
+                <>
+                  {situations.length > 0 && <Separator className="my-4" />}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {currentImages.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-destructive" />
+                          <h4 className="font-medium text-xs text-muted-foreground">Imagens — Situação Atual</h4>
+                        </div>
+                        <ImageMosaic images={currentImages} />
+                      </div>
+                    )}
+                    {targetImages.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <h4 className="font-medium text-xs text-muted-foreground">Imagens — Situação Alvo</h4>
+                        </div>
+                        <ImageMosaic images={targetImages} />
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>

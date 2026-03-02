@@ -24,12 +24,16 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import type { ProjectDetails } from '@/hooks/useProjectDetails';
 import type { ProjectSituation } from '@/hooks/useProjectSituations';
+import type { CategoryImage } from '@/hooks/useProjectCategoryAttachments';
+import { ImageMosaic } from './ImageMosaic';
 
 interface A3PresentationViewProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: ProjectDetails;
   situations: ProjectSituation[];
+  currentImages?: CategoryImage[];
+  targetImages?: CategoryImage[];
 }
 
 const strategicPillars: Record<string, { label: string; color: string }> = {
@@ -67,6 +71,8 @@ export function A3PresentationView({
   onOpenChange,
   project,
   situations,
+  currentImages = [],
+  targetImages = [],
 }: A3PresentationViewProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -235,6 +241,48 @@ export function A3PresentationView({
                 </div>
               );
             })}
+          </div>
+        </div>
+      ),
+    });
+  }
+
+  // Slide 2b: Fallback diagnosis using wizard-uploaded category images
+  if (situations.length === 0 && (currentImages.length > 0 || targetImages.length > 0)) {
+    slides.push({
+      id: 'diagnosis-images',
+      title: 'Situação Atual vs Alvo',
+      render: () => (
+        <div className="flex flex-col h-full px-8 py-4">
+          <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+            <Target className="h-8 w-8 text-primary" />
+            Situação Atual vs Situação Alvo
+          </h2>
+          <div className="flex-1 grid grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <h3 className="font-semibold text-lg">Situação Atual</h3>
+              </div>
+              {project.current_situation_description && (
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-lg p-4">
+                  <p className="text-base leading-relaxed">{project.current_situation_description}</p>
+                </div>
+              )}
+              <ImageMosaic images={currentImages} />
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <h3 className="font-semibold text-lg">Situação Alvo</h3>
+              </div>
+              {project.target_situation_description && (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-lg p-4">
+                  <p className="text-base leading-relaxed">{project.target_situation_description}</p>
+                </div>
+              )}
+              <ImageMosaic images={targetImages} />
+            </div>
           </div>
         </div>
       ),

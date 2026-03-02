@@ -41,6 +41,8 @@ import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
 import { Target, FileCheck, AlertCircle, Monitor } from "lucide-react";
 import { format } from "date-fns";
 import { ActionMatrix } from "@/components/execution/ActionMatrix";
+import { ImageMosaic } from "@/components/execution/ImageMosaic";
+import { useProjectCategoryAttachments } from "@/hooks/useProjectCategoryAttachments";
 
 const strategicPillars = [
   { value: 'operational_efficiency', label: 'Eficiência Operacional', icon: '⚙️' },
@@ -57,6 +59,7 @@ const ProjectExecution = () => {
   const { data: requirements } = useRequirements(projectId || null);
   const { data: reportData } = useA3ReportData(projectId || null);
   const { data: tasks } = useProjectTasks(projectId || null);
+  const { data: categoryAttachments } = useProjectCategoryAttachments(projectId || null);
   const deleteMilestone = useDeleteMilestone();
 
   // Get initial tab from URL parameter
@@ -287,6 +290,8 @@ const ProjectExecution = () => {
                 linkedKPI={project.linkedKPI}
                 onAddRequirement={() => setShowAddRequirementDialog(true)}
                 onEditRequirements={() => setShowEditRequirementsDialog(true)}
+                currentImages={categoryAttachments?.currentImages}
+                targetImages={categoryAttachments?.targetImages}
               />
             </div>
 
@@ -538,11 +543,8 @@ const ProjectExecution = () => {
                           : 'Não descrita')}
                   </p>
                 </div>
-                {project.attachments && project.attachments.length > 0 && (
-                  <div className="pt-2">
-                    <span className="text-sm text-muted-foreground">📎 Anexos: </span>
-                    <span className="text-sm">{project.attachments.length} arquivo(s)</span>
-                  </div>
+                {categoryAttachments?.currentImages && categoryAttachments.currentImages.length > 0 && (
+                  <ImageMosaic images={categoryAttachments.currentImages} />
                 )}
               </CardContent>
             </Card>
@@ -565,6 +567,9 @@ const ProjectExecution = () => {
                           : 'Não descrita')}
                   </p>
                 </div>
+                {categoryAttachments?.targetImages && categoryAttachments.targetImages.length > 0 && (
+                  <ImageMosaic images={categoryAttachments.targetImages} />
+                )}
                 {project.indicators.length > 0 && (
                   <div className="mt-4">
                     <div className="rounded-md border">
@@ -857,6 +862,8 @@ const ProjectExecution = () => {
         onOpenChange={setShowPresentationView}
         project={project}
         situations={situations || []}
+        currentImages={categoryAttachments?.currentImages}
+        targetImages={categoryAttachments?.targetImages}
       />
 
       {/* Relatório A3 para impressão (oculto na tela) */}
