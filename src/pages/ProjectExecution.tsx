@@ -764,7 +764,14 @@ const ProjectExecution = () => {
               projectId={project.id}
               milestones={project.milestones.map(m => ({ id: m.id, title: m.title }))}
               indicators={project.indicators.map(i => ({ id: i.id, name: i.name }))}
-              members={project.members.map(m => ({ user_id: m.user.id, user: { full_name: m.user.full_name } }))}
+              members={(() => {
+                const list = project.members.map(m => ({ user_id: m.user.id, user: { full_name: m.user.full_name } }));
+                // Include project leader if not already in the members list
+                if (project.assignee && !list.some(m => m.user_id === project.assignee!.id)) {
+                  list.unshift({ user_id: project.assignee.id, user: { full_name: project.assignee.full_name } });
+                }
+                return list;
+              })()}
               requirements={requirements || []}
             />
           </TabsContent>
