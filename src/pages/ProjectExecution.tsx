@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
+import { useProjectTeamMembers } from "@/hooks/useTeamMembers";
 import { useRequirements } from "@/hooks/useRequirements";
 import { useDeleteMilestone } from "@/hooks/useMilestones";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
@@ -35,6 +36,7 @@ import { PrintableA3Report } from "@/components/execution/PrintableA3Report";
 import { A3PresentationView } from "@/components/execution/A3PresentationView";
 import { ProjectAttachmentsCard } from "@/components/execution/ProjectAttachmentsCard";
 import { LinkedIdeasCard } from "@/components/execution/LinkedIdeasCard";
+import { ProjectMembersManager } from "@/components/execution/ProjectMembersManager";
 import { GanttChart } from "@/components/execution/GanttChart";
 import { ProjectKanban } from "@/components/execution/ProjectKanban";
 import { ManagementChatPanel } from "@/components/chat/ManagementChatPanel";
@@ -61,6 +63,7 @@ const ProjectExecution = () => {
   const { data: tasks } = useProjectTasks(projectId || null);
   const { data: categoryAttachments } = useProjectCategoryAttachments(projectId || null);
   const deleteMilestone = useDeleteMilestone();
+  const { data: projectTeamMembers = [] } = useProjectTeamMembers(projectId || null);
 
   // Get initial tab from URL parameter
   const getInitialTab = () => {
@@ -492,12 +495,10 @@ const ProjectExecution = () => {
                     <p className="font-medium">{project.assignee?.full_name || project.creator?.full_name || '--'}</p>
                   </div>
                 </div>
-                {project.members.length > 0 && (
-                  <div>
-                    <span className="text-muted-foreground">👥 Equipe:</span>
-                    <p className="font-medium">{project.members.map(m => m.user.full_name).join(', ')}</p>
-                  </div>
-                )}
+                <ProjectMembersManager
+                  projectId={project.id}
+                  assigneeId={project.assignee?.id}
+                />
               </CardContent>
             </Card>
 
@@ -769,14 +770,7 @@ const ProjectExecution = () => {
               projectId={project.id}
               milestones={project.milestones.map(m => ({ id: m.id, title: m.title }))}
               indicators={project.indicators.map(i => ({ id: i.id, name: i.name }))}
-              members={(() => {
-                const list = project.members.map(m => ({ user_id: m.user.id, user: { full_name: m.user.full_name } }));
-                // Include project leader if not already in the members list
-                if (project.assignee && !list.some(m => m.user_id === project.assignee!.id)) {
-                  list.unshift({ user_id: project.assignee.id, user: { full_name: project.assignee.full_name } });
-                }
-                return list;
-              })()}
+              members={projectTeamMembers.map(m => ({ user_id: m.id, user: { full_name: m.full_name } }))}
               requirements={requirements || []}
             />
           </TabsContent>

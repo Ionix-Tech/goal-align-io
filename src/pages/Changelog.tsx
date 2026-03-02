@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.9.9",
+    date: "2026-03-02",
+    changes: [
+      { type: 'feature', description: 'Gerenciador de equipe na página de Execução do Projeto — adicionar e remover membros diretamente' },
+      { type: 'fix', description: 'Auto-save do Wizard A3 agora salva também whyLinks e milestones (antes só eram gravados no submit final)' },
+      { type: 'improvement', description: 'Lista de responsáveis nas ações do Plano de Ação usa membros do projeto via useProjectTeamMembers' },
+    ],
+  },
+  {
     version: "0.9.8",
     date: "2026-03-02",
     changes: [

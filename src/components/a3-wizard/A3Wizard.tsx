@@ -465,6 +465,79 @@ export function A3Wizard() {
             );
         }
 
+        // --- SAVE WHY LINKS (AUTO-SAVE) ---
+        if (dataRef.current.whyLinks.length > 0) {
+          await supabase
+            .from('project_why_links')
+            .delete()
+            .eq('project_id', currentProjectId);
+
+          for (const link of dataRef.current.whyLinks) {
+            if (!link.url.trim()) continue;
+            await supabase
+              .from('project_why_links')
+              .insert({
+                project_id: currentProjectId,
+                url: link.url,
+                label: link.label || null
+              });
+          }
+        }
+
+        // --- SAVE MILESTONES (AUTO-SAVE) ---
+        if (dataRef.current.m1Date || dataRef.current.m2Date || dataRef.current.m3Date || dataRef.current.extraMilestones.length > 0) {
+          const { data: existingMilestones } = await supabase
+            .from('project_milestones')
+            .select('id, milestone_type')
+            .eq('project_id', currentProjectId);
+
+          const fixedMilestones = [
+            { title: "M1 - Decolagem", target_date: dataRef.current.m1Date, milestone_type: 'decolagem' as const },
+            { title: "M2 - Voo", target_date: dataRef.current.m2Date, milestone_type: 'voo' as const },
+            { title: "M3 - Escala", target_date: dataRef.current.m3Date, milestone_type: 'escala' as const }
+          ];
+
+          for (const milestone of fixedMilestones) {
+            if (!milestone.target_date) continue;
+            const existing = existingMilestones?.find(m => m.milestone_type === milestone.milestone_type);
+            if (existing) {
+              await supabase
+                .from('project_milestones')
+                .update({ target_date: milestone.target_date })
+                .eq('id', existing.id);
+            } else {
+              await supabase
+                .from('project_milestones')
+                .insert({ project_id: currentProjectId, ...milestone });
+            }
+          }
+
+          // Extra milestones: delete old extras, insert new
+          const extraMilestoneIds = existingMilestones
+            ?.filter(m => !m.milestone_type)
+            .map(m => m.id) || [];
+
+          if (extraMilestoneIds.length > 0) {
+            await supabase
+              .from('project_milestones')
+              .delete()
+              .in('id', extraMilestoneIds);
+          }
+
+          for (const milestone of dataRef.current.extraMilestones) {
+            if (!milestone.title.trim() || !milestone.targetDate) continue;
+            await supabase
+              .from('project_milestones')
+              .insert({
+                project_id: currentProjectId,
+                title: milestone.title,
+                description: milestone.description || null,
+                target_date: milestone.targetDate,
+                milestone_type: null
+              });
+          }
+        }
+
         // --- SAVE ATTACHMENTS (AUTO-SAVE) ---
         const updatedCurrentAtts = await persistAttachments(
           currentProjectId, dataRef.current.currentSituationAttachments, 'current_situation', userId!
