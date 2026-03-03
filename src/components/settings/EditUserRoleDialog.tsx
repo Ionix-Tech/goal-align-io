@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2, Shield, Eye, EyeOff, KeyRound } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 type AppRole = "ceo" | "pmo_manager" | "project_member";
 
@@ -47,6 +49,8 @@ export function EditUserRoleDialog({
   const [selectedRole, setSelectedRole] = useState<AppRole | "">(
     user?.currentRole || ""
   );
+  const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const queryClient = useQueryClient();
 
   const updateRoleMutation = useMutation({
@@ -80,6 +84,42 @@ export function EditUserRoleDialog({
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("Não autenticado");
+      }
+
+      const response = await supabase.functions.invoke("reset-user-password", {
+        body: { user_id: userId, new_password: password },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Erro ao resetar senha");
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Senha resetada com sucesso!");
+      setNewPassword("");
+      setShowPassword(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao resetar senha");
+    },
+  });
+
+  const handleResetPassword = () => {
+    if (!user || !newPassword) return;
+    resetPasswordMutation.mutate({ userId: user.id, password: newPassword });
+  };
+
   const handleSubmit = () => {
     if (!user || !selectedRole) return;
     updateRoleMutation.mutate({ userId: user.id, newRole: selectedRole });
@@ -91,7 +131,13 @@ export function EditUserRoleDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => {
+      if (!v) {
+        setNewPassword("");
+        setShowPassword(false);
+      }
+      onOpenChange(v);
+    }}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -145,6 +191,47 @@ export function EditUserRoleDialog({
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             )}
             Salvar
+          </Button>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            Resetar Senha
+          </Label>
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Nova senha (mín. 6 caracteres)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleResetPassword}
+            disabled={resetPasswordMutation.isPending || newPassword.length < 6}
+          >
+            {resetPasswordMutation.isPending && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
+            Resetar Senha
           </Button>
         </div>
       </DialogContent>
