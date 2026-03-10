@@ -14,6 +14,7 @@ const changelog: ChangelogEntry[] = [
     changes: [
       { type: 'fix', description: 'Corrigido cálculo YTD dos indicadores — agora considera apenas meses com valor realizado preenchido, em vez de incluir todos os meses até o mês atual (evita inflar a meta com meses sem dados)' },
       { type: 'fix', description: 'Área de Marketing adicionada na tabela de áreas do banco — antes existia apenas como categoria de projeto, impedindo a criação de KPIs para Marketing' },
+      { type: 'fix', description: 'Corrigido glitch ao criar KPI de Área diretamente — formulário podia abrir com estado inconsistente (campos de outro tipo visíveis ou dropdown de KPI Pai vazio)' },
     ],
   },
   {

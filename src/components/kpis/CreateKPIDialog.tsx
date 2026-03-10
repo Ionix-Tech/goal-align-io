@@ -71,9 +71,28 @@ export function CreateKPIDialog({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Reset form completely when dialog opens or type changes
   useEffect(() => {
-    setFormData(prev => ({ ...prev, kpi_type: defaultType }));
-  }, [defaultType]);
+    if (open) {
+      setFormData({
+        name: '',
+        description: '',
+        kpi_type: defaultType,
+        pillar_id: '',
+        objective_id: '',
+        parent_kpi_id: '',
+        area_id: '',
+        context_type: 'area',
+        unit: '',
+        direction: 'higher_better',
+        target_type: 'fixed',
+        default_target: '',
+        owner_id: '',
+        year: currentYear
+      });
+      setErrors({});
+    }
+  }, [open, defaultType, currentYear]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -137,22 +156,6 @@ export function CreateKPIDialog({
     });
 
     onOpenChange(false);
-    setFormData({
-      name: '',
-      description: '',
-      kpi_type: defaultType,
-      pillar_id: '',
-      objective_id: '',
-      parent_kpi_id: '',
-      area_id: '',
-      context_type: 'area',
-      unit: '',
-      direction: 'higher_better',
-      target_type: 'fixed',
-      default_target: '',
-      owner_id: '',
-      year: currentYear
-    });
   };
 
   return (
@@ -260,9 +263,10 @@ export function CreateKPIDialog({
                 <Select
                   value={formData.parent_kpi_id}
                   onValueChange={(value) => setFormData({ ...formData, parent_kpi_id: value })}
+                  disabled={existingKPIs.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o KPI pai" />
+                    <SelectValue placeholder={existingKPIs.length === 0 ? "Carregando KPIs..." : "Selecione o KPI pai"} />
                   </SelectTrigger>
                   <SelectContent>
                     {existingKPIs.map(kpi => (
