@@ -54,9 +54,13 @@ export function KPIConsolidatedGrid({ kpis, year, isLoading, onKPIClick }: KPICo
 
       let ytdTarget = 0, ytdActual = 0;
       let countTarget = 0, countActual = 0;
+      // Only include months that have actual_value filled in the YTD calculation
+      // This prevents inflating the target with months that haven't been reported yet
       ytdValues.forEach(v => {
-        if (v.target_value) { ytdTarget += v.target_value; countTarget++; }
-        if (v.actual_value) { ytdActual += v.actual_value; countActual++; }
+        if (v.actual_value != null && v.actual_value !== 0) {
+          ytdActual += v.actual_value; countActual++;
+          if (v.target_value) { ytdTarget += v.target_value; countTarget++; }
+        }
       });
 
       if (isAverage) {

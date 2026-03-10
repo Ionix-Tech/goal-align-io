@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.10.0",
+    date: "2026-03-10",
+    changes: [
+      { type: 'fix', description: 'Corrigido cálculo YTD dos indicadores — agora considera apenas meses com valor realizado preenchido, em vez de incluir todos os meses até o mês atual (evita inflar a meta com meses sem dados)' },
+    ],
+  },
+  {
     version: "0.9.9",
     date: "2026-03-02",
     changes: [
