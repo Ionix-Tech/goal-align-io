@@ -13,6 +13,7 @@ const changelog: ChangelogEntry[] = [
     date: "2026-03-10",
     changes: [
       { type: 'fix', description: 'Corrigido cálculo YTD dos indicadores — agora considera apenas meses com valor realizado preenchido, em vez de incluir todos os meses até o mês atual (evita inflar a meta com meses sem dados)' },
+      { type: 'fix', description: 'Área de Marketing adicionada na tabela de áreas do banco — antes existia apenas como categoria de projeto, impedindo a criação de KPIs para Marketing' },
     ],
   },
   {
