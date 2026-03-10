@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.10.1",
+    date: "2026-03-10",
+    changes: [
+      { type: 'fix', description: 'Corrigido cálculo YTD no balão (tooltip) dos indicadores — Meta YTD e Atingimento agora consideram apenas meses com valor realizado preenchido, consistente com a linha expandida Meta/Real' },
+    ],
+  },
+  {
     version: "0.10.0",
     date: "2026-03-10",
     changes: [

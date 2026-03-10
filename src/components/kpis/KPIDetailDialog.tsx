@@ -90,8 +90,8 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
     if (withActual.length === 0) return null;
 
     const actuals = withActual.map(v => v.actual_value!);
-    const targets = withActual.filter(v => v.target_value).map(v => v.target_value!);
-    
+    const targets = withActual.filter(v => v.target_value != null).map(v => v.target_value!);
+
     const sumActual = actuals.reduce((a, b) => a + b, 0);
     const sumTarget = targets.reduce((a, b) => a + b, 0);
 
@@ -101,7 +101,7 @@ export function KPIDetailDialog({ kpiId, open, onOpenChange }: KPIDetailDialogPr
       avg: sumActual / actuals.length,
       ytdActual: sumActual,
       ytdTarget: sumTarget,
-      ytdAchievement: sumTarget > 0 ? (sumActual / sumTarget) * 100 : null
+      ytdAchievement: sumTarget !== 0 ? (sumActual / sumTarget) * 100 : null
     };
   }, [kpi]);
 
